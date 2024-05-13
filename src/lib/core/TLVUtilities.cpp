@@ -23,8 +23,12 @@
  *
  */
 
-#include <lib/core/TLVDebug.h>
 #include <lib/core/TLVUtilities.h>
+
+#include <lib/core/CHIPError.h>
+#include <lib/core/TLVReader.h>
+#include <lib/core/TLVTags.h>
+#include <lib/core/TLVTypes.h>
 #include <lib/support/CodeUtils.h>
 
 namespace chip {
@@ -85,7 +89,7 @@ static CHIP_ERROR Iterate(TLVReader & aReader, size_t aDepth, IterateHandler aHa
     {
         const TLVType theType = aReader.GetType();
 
-        ReturnErrorOnFailure((aHandler)(aReader, aDepth, aContext));
+        ReturnErrorOnFailure((aHandler) (aReader, aDepth, aContext));
 
         if (aRecurse && TLVTypeIsContainer(theType))
         {

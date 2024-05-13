@@ -105,6 +105,16 @@ bool MakeBoolFromAsciiDecimal(const ByteSpan & val)
     return val.size() == 1 && static_cast<char>(*val.data()) == '1';
 }
 
+std::optional<bool> MakeOptionalBoolFromAsciiDecimal(const ByteSpan & val)
+{
+    char character = static_cast<char>(*val.data());
+    if (val.size() == 1 && ((character == '1') || (character == '0')))
+    {
+        return std::make_optional(character == '1');
+    }
+    return std::nullopt;
+}
+
 size_t GetPlusSignIdx(const ByteSpan & value)
 {
     // First value is the vendor id, second (after the +) is the product.
@@ -173,27 +183,32 @@ void GetPairingInstruction(const ByteSpan & value, char * pairingInstruction)
     Platform::CopyString(pairingInstruction, kMaxPairingInstructionLen + 1, value);
 }
 
-Optional<System::Clock::Milliseconds32> GetRetryInterval(const ByteSpan & value)
+uint8_t GetCommissionerPasscode(const ByteSpan & value)
+{
+    return MakeBoolFromAsciiDecimal(value);
+}
+
+std::optional<System::Clock::Milliseconds32> GetRetryInterval(const ByteSpan & value)
 {
     const auto undefined     = std::numeric_limits<uint32_t>::max();
     const auto retryInterval = MakeU32FromAsciiDecimal(value, undefined);
 
     if (retryInterval != undefined && retryInterval <= kMaxRetryInterval.count())
-        return MakeOptional(System::Clock::Milliseconds32(retryInterval));
+        return std::make_optional(System::Clock::Milliseconds32(retryInterval));
 
-    return NullOptional;
+    return std::nullopt;
 }
 
-Optional<System::Clock::Milliseconds16> GetRetryActiveThreshold(const ByteSpan & value)
+std::optional<System::Clock::Milliseconds16> GetRetryActiveThreshold(const ByteSpan & value)
 {
     const auto retryInterval = MakeU16FromAsciiDecimal(value);
 
     if (retryInterval == 0)
     {
-        return NullOptional;
+        return std::nullopt;
     }
 
-    return MakeOptional(System::Clock::Milliseconds16(retryInterval));
+    return std::make_optional(System::Clock::Milliseconds16(retryInterval));
 }
 
 TxtFieldKey GetTxtFieldKey(const ByteSpan & key)
@@ -240,6 +255,9 @@ void FillNodeDataFromTxt(const ByteSpan & key, const ByteSpan & val, CommissionN
     case TxtFieldKey::kPairingHint:
         nodeData.pairingHint = Internal::GetPairingHint(val);
         break;
+    case TxtFieldKey::kCommissionerPasscode:
+        nodeData.supportsCommissionerGeneratedPasscode = Internal::GetCommissionerPasscode(val);
+        break;
     default:
         break;
     }
@@ -260,6 +278,9 @@ void FillNodeDataFromTxt(const ByteSpan & key, const ByteSpan & value, CommonRes
         break;
     case TxtFieldKey::kTcpSupported:
         nodeData.supportsTcp = Internal::MakeBoolFromAsciiDecimal(value);
+        break;
+    case TxtFieldKey::kLongIdleTimeICD:
+        nodeData.isICDOperatingAsLIT = Internal::MakeOptionalBoolFromAsciiDecimal(value);
         break;
     default:
         break;

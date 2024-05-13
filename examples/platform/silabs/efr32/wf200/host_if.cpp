@@ -289,7 +289,7 @@ static void sl_wfx_scan_result_callback(sl_wfx_scan_result_ind_body_t * scan_res
     struct scan_result_holder * ap;
 
     SILABS_LOG("# %2d %2d  %03d %02X:%02X:%02X:%02X:%02X:%02X  %s", scan_count, scan_result->channel,
-               ((int16_t)(scan_result->rcpi - 220) / 2), scan_result->mac[0], scan_result->mac[1], scan_result->mac[2],
+               ((int16_t) (scan_result->rcpi - 220) / 2), scan_result->mac[0], scan_result->mac[1], scan_result->mac[2],
                scan_result->mac[3], scan_result->mac[4], scan_result->mac[5], scan_result->ssid_def.ssid);
     /*Report one AP information*/
     SILABS_LOG("\r\n");
@@ -607,7 +607,7 @@ static void wfx_events_task(void * p_arg)
             {
                 // Enable the power save
                 SILABS_LOG("WF200 going to DTIM based sleep");
-                sl_wfx_set_power_mode(WFM_PM_MODE_DTIM, WFM_PM_POLL_FAST_PS, BEACON_1);
+                sl_wfx_set_power_mode(WFM_PM_MODE_DTIM, WFM_PM_POLL_FAST_PS, BEACON_1, 0 /*timeout*/);
                 sl_wfx_enable_device_power_save();
             }
 #endif /* CHIP_CONFIG_ENABLE_ICD_SERVER */

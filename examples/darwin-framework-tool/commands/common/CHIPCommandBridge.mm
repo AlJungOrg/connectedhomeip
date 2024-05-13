@@ -21,17 +21,20 @@
 #import "CHIPToolKeypair.h"
 #import <Matter/Matter.h>
 
-#include <core/CHIPBuildConfig.h>
+#include <lib/core/CHIPConfig.h>
 #include <lib/core/CHIPVendorIdentifiers.hpp>
 
 #include "MTRError_Utils.h"
+
+#include <map>
+#include <string>
 
 static CHIPToolPersistentStorageDelegate * storage = nil;
 std::set<CHIPCommandBridge *> CHIPCommandBridge::sDeferredCleanups;
 std::map<std::string, MTRDeviceController *> CHIPCommandBridge::mControllers;
 dispatch_queue_t CHIPCommandBridge::mOTAProviderCallbackQueue;
 OTAProviderDelegate * CHIPCommandBridge::mOTADelegate;
-constexpr const char * kTrustStorePathVariable = "PAA_TRUST_STORE_PATH";
+constexpr char kTrustStorePathVariable[] = "PAA_TRUST_STORE_PATH";
 
 CHIPToolKeypair * gNocSigner = [[CHIPToolKeypair alloc] init];
 
@@ -40,6 +43,12 @@ CHIP_ERROR CHIPCommandBridge::Run()
     ChipLogProgress(chipTool, "Running Command");
     ReturnErrorOnFailure(MaybeSetUpStack());
     SetIdentity(mCommissionerName.HasValue() ? mCommissionerName.Value() : kIdentityAlpha);
+
+    {
+        std::lock_guard<std::mutex> lk(cvWaitingForResponseMutex);
+        mWaitingForResponse = YES;
+    }
+
     ReturnLogErrorOnFailure(RunCommand());
 
     auto err = StartWaiting(GetWaitDuration());

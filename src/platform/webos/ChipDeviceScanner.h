@@ -23,8 +23,9 @@
 
 #include <glib.h>
 #include <memory>
+#include <string>
 
-#include <ble/CHIPBleServiceData.h>
+#include <ble/Ble.h>
 #include <lib/core/CHIPError.h>
 #include <system/SystemLayer.h>
 
@@ -58,8 +59,8 @@ public:
     ChipDeviceScanner(LSHandle * handle, ChipDeviceScannerDelegate * delegate);
     ChipDeviceScanner(ChipDeviceScannerDelegate * delegate);
 
-    ChipDeviceScanner(ChipDeviceScanner &&)      = default;
-    ChipDeviceScanner(const ChipDeviceScanner &) = delete;
+    ChipDeviceScanner(ChipDeviceScanner &&)                  = default;
+    ChipDeviceScanner(const ChipDeviceScanner &)             = delete;
     ChipDeviceScanner & operator=(const ChipDeviceScanner &) = delete;
 
     ~ChipDeviceScanner();

@@ -19,8 +19,11 @@
 #pragma once
 
 #include "../common/CHIPCommand.h"
+#include "../common/RemoteDataModelLogger.h"
 
 #include "ToTLVCert.h"
+
+#include <string>
 
 class IssueNOCChainCommand : public CHIPCommand
 {
@@ -46,7 +49,7 @@ public:
 
     static void OnDeviceNOCChainGeneration(void * context, CHIP_ERROR status, const chip::ByteSpan & noc,
                                            const chip::ByteSpan & icac, const chip::ByteSpan & rcac,
-                                           chip::Optional<chip::IdentityProtectionKeySpan> ipk,
+                                           chip::Optional<chip::Crypto::IdentityProtectionKeySpan> ipk,
                                            chip::Optional<chip::NodeId> adminSubject)
     {
         auto command = static_cast<IssueNOCChainCommand *>(context);
@@ -69,10 +72,12 @@ public:
         VerifyOrReturn(CHIP_NO_ERROR == err, command->SetCommandExitStatus(err));
         ChipLogProgress(chipTool, "RCAC: %s", rcacStr.c_str());
 
-        auto ipkValue = ipk.ValueOr(chip::Crypto::IdentityProtectionKeySpan());
         std::string ipkStr;
-        err = ToBase64(ipkValue, ipkStr);
-        VerifyOrReturn(CHIP_NO_ERROR == err, command->SetCommandExitStatus(err));
+        if (ipk.HasValue())
+        {
+            err = ToBase64(ipk.Value(), ipkStr);
+            VerifyOrReturn(CHIP_NO_ERROR == err, command->SetCommandExitStatus(err));
+        }
         ChipLogProgress(chipTool, "IPK: %s", ipkStr.c_str());
 
         err = RemoteDataModelLogger::LogIssueNOCChain(nocStr.c_str(), icacStr.c_str(), rcacStr.c_str(), ipkStr.c_str());

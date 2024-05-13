@@ -30,9 +30,9 @@ namespace core {
  */
 enum CastingAppState
 {
-    UNINITIALIZED, // Before Initialize() success
-    NOT_RUNNING,   // After Initialize() success before Start()ing, OR After stop() success
-    RUNNING,       // After Start() success
+    CASTING_APP_UNINITIALIZED, // Before Initialize() success
+    CASTING_APP_NOT_RUNNING,   // After Initialize() success before Start()ing, OR After stop() success
+    CASTING_APP_RUNNING,       // After Start() success
 };
 
 /**
@@ -47,18 +47,49 @@ public:
     /**
      * @brief Initializes the CastingApp with appParameters
      *
-     * @param appParameters
+     * @param appParameters AppParameters required to Start up the CastingApp
      * @return CHIP_ERROR
      */
     CHIP_ERROR Initialize(const matter::casting::support::AppParameters & appParameters);
 
     /**
-     * @brief Starts the Matter server that the CastingApp runs on and calls PostStartRegistrations() to finish starting up the
+     * @brief Starts the Matter server that the CastingApp runs on and registers all the necessary delegates
      * CastingApp.
+     * If the CastingApp was previously connected to a CastingPlayer and then Stopped by calling the Stop()
+     * API, it will re-connect to the CastingPlayer.
      *
      * @return CHIP_ERROR - CHIP_NO_ERROR if Matter server started successfully, specific error code otherwise.
      */
     CHIP_ERROR Start();
+
+    /**
+     * @brief Stops the Matter server that the CastingApp runs on.
+     *
+     * @return CHIP_ERROR - CHIP_NO_ERROR if Matter server stopped successfully, specific error code otherwise.
+     */
+    CHIP_ERROR Stop();
+
+    /**
+     * @return true, if CastingApp is in CASTING_APP_RUNNING state. false otherwise
+     */
+    bool isRunning() { return mState == CASTING_APP_RUNNING; }
+
+    /**
+     * @brief Tears down all active subscriptions.
+     */
+    CHIP_ERROR ShutdownAllSubscriptions();
+
+    /**
+     * @brief Clears app cache that contains the information about CastingPlayers previously connected to
+     */
+    CHIP_ERROR ClearCache();
+
+private:
+    CastingApp();
+    static CastingApp * _castingApp;
+
+    CastingApp(CastingApp & other)     = delete;
+    void operator=(const CastingApp &) = delete;
 
     /**
      * @brief Perform post Matter server startup registrations
@@ -67,23 +98,9 @@ public:
      */
     CHIP_ERROR PostStartRegistrations();
 
-    /**
-     * @brief Stops the Matter server that the CastingApp runs on
-     *
-     * @return CHIP_ERROR - CHIP_NO_ERROR if Matter server stopped successfully, specific error code otherwise.
-     */
-    CHIP_ERROR Stop();
-
-private:
-    CastingApp();
-    static CastingApp * _castingApp;
-
-    CastingApp(CastingApp & other) = delete;
-    void operator=(const CastingApp &) = delete;
-
     const matter::casting::support::AppParameters * mAppParameters;
 
-    CastingAppState mState = UNINITIALIZED;
+    CastingAppState mState = CASTING_APP_UNINITIALIZED;
 };
 
 }; // namespace core

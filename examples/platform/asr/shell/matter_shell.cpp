@@ -42,7 +42,7 @@ using namespace ::chip;
 using namespace ::chip::Credentials;
 using namespace ::chip::DeviceLayer;
 
-#if CONFIG_ENABLE_CHIP_SHELL
+#ifdef CONFIG_ENABLE_CHIP_SHELL
 #include "lib/shell/Engine.h"
 
 using chip::Shell::Engine;
@@ -83,18 +83,18 @@ void asr_matter_onoff(int value)
 {
     ChipLogProgress(Zcl, "updating on/off = %d", value);
 
-    EmberAfStatus status = chip::app::Clusters::OnOff::Attributes::OnOff::Set(
+    Protocols::InteractionModel::Status status = chip::app::Clusters::OnOff::Attributes::OnOff::Set(
         /* endpoint ID */ 1, (uint8_t *) &value);
 
-    if (status != EMBER_ZCL_STATUS_SUCCESS)
+    if (status != Protocols::InteractionModel::Status::Success)
     {
-        ChipLogProgress(Zcl, "ERR: updating on/off %x", status);
+        ChipLogProgress(Zcl, "ERR: updating on/off %x", to_underlying(status));
     }
 }
 
 void asr_matter_sensors(bool enable, int temp, int humi, int pressure)
 {
-#if ASR_BOARD_ENABLE_SENSORS
+#ifdef ASR_BOARD_ENABLE_SENSORS
     if (enable)
     {
         chip::app::Clusters::TemperatureMeasurement::Attributes::MeasuredValue::Set(
@@ -120,7 +120,7 @@ void asr_matter_ota(uint32_t timeout)
 #endif
 }
 
-#if CONFIG_ENABLE_CHIP_SHELL
+#ifdef CONFIG_ENABLE_CHIP_SHELL
 static CHIP_ERROR sLightCommandHandler(int argc, char ** argv)
 {
     if (argc == 1 && strcmp(argv[0], "on") == 0)

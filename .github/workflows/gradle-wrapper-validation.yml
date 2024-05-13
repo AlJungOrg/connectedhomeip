@@ -1,13 +1,17 @@
 name: "Validate Gradle Wrapper"
-on: [push, pull_request]
+on:
+    push:
+        branches-ignore:
+            - 'dependabot/**'
+    pull_request:
 
 jobs:
   validation:
     name: "Validation"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: Wandalen/wretry.action@v1.3.0
+      - uses: actions/checkout@v4
+      - uses: Wandalen/wretry.action@v1.4.5
         name: Gradle Validation
         continue-on-error: true
         with:

@@ -16,7 +16,6 @@
  */
 
 #include "FactoryDataProvider.h"
-
 #include "FactoryDataDecoder.h"
 #include <crypto/CHIPCryptoPAL.h>
 #include <lib/core/CHIPError.h>
@@ -31,6 +30,7 @@
 #include <platform/internal/GenericConfigurationManagerImpl.ipp>
 
 using namespace ::chip::DeviceLayer::Internal;
+using namespace chip::app::Clusters::BasicInformation;
 
 namespace chip {
 namespace DeviceLayer {
@@ -247,12 +247,25 @@ CHIP_ERROR FactoryDataProvider::SignWithDeviceAttestationKey(const ByteSpan & me
     Crypto::P256ECDSASignature signature;
     Crypto::P256Keypair keypair;
 
-    VerifyOrReturnError(IsSpanUsable(outSignBuffer), CHIP_ERROR_INVALID_ARGUMENT);
-    VerifyOrReturnError(IsSpanUsable(messageToSign), CHIP_ERROR_INVALID_ARGUMENT);
+    VerifyOrReturnError(!outSignBuffer.empty(), CHIP_ERROR_INVALID_ARGUMENT);
+    VerifyOrReturnError(!messageToSign.empty(), CHIP_ERROR_INVALID_ARGUMENT);
     VerifyOrReturnError(outSignBuffer.size() >= signature.Capacity(), CHIP_ERROR_BUFFER_TOO_SMALL);
 
     if (kReadFromFlash)
     {
+#if CONFIG_ENABLE_AMEBA_CRYPTO
+        ReturnErrorCodeIf(!mFactoryData.dac.dac_cert.value, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+        // Extract public key from DAC cert.
+        ByteSpan dacCertSpan{ reinterpret_cast<uint8_t *>(mFactoryData.dac.dac_cert.value), mFactoryData.dac.dac_cert.len };
+        chip::Crypto::P256PublicKey dacPublicKey;
+
+        ReturnErrorOnFailure(chip::Crypto::ExtractPubkeyFromX509Cert(dacCertSpan, dacPublicKey));
+
+        CHIP_ERROR err             = CHIP_NO_ERROR;
+        FactoryDataDecoder decoder = FactoryDataDecoder::GetInstance();
+        err = decoder.GetSign(dacPublicKey.Bytes(), dacPublicKey.Length(), messageToSign.data(), messageToSign.size(),
+                              signature.Bytes());
+#else
         ReturnErrorCodeIf(!mFactoryData.dac.dac_cert.value, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
         ReturnErrorCodeIf(!mFactoryData.dac.dac_key.value, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
         // Extract public key from DAC cert.
@@ -260,18 +273,23 @@ CHIP_ERROR FactoryDataProvider::SignWithDeviceAttestationKey(const ByteSpan & me
         chip::Crypto::P256PublicKey dacPublicKey;
 
         ReturnErrorOnFailure(chip::Crypto::ExtractPubkeyFromX509Cert(dacCertSpan, dacPublicKey));
+
         ReturnErrorOnFailure(
             LoadKeypairFromRaw(ByteSpan(reinterpret_cast<uint8_t *>(mFactoryData.dac.dac_key.value), mFactoryData.dac.dac_key.len),
                                ByteSpan(dacPublicKey.Bytes(), dacPublicKey.Length()), keypair));
+#endif
     }
     else
     {
         ReturnErrorOnFailure(LoadKeypairFromRaw(ByteSpan(kDacPrivateKey), ByteSpan(kDacPublicKey), keypair));
     }
-
-    ReturnErrorOnFailure(keypair.ECDSA_sign_msg(messageToSign.data(), messageToSign.size(), signature));
-
+#if CONFIG_ENABLE_AMEBA_CRYPTO
+    VerifyOrReturnError(signature.SetLength(chip::Crypto::kP256_ECDSA_Signature_Length_Raw) == CHIP_NO_ERROR, CHIP_ERROR_INTERNAL);
     return CopySpanToMutableSpan(ByteSpan{ signature.ConstBytes(), signature.Length() }, outSignBuffer);
+#else
+    ReturnErrorOnFailure(keypair.ECDSA_sign_msg(messageToSign.data(), messageToSign.size(), signature));
+    return CopySpanToMutableSpan(ByteSpan{ signature.ConstBytes(), signature.Length() }, outSignBuffer);
+#endif
 }
 
 CHIP_ERROR FactoryDataProvider::GetSetupDiscriminator(uint16_t & setupDiscriminator)
@@ -661,6 +679,20 @@ CHIP_ERROR FactoryDataProvider::GetRotatingDeviceIdUniqueId(MutableByteSpan & un
 #endif
     }
 
+    return err;
+}
+
+CHIP_ERROR FactoryDataProvider::GetProductFinish(ProductFinishEnum * finish)
+{
+    CHIP_ERROR err = CHIP_NO_ERROR;
+    *finish        = ProductFinishEnum::kOther;
+    return err;
+}
+
+CHIP_ERROR FactoryDataProvider::GetProductPrimaryColor(ColorEnum * primaryColor)
+{
+    CHIP_ERROR err = CHIP_NO_ERROR;
+    *primaryColor  = ColorEnum::kBlack;
     return err;
 }
 

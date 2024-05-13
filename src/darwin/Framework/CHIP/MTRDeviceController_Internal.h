@@ -20,6 +20,8 @@
  */
 
 #import <Foundation/Foundation.h>
+#import <Matter/MTRAccessGrant.h>
+#import <Matter/MTRBaseDevice.h> // for MTRClusterPath
 
 #import "MTRDeviceConnectionBridge.h" // For MTRInternalDeviceConnectionCallback
 #import "MTRDeviceController.h"
@@ -29,6 +31,13 @@
 
 #import "MTRBaseDevice.h"
 #import "MTRDeviceController.h"
+#import "MTRDeviceControllerDataStore.h"
+
+#import <Matter/MTRDefines.h>
+#import <Matter/MTRDeviceControllerStartupParams.h>
+#import <Matter/MTRDeviceControllerStorageDelegate.h>
+#import <Matter/MTRDiagnosticLogsType.h>
+#import <Matter/MTROTAProviderDelegate.h>
 
 @class MTRDeviceControllerStartupParamsInternal;
 @class MTRDeviceControllerFactory;
@@ -71,14 +80,32 @@ NS_ASSUME_NONNULL_BEGIN
  *
  * This property MUST be gotten from the Matter work queue.
  */
-@property (readonly, nullable) NSNumber * compressedFabricID;
+@property (nonatomic, readonly, nullable) NSNumber * compressedFabricID;
+
+/**
+ * The per-controller data store this controller was initialized with, if any.
+ */
+@property (nonatomic, readonly, nullable) MTRDeviceControllerDataStore * controllerDataStore;
+
+/**
+ * OTA delegate and its queue, if this controller supports OTA.  Either both
+ * will be non-nil or both will be nil.
+ */
+@property (nonatomic, readonly, nullable) id<MTROTAProviderDelegate> otaProviderDelegate;
+@property (nonatomic, readonly, nullable) dispatch_queue_t otaProviderDelegateQueue;
 
 /**
  * Init a newly created controller.
  *
  * Only MTRDeviceControllerFactory should be calling this.
  */
-- (instancetype)initWithFactory:(MTRDeviceControllerFactory *)factory queue:(dispatch_queue_t)queue;
+- (instancetype)initWithFactory:(MTRDeviceControllerFactory *)factory
+                          queue:(dispatch_queue_t)queue
+                storageDelegate:(id<MTRDeviceControllerStorageDelegate> _Nullable)storageDelegate
+           storageDelegateQueue:(dispatch_queue_t _Nullable)storageDelegateQueue
+            otaProviderDelegate:(id<MTROTAProviderDelegate> _Nullable)otaProviderDelegate
+       otaProviderDelegateQueue:(dispatch_queue_t _Nullable)otaProviderDelegateQueue
+               uniqueIdentifier:(NSUUID *)uniqueIdentifier;
 
 /**
  * Check whether this controller is running on the given fabric, as represented
@@ -198,10 +225,38 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)operationalInstanceAdded:(chip::NodeId)nodeID;
 
+/**
+ * Download log of the desired type from the device.
+ */
+- (void)downloadLogFromNodeWithID:(NSNumber *)nodeID
+                             type:(MTRDiagnosticLogType)type
+                          timeout:(NSTimeInterval)timeout
+                            queue:(dispatch_queue_t)queue
+                       completion:(void (^)(NSURL * _Nullable url, NSError * _Nullable error))completion;
+
+/**
+ * Get the access grants that apply for the given cluster path.
+ */
+- (NSArray<MTRAccessGrant *> *)accessGrantsForClusterPath:(MTRClusterPath *)clusterPath;
+
+/**
+ * Get the privilege level needed to read the given attribute.  There's no
+ * endpoint provided because the expectation is that this information is the
+ * same for all cluster instances.
+ *
+ * Returns nil if we have no such attribute defined on any endpoint, otherwise
+ * one of MTRAccessControlEntry* constants wrapped in NSNumber.
+ *
+ * Only called on the Matter queue.
+ */
+- (nullable NSNumber *)neededReadPrivilegeForClusterID:(NSNumber *)clusterID attributeID:(NSNumber *)attributeID;
+
 #pragma mark - Device-specific data and SDK access
 // DeviceController will act as a central repository for this opaque dictionary that MTRDevice manages
 - (MTRDevice *)deviceForNodeID:(NSNumber *)nodeID;
 - (void)removeDevice:(MTRDevice *)device;
+
+- (NSNumber * _Nullable)syncGetCompressedFabricID;
 
 @end
 

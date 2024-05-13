@@ -23,18 +23,17 @@
 extern "C" {
 #include "btl_interface.h"
 #include "em_bus.h" // For CORE_CRITICAL_SECTION
-#if (defined(EFR32MG24) && defined(SL_WIFI))
+#if SL_WIFI
 #include "spi_multiplex.h"
-#ifdef WF200_WIFI // TODO: (MATTER-1905) clean up of MACROs
-#include "sl_wfx_host_api.h"
-#endif
-#endif
+#endif // SL_WIFI
 }
 
 #include <platform/silabs/SilabsConfig.h>
 
 /// No error, operation OK
 #define SL_BOOTLOADER_OK 0L
+
+static chip::OTAImageProcessorImpl gImageProcessor;
 
 namespace chip {
 
@@ -43,6 +42,15 @@ uint8_t OTAImageProcessorImpl::mSlotId                                          
 uint32_t OTAImageProcessorImpl::mWriteOffset                                            = 0;
 uint16_t OTAImageProcessorImpl::writeBufOffset                                          = 0;
 uint8_t OTAImageProcessorImpl::writeBuffer[kAlignmentBytes] __attribute__((aligned(4))) = { 0 };
+
+CHIP_ERROR OTAImageProcessorImpl::Init(OTADownloader * downloader)
+{
+    ReturnErrorCodeIf(downloader == nullptr, CHIP_ERROR_INVALID_ARGUMENT);
+
+    gImageProcessor.SetOTADownloader(downloader);
+
+    return CHIP_NO_ERROR;
+}
 
 CHIP_ERROR OTAImageProcessorImpl::PrepareDownload()
 {
@@ -170,23 +178,23 @@ void OTAImageProcessorImpl::HandleFinalize(intptr_t context)
             writeBuffer[writeBufOffset] = 0;
             writeBufOffset++;
         }
-#if (defined(EFR32MG24) && defined(SL_WIFI))
+#if SL_BTLCTRL_MUX
         err = sl_wfx_host_pre_bootloader_spi_transfer();
         if (err != SL_STATUS_OK)
         {
             ChipLogError(SoftwareUpdate, "sl_wfx_host_pre_bootloader_spi_transfer() error: %ld", err);
             return;
         }
-#endif
+#endif // SL_BTLCTRL_MUX
         CORE_CRITICAL_SECTION(err = bootloader_eraseWriteStorage(mSlotId, mWriteOffset, writeBuffer, kAlignmentBytes);)
-#if (defined(EFR32MG24) && defined(SL_WIFI))
+#if SL_BTLCTRL_MUX
         err = sl_wfx_host_post_bootloader_spi_transfer();
         if (err != SL_STATUS_OK)
         {
             ChipLogError(SoftwareUpdate, "sl_wfx_host_post_bootloader_spi_transfer() error: %ld", err);
             return;
         }
-#endif
+#endif // SL_BTLCTRL_MUX
         if (err)
         {
             ChipLogError(SoftwareUpdate, "bootloader_eraseWriteStorage() error: %ld", err);
@@ -208,28 +216,28 @@ void OTAImageProcessorImpl::HandleApply(intptr_t context)
 
     // Force KVS to store pending keys such as data from StoreCurrentUpdateInfo()
     chip::DeviceLayer::PersistedStorage::KeyValueStoreMgrImpl().ForceKeyMapSave();
-#if (defined(EFR32MG24) && defined(SL_WIFI))
+#if SL_BTLCTRL_MUX
     err = sl_wfx_host_pre_bootloader_spi_transfer();
     if (err != SL_STATUS_OK)
     {
         ChipLogError(SoftwareUpdate, "sl_wfx_host_pre_bootloader_spi_transfer() error: %ld", err);
         return;
     }
-#endif
+#endif // SL_BTLCTRL_MUX
     CORE_CRITICAL_SECTION(err = bootloader_verifyImage(mSlotId, NULL);)
     if (err != SL_BOOTLOADER_OK)
     {
         ChipLogError(SoftwareUpdate, "bootloader_verifyImage() error: %ld", err);
         // Call the OTARequestor API to reset the state
         GetRequestorInstance()->CancelImageUpdate();
-#if (defined(EFR32MG24) && defined(SL_WIFI))
+#if SL_BTLCTRL_MUX
         err = sl_wfx_host_post_bootloader_spi_transfer();
         if (err != SL_STATUS_OK)
         {
             ChipLogError(SoftwareUpdate, "sl_wfx_host_post_bootloader_spi_transfer() error: %ld", err);
             return;
         }
-#endif
+#endif // SL_BTLCTRL_MUX
         return;
     }
 
@@ -239,25 +247,25 @@ void OTAImageProcessorImpl::HandleApply(intptr_t context)
         ChipLogError(SoftwareUpdate, "bootloader_setImageToBootload() error: %ld", err);
         // Call the OTARequestor API to reset the state
         GetRequestorInstance()->CancelImageUpdate();
-#if (defined(EFR32MG24) && defined(SL_WIFI))
+#if SL_BTLCTRL_MUX
         err = sl_wfx_host_post_bootloader_spi_transfer();
         if (err != SL_STATUS_OK)
         {
             ChipLogError(SoftwareUpdate, "sl_wfx_host_post_bootloader_spi_transfer() error: %ld", err);
             return;
         }
-#endif
+#endif // SL_BTLCTRL_MUX
         return;
     }
 
-#if (defined(EFR32MG24) && defined(SL_WIFI))
+#if SL_BTLCTRL_MUX
     err = sl_wfx_host_post_bootloader_spi_transfer();
     if (err != SL_STATUS_OK)
     {
         ChipLogError(SoftwareUpdate, "sl_wfx_host_post_bootloader_spi_transfer() error: %ld", err);
         return;
     }
-#endif
+#endif // SL_BTLCTRL_MUX
     // This reboots the device
     CORE_CRITICAL_SECTION(bootloader_rebootAndInstall();)
 }
@@ -310,23 +318,23 @@ void OTAImageProcessorImpl::HandleProcessBlock(intptr_t context)
         if (writeBufOffset == kAlignmentBytes)
         {
             writeBufOffset = 0;
-#if (defined(EFR32MG24) && defined(SL_WIFI))
+#if SL_BTLCTRL_MUX
             err = sl_wfx_host_pre_bootloader_spi_transfer();
             if (err != SL_STATUS_OK)
             {
                 ChipLogError(SoftwareUpdate, "sl_wfx_host_pre_bootloader_spi_transfer() error: %ld", err);
                 return;
             }
-#endif
+#endif // SL_BTLCTRL_MUX
             CORE_CRITICAL_SECTION(err = bootloader_eraseWriteStorage(mSlotId, mWriteOffset, writeBuffer, kAlignmentBytes);)
-#if (defined(EFR32MG24) && defined(SL_WIFI))
+#if SL_BTLCTRL_MUX
             err = sl_wfx_host_post_bootloader_spi_transfer();
             if (err != SL_STATUS_OK)
             {
                 ChipLogError(SoftwareUpdate, "sl_wfx_host_post_bootloader_spi_transfer() error: %ld", err);
                 return;
             }
-#endif
+#endif // SL_BTLCTRL_MUX
             if (err)
             {
                 ChipLogError(SoftwareUpdate, "bootloader_eraseWriteStorage() error: %ld", err);
@@ -401,6 +409,11 @@ CHIP_ERROR OTAImageProcessorImpl::ReleaseBlock()
 
     mBlock = MutableByteSpan();
     return CHIP_NO_ERROR;
+}
+
+OTAImageProcessorImpl & OTAImageProcessorImpl::GetDefaultInstance()
+{
+    return gImageProcessor;
 }
 
 } // namespace chip

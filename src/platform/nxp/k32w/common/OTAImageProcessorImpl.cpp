@@ -28,6 +28,13 @@
 using namespace chip::DeviceLayer;
 using namespace ::chip::DeviceLayer::Internal;
 
+#if USE_SMU2_STATIC
+// The attribute specifier should not be changed.
+static chip::OTAImageProcessorImpl gImageProcessor __attribute__((section(".smu2")));
+#else
+static chip::OTAImageProcessorImpl gImageProcessor;
+#endif
+
 namespace chip {
 
 CHIP_ERROR OTAImageProcessorImpl::Init(OTADownloader * downloader)
@@ -96,16 +103,10 @@ CHIP_ERROR OTAImageProcessorImpl::ProcessBlock(ByteSpan & block)
 void OTAImageProcessorImpl::HandlePrepareDownload(intptr_t context)
 {
     auto * imageProcessor = reinterpret_cast<OTAImageProcessorImpl *>(context);
-    if (imageProcessor == nullptr)
-    {
-        ChipLogError(SoftwareUpdate, "ImageProcessor context is null");
-        return;
-    }
-    else if (imageProcessor->mDownloader == nullptr)
-    {
-        ChipLogError(SoftwareUpdate, "mDownloader is null");
-        return;
-    }
+
+    VerifyOrReturn(imageProcessor != nullptr, ChipLogError(SoftwareUpdate, "ImageProcessor context is null"));
+
+    VerifyOrReturn(imageProcessor->mDownloader != nullptr, ChipLogError(SoftwareUpdate, "mDownloader is null"));
 
     GetRequestorInstance()->GetProviderLocation(imageProcessor->mBackupProviderLocation);
 
@@ -147,6 +148,16 @@ CHIP_ERROR OTAImageProcessorImpl::ProcessPayload(ByteSpan & block)
             mAccumulator.Init(sizeof(OTATlvHeader));
 
             mCurrentProcessor = nullptr;
+
+            // If the block size is 0, it means that the processed data was a multiple of
+            // received BDX block size (e.g. 8 blocks of 1024 bytes were transferred).
+            // After state for selecting next processor is reset, a request for fetching next
+            // data must be sent.
+            if (block.size() == 0)
+            {
+                status = CHIP_NO_ERROR;
+                break;
+            }
         }
         else
         {
@@ -210,17 +221,10 @@ void OTAImageProcessorImpl::HandleAbort(intptr_t context)
 void OTAImageProcessorImpl::HandleProcessBlock(intptr_t context)
 {
     auto * imageProcessor = reinterpret_cast<OTAImageProcessorImpl *>(context);
-    if (imageProcessor == nullptr)
-    {
-        ChipLogError(SoftwareUpdate, "ImageProcessor context is null");
-        return;
-    }
 
-    if (imageProcessor->mDownloader == nullptr)
-    {
-        ChipLogError(SoftwareUpdate, "mDownloader is null");
-        return;
-    }
+    VerifyOrReturn(imageProcessor != nullptr, ChipLogError(SoftwareUpdate, "ImageProcessor context is null"));
+
+    VerifyOrReturn(imageProcessor->mDownloader != nullptr, ChipLogError(SoftwareUpdate, "mDownloader is null"));
 
     CHIP_ERROR status;
     auto block = ByteSpan(imageProcessor->mBlock.data(), imageProcessor->mBlock.size());
@@ -243,7 +247,7 @@ void OTAImageProcessorImpl::HandleStatus(CHIP_ERROR status)
     if (status == CHIP_NO_ERROR || status == CHIP_ERROR_BUFFER_TOO_SMALL)
     {
         mParams.downloadedBytes += mBlock.size();
-        FetchNextData(reinterpret_cast<uint32_t>(this));
+        FetchNextData(0);
     }
     else if (status == CHIP_OTA_FETCH_ALREADY_SCHEDULED)
     {
@@ -380,6 +384,7 @@ void OTAImageProcessorImpl::HandleApply(intptr_t context)
     imageProcessor->mAccumulator.Clear();
 
     ConfigurationManagerImpl().StoreSoftwareUpdateCompleted();
+    PlatformMgr().HandleServerShuttingDown();
 
     // Set the necessary information to inform the SSBL that a new image is available
     // and trigger the actual device reboot after some time, to take into account
@@ -402,7 +407,6 @@ CHIP_ERROR OTAImageProcessorImpl::ReleaseBlock()
 
 void OTAImageProcessorImpl::FetchNextData(uint32_t context)
 {
-    CHIP_ERROR error      = CHIP_NO_ERROR;
     auto * imageProcessor = &OTAImageProcessorImpl::GetDefaultInstance();
     SystemLayer().ScheduleLambda([imageProcessor] {
         if (imageProcessor->mDownloader)
@@ -414,8 +418,7 @@ void OTAImageProcessorImpl::FetchNextData(uint32_t context)
 
 OTAImageProcessorImpl & OTAImageProcessorImpl::GetDefaultInstance()
 {
-    static OTAImageProcessorImpl imageProcessor;
-    return imageProcessor;
+    return gImageProcessor;
 }
 
 } // namespace chip

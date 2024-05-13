@@ -29,13 +29,14 @@ import org.json.JSONObject;
 /** An attribute write request that should be used for interaction model write interaction. */
 public final class AttributeWriteRequest {
   private static final Logger logger = Logger.getLogger(AttributeWriteRequest.class.getName());
-  private final ChipPathId endpointId, clusterId, attributeId;
+  @Nullable private final ChipPathId endpointId;
+  private final ChipPathId clusterId, attributeId;
   private final Optional<Integer> dataVersion;
   @Nullable private final byte[] tlv;
   @Nullable private final JSONObject json;
 
   private AttributeWriteRequest(
-      ChipPathId endpointId,
+      @Nullable ChipPathId endpointId,
       ChipPathId clusterId,
       ChipPathId attributeId,
       @Nullable byte[] tlv,
@@ -74,6 +75,19 @@ public final class AttributeWriteRequest {
 
   public ChipPathId getAttributeId() {
     return attributeId;
+  }
+
+  // For use in JNI.
+  long getEndpointId(long wildcardValue) {
+    return endpointId.getId(wildcardValue);
+  }
+
+  long getClusterId(long wildcardValue) {
+    return clusterId.getId(wildcardValue);
+  }
+
+  long getAttributeId(long wildcardValue) {
+    return attributeId.getId(wildcardValue);
   }
 
   public int getDataVersion() {

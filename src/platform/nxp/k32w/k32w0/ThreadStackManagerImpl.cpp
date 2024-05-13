@@ -72,10 +72,8 @@ void ThreadStackManagerImpl::ProcessThreadActivity()
      * by doing this, we avoid allocating a new stack for short-lived
      * BLE processing (e.g.: only during Matter commissioning)
      */
-#if CHIP_DEVICE_CONFIG_ENABLE_CHIPOBLE
     auto * bleManager = &chip::DeviceLayer::Internal::BLEMgrImpl();
     bleManager->DoBleProcessing();
-#endif
 
 #if defined(chip_with_low_power) && (chip_with_low_power == 1)
     if (isThreadInitialized())
@@ -107,7 +105,7 @@ extern "C" void otTaskletsSignalPending(otInstance * p_instance)
 
 extern "C" void * pvPortCallocRtos(size_t num, size_t size)
 {
-    size_t totalAllocSize = (size_t)(num * size);
+    size_t totalAllocSize = (size_t) (num * size);
 
     if (size && totalAllocSize / size != num)
         return nullptr;

@@ -28,9 +28,9 @@
 #if CHIP_DEVICE_CONFIG_ENABLE_THREAD
 #include <platform/OpenThread/GenericThreadStackManagerImpl_OpenThread.h>
 #endif
-#include "AppConfig.h"
 #include "FreeRTOS.h"
 #include "heap_4_silabs.h"
+#include <inet/InetInterface.h>
 #include <lib/support/CHIPMemString.h>
 
 using namespace ::chip::app::Clusters::GeneralDiagnostics;
@@ -193,20 +193,7 @@ CHIP_ERROR DiagnosticDataProviderImpl::GetUpTime(uint64_t & upTime)
 
 CHIP_ERROR DiagnosticDataProviderImpl::GetTotalOperationalHours(uint32_t & totalOperationalHours)
 {
-    uint64_t upTime = 0;
-
-    if (GetUpTime(upTime) == CHIP_NO_ERROR)
-    {
-        uint32_t totalHours = 0;
-        if (ConfigurationMgr().GetTotalOperationalHours(totalHours) == CHIP_NO_ERROR)
-        {
-            VerifyOrReturnError(upTime / 3600 <= UINT32_MAX, CHIP_ERROR_INVALID_INTEGER_VALUE);
-            totalOperationalHours = totalHours + static_cast<uint32_t>(upTime / 3600);
-            return CHIP_NO_ERROR;
-        }
-    }
-
-    return CHIP_ERROR_INVALID_TIME;
+    return ConfigurationMgr().GetTotalOperationalHours(totalOperationalHours);
 }
 
 CHIP_ERROR DiagnosticDataProviderImpl::GetActiveHardwareFaults(GeneralFaults<kMaxHardwareFaults> & hardwareFaults)
@@ -224,8 +211,8 @@ CHIP_ERROR DiagnosticDataProviderImpl::GetActiveHardwareFaults(GeneralFaults<kMa
 CHIP_ERROR DiagnosticDataProviderImpl::GetActiveRadioFaults(GeneralFaults<kMaxRadioFaults> & radioFaults)
 {
 #if CHIP_CONFIG_TEST
-    ReturnErrorOnFailure(radioFaults.add(EMBER_ZCL_RADIO_FAULT_ENUM_THREAD_FAULT));
-    ReturnErrorOnFailure(radioFaults.add(EMBER_ZCL_RADIO_FAULT_ENUM_BLE_FAULT));
+    ReturnErrorOnFailure(radioFaults.add(to_underlying(RadioFaultEnum::kThreadFault)));
+    ReturnErrorOnFailure(radioFaults.add(to_underlying(RadioFaultEnum::kBLEFault)));
 #endif
 
     return CHIP_NO_ERROR;
@@ -249,13 +236,32 @@ CHIP_ERROR DiagnosticDataProviderImpl::GetNetworkInterfaces(NetworkInterface ** 
 #if CHIP_DEVICE_CONFIG_ENABLE_THREAD
     const char * threadNetworkName = otThreadGetNetworkName(ThreadStackMgrImpl().OTInstance());
     ifp->name                      = Span<const char>(threadNetworkName, strlen(threadNetworkName));
-    ifp->isOperational             = true;
+    ifp->type                      = InterfaceTypeEnum::kThread;
+    ifp->isOperational             = ThreadStackMgrImpl().IsThreadAttached();
     ifp->offPremiseServicesReachableIPv4.SetNull();
     ifp->offPremiseServicesReachableIPv6.SetNull();
-    ifp->type = InterfaceTypeEnum::EMBER_ZCL_INTERFACE_TYPE_ENUM_THREAD;
-    uint8_t macBuffer[ConfigurationManager::kPrimaryMACAddressLength];
-    ConfigurationMgr().GetPrimary802154MACAddress(macBuffer);
-    ifp->hardwareAddress = ByteSpan(macBuffer, ConfigurationManager::kPrimaryMACAddressLength);
+
+    ThreadStackMgrImpl().GetPrimary802154MACAddress(ifp->MacAddress);
+    ifp->hardwareAddress = ByteSpan(ifp->MacAddress, kMaxHardwareAddrSize);
+
+    // The Thread implementation has only 1 interface and is IPv6-only
+    Inet::InterfaceAddressIterator interfaceAddressIterator;
+    uint8_t ipv6AddressesCount = 0;
+    while (interfaceAddressIterator.HasCurrent() && ipv6AddressesCount < kMaxIPv6AddrCount)
+    {
+        Inet::IPAddress ipv6Address;
+        if (interfaceAddressIterator.GetAddress(ipv6Address) == CHIP_NO_ERROR)
+        {
+            memcpy(ifp->Ipv6AddressesBuffer[ipv6AddressesCount], ipv6Address.Addr, kMaxIPv6AddrSize);
+            ifp->Ipv6AddressSpans[ipv6AddressesCount] = ByteSpan(ifp->Ipv6AddressesBuffer[ipv6AddressesCount]);
+            ipv6AddressesCount++;
+        }
+        interfaceAddressIterator.Next();
+    }
+
+    ifp->IPv6Addresses = app::DataModel::List<ByteSpan>(ifp->Ipv6AddressSpans, ipv6AddressesCount);
+
+    *netifpp = ifp;
 #else
     NetworkInterface * head = NULL;
     for (Inet::InterfaceIterator interfaceIterator; interfaceIterator.HasCurrent(); interfaceIterator.Next())
@@ -270,22 +276,22 @@ CHIP_ERROR DiagnosticDataProviderImpl::GetNetworkInterfaces(NetworkInterface ** 
             switch (interfaceType)
             {
             case Inet::InterfaceType::Unknown:
-                ifp->type = EMBER_ZCL_INTERFACE_TYPE_ENUM_UNSPECIFIED;
+                ifp->type = app::Clusters::GeneralDiagnostics::InterfaceTypeEnum::kUnspecified;
                 break;
             case Inet::InterfaceType::WiFi:
-                ifp->type = EMBER_ZCL_INTERFACE_TYPE_ENUM_WI_FI;
+                ifp->type = app::Clusters::GeneralDiagnostics::InterfaceTypeEnum::kWiFi;
                 break;
             case Inet::InterfaceType::Ethernet:
-                ifp->type = EMBER_ZCL_INTERFACE_TYPE_ENUM_ETHERNET;
+                ifp->type = app::Clusters::GeneralDiagnostics::InterfaceTypeEnum::kEthernet;
                 break;
             case Inet::InterfaceType::Thread:
-                ifp->type = EMBER_ZCL_INTERFACE_TYPE_ENUM_THREAD;
+                ifp->type = app::Clusters::GeneralDiagnostics::InterfaceTypeEnum::kThread;
                 break;
             case Inet::InterfaceType::Cellular:
-                ifp->type = EMBER_ZCL_INTERFACE_TYPE_ENUM_CELLULAR;
+                ifp->type = app::Clusters::GeneralDiagnostics::InterfaceTypeEnum::kCellular;
                 break;
             default:
-                ifp->type = EMBER_ZCL_INTERFACE_TYPE_ENUM_WI_FI;
+                ifp->type = app::Clusters::GeneralDiagnostics::InterfaceTypeEnum::kWiFi;
                 break;
             }
         }
@@ -331,7 +337,6 @@ CHIP_ERROR DiagnosticDataProviderImpl::GetNetworkInterfaces(NetworkInterface ** 
     *netifpp = head;
 #endif
 
-    *netifpp = ifp;
     return CHIP_NO_ERROR;
 }
 

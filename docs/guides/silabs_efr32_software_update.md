@@ -8,7 +8,7 @@ all of the EFR32 example applications.
 ## Running the OTA Download scenario
 
 -   For Matter with OpenThread: Bring up the OpenThread Border Router as
-    discussed in examples/lighting-app/efr32/README.md and get its operational
+    discussed in examples/lighting-app/silabs/README.md and get its operational
     dataset.
 
 -   On a Linux or Darwin platform build the chip-tool and the ota-provider-app
@@ -42,8 +42,8 @@ all of the EFR32 example applications.
 -   In a terminal start the Provider app passing to it the path to the Matter
     OTA file created in the previous step:
 
-           rm -r /tmp/chip_*
-           ./out/debug/chip-ota-provider-app -f chip-efr32-lighting-example.ota
+           rm -r /tmp/chip_kvs_provider
+           ./out/debug/chip-ota-provider-app --KVS /tmp/chip_kvs_provider -f chip-efr32-lighting-example.ota
 
 -   In a separate terminal run the chip-tool commands to provision the Provider:
 

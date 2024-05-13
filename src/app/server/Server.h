@@ -17,7 +17,8 @@
 
 #pragma once
 
-#include <app/AppBuildConfig.h>
+#include <app/AppConfig.h>
+#include <app/icd/server/ICDServerConfig.h>
 
 #include <access/AccessControl.h>
 #include <access/examples/ExampleAccessControlDelegate.h>
@@ -45,6 +46,7 @@
 #include <lib/core/CHIPConfig.h>
 #include <lib/support/SafeInt.h>
 #include <messaging/ExchangeMgr.h>
+#include <platform/DeviceInstanceInfoProvider.h>
 #include <platform/KeyValueStoreManager.h>
 #include <platform/KvsPersistentStorageDelegate.h>
 #include <protocols/secure_channel/CASEServer.h>
@@ -68,13 +70,18 @@
 #include <transport/raw/UDP.h>
 
 #if CHIP_CONFIG_ENABLE_ICD_SERVER
-#include <app/icd/ICDEventManager.h> // nogncheck
-#include <app/icd/ICDManager.h>      // nogncheck
+#include <app/icd/server/ICDManager.h> // nogncheck
 #endif
 
 namespace chip {
 
-constexpr size_t kMaxBlePendingPackets = 1;
+inline constexpr size_t kMaxBlePendingPackets = 1;
+
+#if INET_CONFIG_ENABLE_TCP_ENDPOINT
+inline constexpr size_t kMaxTcpActiveConnectionCount = CHIP_CONFIG_MAX_ACTIVE_TCP_CONNECTIONS;
+
+inline constexpr size_t kMaxTcpPendingPackets = CHIP_CONFIG_MAX_TCP_PENDING_PACKETS;
+#endif // INET_CONFIG_ENABLE_TCP_ENDPOINT
 
 //
 // NOTE: Please do not alter the order of template specialization here as the logic
@@ -89,14 +96,27 @@ using ServerTransportMgr = chip::TransportMgr<chip::Transport::UDP
                                               ,
                                               chip::Transport::BLE<kMaxBlePendingPackets>
 #endif
+#if INET_CONFIG_ENABLE_TCP_ENDPOINT
+                                              ,
+                                              chip::Transport::TCP<kMaxTcpActiveConnectionCount, kMaxTcpPendingPackets>
+#endif
                                               >;
+
+#if CHIP_DEVICE_CONFIG_ENABLE_COMMISSIONER_DISCOVERY_CLIENT
+using UdcTransportMgr = TransportMgr<Transport::UDP /* IPv6 */
+#if INET_CONFIG_ENABLE_IPV4
+                                     ,
+                                     Transport::UDP /* IPv4 */
+#endif
+                                     >;
+#endif
 
 struct ServerInitParams
 {
     ServerInitParams() = default;
 
     // Not copyable
-    ServerInitParams(const ServerInitParams &) = delete;
+    ServerInitParams(const ServerInitParams &)             = delete;
     ServerInitParams & operator=(const ServerInitParams &) = delete;
 
     // Application delegate to handle some commissioning lifecycle events
@@ -178,7 +198,7 @@ struct CommonCaseDeviceServerInitParams : public ServerInitParams
     CommonCaseDeviceServerInitParams() = default;
 
     // Not copyable
-    CommonCaseDeviceServerInitParams(const CommonCaseDeviceServerInitParams &) = delete;
+    CommonCaseDeviceServerInitParams(const CommonCaseDeviceServerInitParams &)             = delete;
     CommonCaseDeviceServerInitParams & operator=(const CommonCaseDeviceServerInitParams &) = delete;
 
     /**
@@ -304,7 +324,14 @@ public:
     CHIP_ERROR Init(const ServerInitParams & initParams);
 
 #if CHIP_DEVICE_CONFIG_ENABLE_COMMISSIONER_DISCOVERY_CLIENT
-    CHIP_ERROR SendUserDirectedCommissioningRequest(chip::Transport::PeerAddress commissioner);
+    CHIP_ERROR
+    SendUserDirectedCommissioningRequest(chip::Transport::PeerAddress commissioner,
+                                         Protocols::UserDirectedCommissioning::IdentificationDeclaration & id);
+
+    Protocols::UserDirectedCommissioning::UserDirectedCommissioningClient * GetUserDirectedCommissioningClient()
+    {
+        return gUDCClient;
+    }
 #endif // CHIP_DEVICE_CONFIG_ENABLE_COMMISSIONER_DISCOVERY_CLIENT
 
     /**
@@ -349,6 +376,22 @@ public:
     app::DefaultAttributePersistenceProvider & GetDefaultAttributePersister() { return mAttributePersister; }
 
     app::reporting::ReportScheduler * GetReportScheduler() { return mReportScheduler; }
+
+#if CHIP_CONFIG_ENABLE_ICD_SERVER
+    app::ICDManager & GetICDManager() { return mICDManager; }
+
+#if CHIP_CONFIG_ENABLE_ICD_CIP
+    /**
+     * @brief Function to determine if a Check-In message would be sent at Boot up
+     *
+     * @param aFabricIndex client fabric index
+     * @param subjectID client subject ID
+     * @return true Check-In message would be sent on boot up.
+     * @return false Device has a persisted subscription with the client. See CHIP_CONFIG_PERSIST_SUBSCRIPTIONS.
+     */
+    bool ShouldCheckInMsgsBeSentAtBootFunction(FabricIndex aFabricIndex, NodeId subjectID);
+#endif // CHIP_CONFIG_ENABLE_ICD_CIP
+#endif // CHIP_CONFIG_ENABLE_ICD_SERVER
 
     /**
      * This function causes the ShutDown event to be generated async on the
@@ -588,7 +631,11 @@ private:
     FabricTable mFabrics;
     secure_channel::MessageCounterManager mMessageCounterManager;
 #if CHIP_DEVICE_CONFIG_ENABLE_COMMISSIONER_DISCOVERY_CLIENT
-    chip::Protocols::UserDirectedCommissioning::UserDirectedCommissioningClient gUDCClient;
+    Protocols::UserDirectedCommissioning::UserDirectedCommissioningClient * gUDCClient = nullptr;
+    // mUdcTransportMgr is for insecure communication (ex. user directed commissioning)
+    // specifically, the commissioner declaration message (sent by commissioner to commissionee)
+    UdcTransportMgr * mUdcTransportMgr = nullptr;
+    uint16_t mCdcListenPort            = CHIP_UDC_COMMISSIONEE_PORT;
 #endif // CHIP_DEVICE_CONFIG_ENABLE_COMMISSIONER_DISCOVERY_CLIENT
     CommissioningWindowManager mCommissioningWindowManager;
 
@@ -619,7 +666,6 @@ private:
 
     System::Clock::Microseconds64 mInitTimestamp;
 #if CHIP_CONFIG_ENABLE_ICD_SERVER
-    app::ICDEventManager mICDEventManager;
     app::ICDManager mICDManager;
 #endif // CHIP_CONFIG_ENABLE_ICD_SERVER
 };

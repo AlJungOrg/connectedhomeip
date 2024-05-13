@@ -24,13 +24,18 @@
 #include <app-common/zap-generated/ids/Attributes.h>
 #include <app-common/zap-generated/ids/Clusters.h>
 #include <app/AttributeAccessInterface.h>
+#include <app/AttributeAccessInterfaceRegistry.h>
 #include <app/util/attribute-storage.h>
+#include <app/util/endpoint-config-api.h>
 #include <lib/support/CodeUtils.h>
 #include <lib/support/logging/CHIPLogging.h>
+
+#include "descriptor.h"
 
 using namespace chip;
 using namespace chip::app;
 using namespace chip::app::Clusters;
+using namespace chip::app::Clusters::Descriptor;
 using namespace chip::app::Clusters::Descriptor::Attributes;
 
 namespace {
@@ -44,15 +49,45 @@ public:
     CHIP_ERROR Read(const ConcreteReadAttributePath & aPath, AttributeValueEncoder & aEncoder) override;
 
 private:
-    static constexpr uint16_t ClusterRevision = 1;
-
+    CHIP_ERROR ReadTagListAttribute(EndpointId endpoint, AttributeValueEncoder & aEncoder);
     CHIP_ERROR ReadPartsAttribute(EndpointId endpoint, AttributeValueEncoder & aEncoder);
     CHIP_ERROR ReadDeviceAttribute(EndpointId endpoint, AttributeValueEncoder & aEncoder);
     CHIP_ERROR ReadClientServerAttribute(EndpointId endpoint, AttributeValueEncoder & aEncoder, bool server);
     CHIP_ERROR ReadClusterRevision(EndpointId endpoint, AttributeValueEncoder & aEncoder);
+    CHIP_ERROR ReadFeatureMap(EndpointId endpoint, AttributeValueEncoder & aEncoder);
 };
 
-constexpr uint16_t DescriptorAttrAccess::ClusterRevision;
+CHIP_ERROR DescriptorAttrAccess::ReadFeatureMap(EndpointId endpoint, AttributeValueEncoder & aEncoder)
+{
+    Clusters::Descriptor::Structs::SemanticTagStruct::Type tag;
+    size_t index = 0;
+    BitFlags<Feature> featureFlags;
+
+    if (GetSemanticTagForEndpointAtIndex(endpoint, index, tag) == CHIP_NO_ERROR)
+    {
+        featureFlags.Set(Feature::kTagList);
+    }
+    return aEncoder.Encode(featureFlags);
+}
+
+CHIP_ERROR DescriptorAttrAccess::ReadTagListAttribute(EndpointId endpoint, AttributeValueEncoder & aEncoder)
+{
+    return aEncoder.EncodeList([&endpoint](const auto & encoder) -> CHIP_ERROR {
+        Clusters::Descriptor::Structs::SemanticTagStruct::Type tag;
+        size_t index   = 0;
+        CHIP_ERROR err = CHIP_NO_ERROR;
+        while ((err = GetSemanticTagForEndpointAtIndex(endpoint, index, tag)) == CHIP_NO_ERROR)
+        {
+            ReturnErrorOnFailure(encoder.Encode(tag));
+            index++;
+        }
+        if (err == CHIP_ERROR_NOT_FOUND)
+        {
+            return CHIP_NO_ERROR;
+        }
+        return err;
+    });
+}
 
 CHIP_ERROR DescriptorAttrAccess::ReadPartsAttribute(EndpointId endpoint, AttributeValueEncoder & aEncoder)
 {
@@ -167,7 +202,7 @@ CHIP_ERROR DescriptorAttrAccess::ReadClientServerAttribute(EndpointId endpoint, 
 
 CHIP_ERROR DescriptorAttrAccess::ReadClusterRevision(EndpointId endpoint, AttributeValueEncoder & aEncoder)
 {
-    return aEncoder.Encode(ClusterRevision);
+    return aEncoder.Encode(kClusterRevision);
 }
 
 DescriptorAttrAccess gAttrAccess;
@@ -190,8 +225,14 @@ CHIP_ERROR DescriptorAttrAccess::Read(const ConcreteReadAttributePath & aPath, A
     case PartsList::Id: {
         return ReadPartsAttribute(aPath.mEndpointId, aEncoder);
     }
+    case TagList::Id: {
+        return ReadTagListAttribute(aPath.mEndpointId, aEncoder);
+    }
     case ClusterRevision::Id: {
         return ReadClusterRevision(aPath.mEndpointId, aEncoder);
+    }
+    case FeatureMap::Id: {
+        return ReadFeatureMap(aPath.mEndpointId, aEncoder);
     }
     default: {
         break;

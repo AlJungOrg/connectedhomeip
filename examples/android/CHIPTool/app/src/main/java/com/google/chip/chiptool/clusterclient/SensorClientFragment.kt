@@ -21,7 +21,6 @@ import com.google.chip.chiptool.ChipClient
 import com.google.chip.chiptool.R
 import com.google.chip.chiptool.databinding.SensorClientFragmentBinding
 import com.google.chip.chiptool.util.DeviceIdUtil
-import com.google.chip.chiptool.util.TlvParseUtil
 import com.jjoe64.graphview.LabelFormatter
 import com.jjoe64.graphview.Viewport
 import com.jjoe64.graphview.series.DataPoint
@@ -31,6 +30,8 @@ import java.util.Calendar
 import java.util.Date
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import matter.tlv.AnonymousTag
+import matter.tlv.TlvReader
 
 class SensorClientFragment : Fragment() {
   private val deviceController: ChipDeviceController
@@ -154,7 +155,13 @@ class SensorClientFragment : Fragment() {
       val clusterName = binding.clusterNameSpinner.selectedItem.toString()
       val clusterId = CLUSTERS[clusterName]!!["clusterId"] as Long
       val attributeId = CLUSTERS[clusterName]!!["attributeId"] as Long
-      val device = ChipClient.getConnectedDevicePointer(requireContext(), deviceId)
+      val device =
+        try {
+          ChipClient.getConnectedDevicePointer(requireContext(), deviceId)
+        } catch (e: IllegalStateException) {
+          Log.d(TAG, "getConnectedDevicePointer exception", e)
+          return
+        }
       val callback = makeReadCallback(clusterName, false)
 
       deviceController.readAttributePath(
@@ -176,7 +183,13 @@ class SensorClientFragment : Fragment() {
       val clusterName = binding.clusterNameSpinner.selectedItem.toString()
       val clusterId = CLUSTERS[clusterName]!!["clusterId"] as Long
       val attributeId = CLUSTERS[clusterName]!!["attributeId"] as Long
-      val device = ChipClient.getConnectedDevicePointer(requireContext(), deviceId)
+      val device =
+        try {
+          ChipClient.getConnectedDevicePointer(requireContext(), deviceId)
+        } catch (e: IllegalStateException) {
+          Log.d(TAG, "getConnectedDevicePointer exception", e)
+          return
+        }
       val callback = makeReadCallback(clusterName, true)
 
       deviceController.subscribeToAttributePath(
@@ -224,7 +237,7 @@ class SensorClientFragment : Fragment() {
         // TODO : Need to be implement poj-to-tlv
         val value =
           try {
-            TlvParseUtil.decodeInt(tlv)
+            TlvReader(tlv).getInt(AnonymousTag)
           } catch (ex: Exception) {
             showMessage(R.string.sensor_client_read_error_text, "value is null")
             return

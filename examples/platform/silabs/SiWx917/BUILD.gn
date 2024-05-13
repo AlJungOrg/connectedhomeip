@@ -17,10 +17,9 @@ import("//build_overrides/efr32_sdk.gni")
 import("${chip_root}/examples/common/pigweed/pigweed_rpcs.gni")
 import("${chip_root}/src/lib/lib.gni")
 import("${chip_root}/src/platform/device.gni")
+import("${chip_root}/src/platform/silabs/wifi_args.gni")
 import("${chip_root}/third_party/silabs/silabs_board.gni")
 import("${efr32_sdk_build_root}/SiWx917_sdk.gni")
-silabs_common_plat_dir = "${chip_root}/examples/platform/silabs"
-wifi_sdk_dir = "${chip_root}/src/platform/silabs/SiWx917/wifi"
 
 declare_args() {
   enable_heap_monitoring = false
@@ -33,10 +32,7 @@ declare_args() {
   sl_wfx_config_scan = true
 
   # Argument to force enable WPA3 security on rs91x
-  rs91x_wpa3_transition = false
-
-  # use commissionable data for SiWx917
-  siwx917_commissionable_data = false
+  rs91x_wpa3_transition = true
 
   #default WiFi SSID
   chip_default_wifi_ssid = ""
@@ -45,20 +41,19 @@ declare_args() {
   chip_default_wifi_psk = ""
 
   # Enable TestEventTrigger in GeneralDiagnostics cluster
-  silabs_test_event_trigger_enabled = false
+  sl_enable_test_event_trigger = false
 
   # The EnableKey in hex string format used by TestEventTrigger command in
-  # GeneralDiagnostics cluster. The length of the string should be 32.
-  silabs_test_event_trigger_enable_key = "00112233445566778899aabbccddeeff"
+  # GeneralDiagnostics cluster. The length of the string should be 16 bytes.
+  sl_test_event_trigger_enable_key = "00112233445566778899AABBCCDDEEFF"
 }
-
-import("${chip_root}/src/platform/silabs/wifi_args.gni")
-import("${silabs_common_plat_dir}/args.gni")
 
 # Sanity check
 assert(chip_enable_wifi)
 
 silabs_common_plat_dir = "${chip_root}/examples/platform/silabs"
+silabs_plat_si91x_wifi_dir = "${chip_root}/src/platform/silabs/SiWx917/wifi"
+import("${silabs_common_plat_dir}/args.gni")
 
 config("chip_examples_project_config") {
   include_dirs = [ "project_include" ]
@@ -82,6 +77,30 @@ config("chip_examples_project_config") {
   ]
 }
 
+config("test-event-trigger-config") {
+  defines = [ "SL_MATTER_TEST_EVENT_TRIGGER_ENABLED" ]
+
+  if (is_debug) {
+    defines += [ "SL_MATTER_TEST_EVENT_TRIGGER_ENABLE_KEY=\"${sl_test_event_trigger_enable_key}\"" ]
+  }
+}
+
+source_set("test-event-trigger") {
+  sources = [
+    "${silabs_common_plat_dir}/SilabsTestEventTriggerDelegate.cpp",
+    "${silabs_common_plat_dir}/SilabsTestEventTriggerDelegate.h",
+  ]
+
+  public_configs = [ ":test-event-trigger-config" ]
+
+  public_deps = [
+    ":silabs-factory-data-provider",
+    "${chip_root}/src/app:test-event-trigger",
+    "${chip_root}/src/lib/core",
+    "${chip_root}/src/lib/support",
+  ]
+}
+
 source_set("siwx917-matter-shell") {
   if (chip_build_libshell) {
     defines = [ "ENABLE_CHIP_SHELL" ]
@@ -102,11 +121,6 @@ source_set("siwx917-matter-shell") {
 
 config("attestation-credentials-config") {
   include_dirs = [ "${chip_root}" ]
-
-  defines = [
-    # Set to 1 to enable SI917 attestation credentials
-    "SILABS_ATTESTATION_CREDENTIALS",
-  ]
 }
 
 source_set("siwx917-attestation-credentials") {
@@ -131,11 +145,16 @@ source_set("silabs-factory-data-provider") {
 
   public_deps = [
     "${chip_root}/src/credentials",
+    "${chip_root}/src/lib/support",
     "${chip_root}/src/platform:platform_base",
     "${chip_root}/src/setup_payload",
   ]
 
   public_configs = [ ":siwx917-common-config" ]
+
+  if (sl_enable_test_event_trigger) {
+    public_configs += [ ":test-event-trigger-config" ]
+  }
 }
 
 config("siwx917-common-config") {
@@ -151,17 +170,12 @@ config("siwx917-common-config") {
     defines += [ "QR_CODE_ENABLED" ]
   }
 
-  # TODO: Renable once ota is supported
-  # if (chip_enable_ota_requestor) {
-  #   defines += [ "SILABS_OTA_ENABLED" ]
-  # }
+  if (chip_enable_ota_requestor) {
+    defines += [ "SILABS_OTA_ENABLED" ]
+  }
 
   if (enable_heap_monitoring) {
     defines += [ "HEAP_MONITORING" ]
-  }
-
-  if (siwx917_commissionable_data) {
-    defines += [ "SIWX917_USE_COMISSIONABLE_DATA=1" ]
   }
 
   ldflags = [ "-Wl,--no-warn-rwx-segment" ]
@@ -212,7 +226,7 @@ source_set("siwx917-common") {
   include_dirs = [
     ".",
     "SiWx917/",
-    "${wifi_sdk_dir}",
+    "${silabs_plat_si91x_wifi_dir}",
   ]
 
   sources = [
@@ -223,20 +237,20 @@ source_set("siwx917-common") {
     "${silabs_common_plat_dir}/heap_4_silabs.c",
     "${silabs_common_plat_dir}/silabs_utils.cpp",
     "${silabs_common_plat_dir}/syscalls_stubs.cpp",
-    "${wifi_sdk_dir}/dhcp_client.cpp",
-    "${wifi_sdk_dir}/ethernetif.cpp",
-    "${wifi_sdk_dir}/lwip_netif.cpp",
-    "${wifi_sdk_dir}/wfx_notify.cpp",
-    "SiWx917/sl_wifi_if.c",
-    "SiWx917/wfx_rsi_host.c",
+    "${silabs_plat_si91x_wifi_dir}/dhcp_client.cpp",
+    "${silabs_plat_si91x_wifi_dir}/ethernetif.cpp",
+    "${silabs_plat_si91x_wifi_dir}/lwip_netif.cpp",
+    "${silabs_plat_si91x_wifi_dir}/wfx_notify.cpp",
+    "SiWx917/sl_wifi_if.cpp",
+    "SiWx917/wfx_rsi_host.cpp",
   ]
 
-  if (chip_enable_pw_rpc || chip_build_libshell) {
+  if (chip_enable_pw_rpc || chip_build_libshell || sl_uart_log_output) {
     sources += [ "uart.cpp" ]
   }
 
   if (chip_enable_ota_requestor) {
-    # TODO: OTA For CCP Platform
+    sources += [ "${silabs_common_plat_dir}/OTAConfig.cpp" ]
   }
 
   if (!disable_lcd) {
@@ -275,19 +289,11 @@ source_set("siwx917-common") {
   }
 
   # Attestation Credentials
-  if (chip_build_platform_attestation_credentials_provider) {
-    deps += [ ":siwx917-attestation-credentials" ]
-  }
+  deps += [ ":siwx917-attestation-credentials" ]
 
   # Factory Data Provider
   if (use_efr32_factory_data_provider) {
     public_deps += [ ":silabs-factory-data-provider" ]
-  }
-
-  if (silabs_test_event_trigger_enabled) {
-    sources +=
-        [ "${silabs_common_plat_dir}/SilabsTestEventTriggerDelegate.cpp" ]
-    defines += [ "SILABS_TEST_EVENT_TRIGGER_ENABLE_KEY=\"${silabs_test_event_trigger_enable_key}\"" ]
   }
 
   public_deps += [
@@ -295,6 +301,10 @@ source_set("siwx917-common") {
     "${chip_root}/src/lib",
     "${chip_root}/src/setup_payload",
   ]
+
+  if (sl_enable_test_event_trigger) {
+    public_deps += [ ":test-event-trigger" ]
+  }
 
   if (app_data_model != "") {
     public_deps += [ app_data_model ]

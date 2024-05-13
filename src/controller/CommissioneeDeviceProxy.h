@@ -46,7 +46,7 @@
 
 namespace chip {
 
-constexpr size_t kAttestationNonceLength = 32;
+inline constexpr size_t kAttestationNonceLength = 32;
 
 struct ControllerDeviceInitParams
 {
@@ -104,6 +104,11 @@ public:
      *  In case there exists an open session to the device, mark it as expired.
      */
     void CloseSession();
+
+    /**
+     *  Detaches the underlying session (if any) from this proxy and returns it.
+     */
+    chip::Optional<SessionHandle> DetachSecureSession();
 
     void Disconnect() override { CloseSession(); }
 

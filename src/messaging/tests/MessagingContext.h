@@ -19,6 +19,7 @@
 #include <credentials/PersistentStorageOpCertStore.h>
 #include <crypto/DefaultSessionKeystore.h>
 #include <crypto/PersistentStorageOperationalKeystore.h>
+#include <lib/core/CASEAuthTag.h>
 #include <lib/support/TestPersistentStorageDelegate.h>
 #include <messaging/ExchangeContext.h>
 #include <messaging/ExchangeMgr.h>
@@ -78,7 +79,7 @@ public:
     enum MRPMode
     {
         kDefault = 1, // This adopts the default MRP values for idle/active as per the spec.
-                      //      i.e IDLE = 4s, ACTIVE = 300ms
+                      //      i.e IDLE = 500ms, ACTIVE = 300ms
 
         kResponsive = 2, // This adopts values that are better suited for loopback tests that
                          // don't actually go over a network interface, and are tuned much lower
@@ -139,9 +140,13 @@ public:
     const FabricInfo * GetAliceFabric() { return mFabricTable.FindFabricWithIndex(mAliceFabricIndex); }
     const FabricInfo * GetBobFabric() { return mFabricTable.FindFabricWithIndex(mBobFabricIndex); }
 
-    CHIP_ERROR CreateSessionBobToAlice();
-    CHIP_ERROR CreateSessionAliceToBob();
-    CHIP_ERROR CreateSessionBobToFriends();
+    CHIP_ERROR CreateSessionBobToAlice(); // Creates PASE session
+    CHIP_ERROR CreateCASESessionBobToAlice();
+    CHIP_ERROR CreateCASESessionBobToAlice(const CATValues & cats);
+    CHIP_ERROR CreateSessionAliceToBob(); // Creates PASE session
+    CHIP_ERROR CreateCASESessionAliceToBob();
+    CHIP_ERROR CreateCASESessionAliceToBob(const CATValues & cats);
+    CHIP_ERROR CreateSessionBobToFriends(); // Creates PASE session
     CHIP_ERROR CreatePASESessionCharlieToDavid();
     CHIP_ERROR CreatePASESessionDavidToCharlie();
 
@@ -206,35 +211,58 @@ class LoopbackMessagingContext : public LoopbackTransportManager, public Messagi
 public:
     virtual ~LoopbackMessagingContext() {}
 
-    /// Initialize the underlying layers.
-    virtual CHIP_ERROR Init()
+    // Performs shared setup for all tests in the test suite
+    virtual void SetUpTestSuite()
     {
-        ReturnErrorOnFailure(chip::Platform::MemoryInit());
-        ReturnErrorOnFailure(LoopbackTransportManager::Init());
-        ReturnErrorOnFailure(MessagingContext::Init(&GetTransportMgr(), &GetIOContext()));
-        return CHIP_NO_ERROR;
+        CHIP_ERROR err = CHIP_NO_ERROR;
+        // TODO: use ASSERT_EQ, once transition to pw_unit_test is complete
+        VerifyOrDieWithMsg((err = chip::Platform::MemoryInit()) == CHIP_NO_ERROR, AppServer,
+                           "Init CHIP memory failed: %" CHIP_ERROR_FORMAT, err.Format());
+        VerifyOrDieWithMsg((err = LoopbackTransportManager::Init()) == CHIP_NO_ERROR, AppServer,
+                           "Init LoopbackTransportManager failed: %" CHIP_ERROR_FORMAT, err.Format());
     }
 
-    // Shutdown all layers, finalize operations
-    virtual void Shutdown()
+    // Performs shared teardown for all tests in the test suite
+    virtual void TearDownTestSuite()
     {
-        MessagingContext::Shutdown();
         LoopbackTransportManager::Shutdown();
         chip::Platform::MemoryShutdown();
     }
 
-    // Init/Shutdown Helpers that can be used directly as the nlTestSuite
-    // initialize/finalize function.
-    static int Initialize(void * context)
+    // Performs setup for each individual test in the test suite
+    virtual void SetUp()
     {
-        auto * ctx = static_cast<LoopbackMessagingContext *>(context);
-        return ctx->Init() == CHIP_NO_ERROR ? SUCCESS : FAILURE;
+        CHIP_ERROR err = CHIP_NO_ERROR;
+        VerifyOrDieWithMsg((err = MessagingContext::Init(&GetTransportMgr(), &GetIOContext())) == CHIP_NO_ERROR, AppServer,
+                           "Init MessagingContext failed: %" CHIP_ERROR_FORMAT, err.Format());
     }
 
-    static int Finalize(void * context)
+    // Performs teardown for each individual test in the test suite
+    virtual void TearDown() { MessagingContext::Shutdown(); }
+
+    // Helpers that can be used directly by the nlTestSuite
+
+    static int nlTestSetUpTestSuite(void * context)
     {
-        auto * ctx = static_cast<LoopbackMessagingContext *>(context);
-        ctx->Shutdown();
+        static_cast<LoopbackMessagingContext *>(context)->SetUpTestSuite();
+        return SUCCESS;
+    }
+
+    static int nlTestTearDownTestSuite(void * context)
+    {
+        static_cast<LoopbackMessagingContext *>(context)->TearDownTestSuite();
+        return SUCCESS;
+    }
+
+    static int nlTestSetUp(void * context)
+    {
+        static_cast<LoopbackMessagingContext *>(context)->SetUp();
+        return SUCCESS;
+    }
+
+    static int nlTestTearDown(void * context)
+    {
+        static_cast<LoopbackMessagingContext *>(context)->TearDown();
         return SUCCESS;
     }
 
@@ -247,35 +275,61 @@ class UDPMessagingContext : public UDPTransportManager, public MessagingContext
 public:
     virtual ~UDPMessagingContext() {}
 
-    /// Initialize the underlying layers.
-    virtual CHIP_ERROR Init()
+    // Performs shared setup for all tests in the test suite
+    virtual CHIP_ERROR SetUpTestSuite()
     {
-        ReturnErrorOnFailure(chip::Platform::MemoryInit());
-        ReturnErrorOnFailure(UDPTransportManager::Init());
-        ReturnErrorOnFailure(MessagingContext::Init(&GetTransportMgr(), &GetIOContext()));
-        return CHIP_NO_ERROR;
+        CHIP_ERROR err = CHIP_NO_ERROR;
+        VerifyOrExit((err = chip::Platform::MemoryInit()) == CHIP_NO_ERROR,
+                     ChipLogError(AppServer, "Init CHIP memory failed: %" CHIP_ERROR_FORMAT, err.Format()));
+        VerifyOrExit((err = UDPTransportManager::Init()) == CHIP_NO_ERROR,
+                     ChipLogError(AppServer, "Init UDPTransportManager failed: %" CHIP_ERROR_FORMAT, err.Format()));
+    exit:
+        return err;
     }
 
-    // Shutdown all layers, finalize operations
-    virtual void Shutdown()
+    // Performs shared teardown for all tests in the test suite
+    virtual void TearDownTestSuite()
     {
-        MessagingContext::Shutdown();
         UDPTransportManager::Shutdown();
         chip::Platform::MemoryShutdown();
     }
 
-    // Init/Shutdown Helpers that can be used directly as the nlTestSuite
-    // initialize/finalize function.
-    static int Initialize(void * context)
+    // Performs setup for each individual test in the test suite
+    virtual CHIP_ERROR SetUp()
     {
-        auto * ctx = static_cast<UDPMessagingContext *>(context);
-        return ctx->Init() == CHIP_NO_ERROR ? SUCCESS : FAILURE;
+        CHIP_ERROR err = CHIP_NO_ERROR;
+        VerifyOrExit((err = MessagingContext::Init(&GetTransportMgr(), &GetIOContext())) == CHIP_NO_ERROR,
+                     ChipLogError(AppServer, "Init MessagingContext failed: %" CHIP_ERROR_FORMAT, err.Format()));
+    exit:
+        return err;
     }
 
-    static int Finalize(void * context)
+    // Performs teardown for each individual test in the test suite
+    virtual void TearDown() { MessagingContext::Shutdown(); }
+
+    // Helpers that can be used directly by the nlTestSuite
+
+    static int nlTestSetUpTestSuite(void * context)
     {
-        auto * ctx = static_cast<UDPMessagingContext *>(context);
-        ctx->Shutdown();
+        auto err = static_cast<UDPMessagingContext *>(context)->SetUpTestSuite();
+        return err == CHIP_NO_ERROR ? SUCCESS : FAILURE;
+    }
+
+    static int nlTestTearDownTestSuite(void * context)
+    {
+        static_cast<UDPMessagingContext *>(context)->TearDownTestSuite();
+        return SUCCESS;
+    }
+
+    static int nlTestSetUp(void * context)
+    {
+        auto err = static_cast<UDPMessagingContext *>(context)->SetUp();
+        return err == CHIP_NO_ERROR ? SUCCESS : FAILURE;
+    }
+
+    static int nlTestTearDown(void * context)
+    {
+        static_cast<UDPMessagingContext *>(context)->TearDown();
         return SUCCESS;
     }
 

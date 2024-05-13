@@ -37,9 +37,10 @@
 #include <openthread/dns_client.h>
 #endif
 
-#include <app/AttributeAccessInterface.h>
+#include <app/icd/server/ICDServerConfig.h>
 #include <lib/dnssd/Advertiser.h>
 #include <lib/dnssd/platform/Dnssd.h>
+#include <platform/GeneralFaults.h>
 #include <platform/NetworkCommissioning.h>
 
 namespace chip {
@@ -100,13 +101,6 @@ protected:
     void _OnNetworkScanFinished(otActiveScanResult * aResult);
     void _UpdateNetworkStatus();
 
-#if CHIP_DEVICE_CONFIG_ENABLE_SED
-    CHIP_ERROR _GetSEDIntervalsConfig(ConnectivityManager::SEDIntervalsConfig & intervalsConfig);
-    CHIP_ERROR _SetSEDIntervalsConfig(const ConnectivityManager::SEDIntervalsConfig & intervalsConfig);
-    CHIP_ERROR _RequestSEDActiveMode(bool onOff, bool delayIdle);
-    CHIP_ERROR SEDUpdateMode();
-    static void RequestSEDModeUpdate(chip::System::Layer * apSystemLayer, void * apAppState);
-#endif
 #if CHIP_CONFIG_ENABLE_ICD_SERVER
     CHIP_ERROR _SetPollingInterval(System::Clock::Milliseconds32 pollingInterval);
 #endif // CHIP_CONFIG_ENABLE_ICD_SERVER
@@ -118,9 +112,7 @@ protected:
     CHIP_ERROR _GetPrimary802154MACAddress(uint8_t * buf);
     CHIP_ERROR _GetExternalIPv6Address(chip::Inet::IPAddress & addr);
     void _ResetThreadNetworkDiagnosticsCounts(void);
-    CHIP_ERROR _WriteThreadNetworkDiagnosticAttributeToTlv(AttributeId attributeId, app::AttributeValueEncoder & encoder);
     CHIP_ERROR _GetPollPeriod(uint32_t & buf);
-    void _SetRouterPromotion(bool val);
     void _OnWoBLEAdvertisingStart(void);
     void _OnWoBLEAdvertisingStop(void);
 
@@ -131,6 +123,7 @@ protected:
     CHIP_ERROR _RemoveSrpService(const char * aInstanceName, const char * aName);
     CHIP_ERROR _InvalidateAllSrpServices();
     CHIP_ERROR _RemoveInvalidSrpServices();
+    CHIP_ERROR _ClearAllSrpHostAndServices();
 
     CHIP_ERROR _SetupSrpHost(const char * aHostName);
     CHIP_ERROR _ClearSrpHost(const char * aHostName);
@@ -153,8 +146,6 @@ protected:
     bool IsThreadAttachedNoLock(void);
     bool IsThreadInterfaceUpNoLock(void);
 
-    CHIP_ERROR _JoinerStart(void);
-
 private:
     // ===== Private members for use by this class only.
 
@@ -167,21 +158,14 @@ private:
     NetworkCommissioning::Internal::WirelessDriver::ConnectCallback * mpConnectCallback;
     NetworkCommissioning::Internal::BaseDriver::NetworkStatusChangeCallback * mpStatusChangeCallback = nullptr;
 
-#if CHIP_DEVICE_CONFIG_ENABLE_SED
-    ConnectivityManager::SEDIntervalsConfig mIntervalsConfig;
-    ConnectivityManager::SEDIntervalMode mIntervalsMode = ConnectivityManager::SEDIntervalMode::Idle;
-    uint32_t mActiveModeConsumers                       = 0;
-    bool mDelayIdleTimerRunning                         = false;
-#endif
-
 #if CHIP_DEVICE_CONFIG_ENABLE_THREAD_SRP_CLIENT
 
     struct SrpClient
     {
-        static constexpr uint8_t kMaxServicesNumber      = CHIP_DEVICE_CONFIG_THREAD_SRP_MAX_SERVICES;
-        static constexpr const char * kDefaultDomainName = "default.service.arpa";
-        static constexpr uint8_t kDefaultDomainNameSize  = 20;
-        static constexpr uint8_t kMaxDomainNameSize      = 32;
+        static constexpr uint8_t kMaxServicesNumber     = CHIP_DEVICE_CONFIG_THREAD_SRP_MAX_SERVICES;
+        static constexpr char kDefaultDomainName[]      = "default.service.arpa";
+        static constexpr uint8_t kDefaultDomainNameSize = 20;
+        static constexpr uint8_t kMaxDomainNameSize     = 32;
 
         // SRP is used for both operational and commissionable services, so buffers sizes must be worst case.
         static constexpr size_t kSubTypeMaxNumber   = Dnssd::Common::kSubTypeMaxNumber;
@@ -220,6 +204,8 @@ private:
 
     SrpClient mSrpClient;
 
+    bool mIsSrpClearAllRequested = false;
+
     static void OnSrpClientNotification(otError aError, const otSrpClientHostInfo * aHostInfo, const otSrpClientService * aServices,
                                         const otSrpClientService * aRemovedServices, void * aContext);
     static void OnSrpClientStateChange(const otSockAddr * aServerSockAddr, void * aContext);
@@ -232,7 +218,7 @@ private:
     static constexpr size_t kTotalDnsServiceTxtValueSize = std::max(Dnssd::CommissionAdvertisingParameters::kTxtTotalValueSize,
                                                                     Dnssd::OperationalAdvertisingParameters::kTxtTotalValueSize);
     static constexpr size_t kTotalDnsServiceTxtKeySize   = std::max(Dnssd::CommissionAdvertisingParameters::kTxtTotalKeySize,
-                                                                  Dnssd::OperationalAdvertisingParameters::kTxtTotalKeySize);
+                                                                    Dnssd::OperationalAdvertisingParameters::kTxtTotalKeySize);
 #else
     // Thread only supports operational discovery.
     static constexpr uint8_t kMaxDnsServiceTxtEntriesNumber = Dnssd::OperationalAdvertisingParameters::kTxtMaxNumber;
@@ -244,6 +230,7 @@ private:
 
     DnsBrowseCallback mDnsBrowseCallback;
     DnsResolveCallback mDnsResolveCallback;
+    GeneralFaults<kMaxNetworkFaults> mNetworkFaults;
 
     struct DnsServiceTxtEntries
     {
@@ -276,13 +263,6 @@ private:
                                                   otError error);
 #endif // CHIP_DEVICE_CONFIG_ENABLE_THREAD_DNS_CLIENT
 #endif // CHIP_DEVICE_CONFIG_ENABLE_THREAD_SRP_CLIENT
-
-    static void OnJoinerComplete(otError aError, void * aContext);
-    void OnJoinerComplete(otError aError);
-
-#if CHIP_DEVICE_CONFIG_ENABLE_SED
-    CHIP_ERROR SetSEDIntervalMode(ConnectivityManager::SEDIntervalMode intervalType);
-#endif
 
     inline ImplClass * Impl() { return static_cast<ImplClass *>(this); }
 };

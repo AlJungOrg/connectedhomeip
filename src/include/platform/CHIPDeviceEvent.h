@@ -148,13 +148,6 @@ enum PublicEventTypes
     kTimeSyncChange,
 
     /**
-     * SED Interval Change
-     *
-     * Signals a change to the sleepy end device interval.
-     */
-    kICDPollingIntervalChange,
-
-    /**
      * CHIPoBLE Connection Established
      *
      * Signals that an external entity has established a new CHIPoBLE connection with the device.
@@ -167,6 +160,19 @@ enum PublicEventTypes
      * Signals that an external entity has closed existing CHIPoBLE connection with the device.
      */
     kCHIPoBLEConnectionClosed,
+
+    /**
+     * Request BLE connections to be closed.
+     * This is used in the supportsConcurrentConnection = False case.
+     */
+    kCloseAllBleConnections,
+
+    /**
+     * When supportsConcurrentConnection = False, the ConnectNetwork command cannot start until
+     * the BLE device is closed and the Operation Network device (e.g. WiFi) has been started.
+     */
+    kWiFiDeviceAvailable,
+    kOperationalNetworkStarted,
 
     /**
      * Thread State Change
@@ -196,11 +202,6 @@ enum PublicEventTypes
     kInterfaceIpAddressChanged,
 
     /**
-     * Signals that the commissioning window has opened or closed.
-     */
-    kCommissioningWindowStatusChanged,
-
-    /**
      * Commissioning has completed by a call to the general commissioning cluster command.
      */
     kCommissioningComplete,
@@ -210,11 +211,6 @@ enum PublicEventTypes
      * successfully invoked.
      */
     kFailSafeTimerExpired,
-
-    /**
-     * Signals that the fail-safe state changed (Armed/Disarmed)
-     */
-    kFailSafeStateChanged,
 
     /**
      *
@@ -251,43 +247,9 @@ enum PublicEventTypes
     kServerReady,
 
     /**
-     * TODO ICD: kChipMsgSentEvent and kChipMsgRxEventHandled should be InternalEventTypes.
-     * However the ICD manager leverages those events and its event handler is registered as an application
-     * event handler.
-     * ICDEventManager will have to expose 'ICDEventHandler' publicly to 'DispatchEventToDeviceLayer'.
+     * Signals that BLE is deinitialized.
      */
-
-    /**
-     * An Exchange Context sent a message.
-     * This event contains a with MessageSent structure.
-     */
-    kChipMsgSentEvent,
-
-    /**
-     * An Exchange Context that was waiting for a response is no longer waiting for it.
-     * This event can occur due to any of the following:
-     *  - A response message was received.
-     *  - An exchange context timed out waiting for a response.
-     *  - The exchange context was closed while a response was expected.
-     *
-     * This event contains an RxEventContext structure.
-     */
-    kChipMsgRxEventHandled,
-
-    /**
-     * This event is used to sync the ICD with any Reliable Message exchange
-     * expecting an ack. The ICD shall stay in active Mode
-     * until the Reliable Message exchange post this event again
-     * informing the ICD that it is no longer awaiting the ack.
-     *
-     * This event contains an AckSync structure.
-     */
-    kICDMsgAckSyncEvent,
-
-    /**
-     * An application event occured that should wake up the system/device
-     */
-    kAppWakeUpEvent,
+    kBLEDeinitialized,
 };
 
 /**
@@ -307,6 +269,12 @@ enum InternalEventTypes
     kCHIPoBLEUnsubscribe,
     kCHIPoBLEWriteReceived,
     kCHIPoBLEIndicateConfirm,
+
+    /**
+     * Post this event in case of a BLE connection error. This event should be posted
+     * if the BLE central disconnects without unsubscribing from the BLE characteristic.
+     * This event should populate CHIPoBLEConnectionError structure.
+     */
     kCHIPoBLEConnectionError,
     kCHIPoBLENotifyConfirm
 };
@@ -406,7 +374,7 @@ typedef void (*AsyncWorkFunct)(intptr_t arg);
 #include CHIPDEVICEPLATFORMEVENT_HEADER
 #endif // defined(CHIP_DEVICE_LAYER_TARGET)
 
-#include <ble/BleConfig.h>
+#include <ble/Ble.h>
 #include <inet/InetInterface.h>
 #include <lib/support/LambdaBridge.h>
 #include <system/SystemEvent.h>
@@ -557,16 +525,6 @@ struct ChipDeviceEvent final
 
         struct
         {
-            bool armed;
-        } FailSafeState;
-
-        struct
-        {
-            bool open;
-        } CommissioningWindowStatus;
-
-        struct
-        {
             // TODO(cecille): This should just specify wifi or thread since we assume at most 1.
             int network;
         } OperationalNetwork;
@@ -575,33 +533,8 @@ struct ChipDeviceEvent final
         {
             OtaState newState;
         } OtaStateChanged;
-
-        struct
-        {
-            bool ExpectResponse;
-        } MessageSent;
-
-        struct
-        {
-            /*
-             * wasReceived is only true when the event was triggered by a response message reception.
-             * See the brief of kChipMsgRxEventHandled, above in this file, for additional details.
-             */
-            bool wasReceived;
-            bool clearsExpectedResponse;
-        } RxEventContext;
-
-        struct
-        {
-            /*
-             * Set to true when a Reliable Message Context is awaiting for a ack to a message sent
-             * Set to false when the Reliable Message Context is no longer awaiting for a ack
-             */
-            bool awaitingAck;
-        } AckSync;
     };
 
-    void Clear() { memset(this, 0, sizeof(*this)); }
     bool IsPublic() const { return DeviceEventType::IsPublic(Type); }
     bool IsInternal() const { return DeviceEventType::IsInternal(Type); }
     bool IsPlatformSpecific() const { return DeviceEventType::IsPlatformSpecific(Type); }

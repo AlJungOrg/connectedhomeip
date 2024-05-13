@@ -21,6 +21,7 @@
  *      one) for a fabric.
  */
 
+#include <app/icd/server/ICDServerConfig.h>
 #include <lib/support/UnitTestContext.h>
 #include <lib/support/UnitTestRegistration.h>
 #include <lib/support/UnitTestUtils.h>
@@ -32,6 +33,14 @@
 #include <system/SystemPacketBuffer.h>
 #include <transport/SessionManager.h>
 
+#if CHIP_CONFIG_ENABLE_ICD_SERVER
+#include <app/icd/server/ICDConfigurationData.h> // nogncheck
+#endif
+
+#if CHIP_CRYPTO_PSA
+#include "psa/crypto.h"
+#endif
+
 namespace {
 
 using namespace chip;
@@ -40,7 +49,17 @@ using namespace chip::System;
 using namespace chip::System::Clock::Literals;
 using namespace chip::Protocols;
 
-using TestContext = Test::LoopbackMessagingContext;
+struct TestContext : Test::LoopbackMessagingContext
+{
+    void SetUp() override
+    {
+#if CHIP_CRYPTO_PSA
+        // TODO: use ASSERT_EQ, once transition to pw_unit_test is complete
+        VerifyOrDie(psa_crypto_init() == PSA_SUCCESS);
+#endif
+        chip::Test::LoopbackMessagingContext::SetUp();
+    }
+};
 
 class MockAppDelegate : public ExchangeDelegate
 {
@@ -163,10 +182,10 @@ void CommonCheckAbortAllButOneExchange(nlTestSuite * inSuite, TestContext & ctx,
     const auto & sessionHandle1 = session1.Get();
     const auto & sessionHandle2 = session2.Get();
 
-    session1->AsSecureSession()->SetRemoteMRPConfig(ReliableMessageProtocolConfig(
+    session1->AsSecureSession()->SetRemoteSessionParameters(ReliableMessageProtocolConfig(
         Test::MessagingContext::kResponsiveIdleRetransTimeout, Test::MessagingContext::kResponsiveActiveRetransTimeout));
 
-    session1Reply->AsSecureSession()->SetRemoteMRPConfig(ReliableMessageProtocolConfig(
+    session1Reply->AsSecureSession()->SetRemoteSessionParameters(ReliableMessageProtocolConfig(
         Test::MessagingContext::kResponsiveIdleRetransTimeout, Test::MessagingContext::kResponsiveActiveRetransTimeout));
 
     NL_TEST_ASSERT(inSuite, session1);
@@ -206,9 +225,11 @@ void CommonCheckAbortAllButOneExchange(nlTestSuite * inSuite, TestContext & ctx,
         // trigger a MRP failure due to timing out waiting for an ACK.
         //
         auto waitTimeout = System::Clock::Milliseconds32(1000);
-        // Account for the retry delay booster, so that we do not timeout our IO processing before the
-        // retransmission failure is triggered.
-        waitTimeout += CHIP_CONFIG_RMP_DEFAULT_MAX_RETRANS * CHIP_CONFIG_MRP_RETRY_INTERVAL_SENDER_BOOST;
+
+#if CHIP_CONFIG_ENABLE_ICD_SERVER
+        // If running as an ICD, increase waitTimeout to account for the polling interval
+        waitTimeout += ICDConfigurationData::GetInstance().GetFastPollingInterval();
+#endif
 
         ctx.GetIOContext().DriveIOUntil(waitTimeout, [&]() { return false; });
     }
@@ -248,12 +269,16 @@ const nlTest sTests[] = {
     NL_TEST_SENTINEL(),
 };
 
+// clang-format off
 nlTestSuite sSuite = {
     "Test-AbortExchangesForFabric",
     &sTests[0],
-    TestContext::Initialize,
-    TestContext::Finalize,
+    TestContext::nlTestSetUpTestSuite,
+    TestContext::nlTestTearDownTestSuite,
+    TestContext::nlTestSetUp,
+    TestContext::nlTestTearDown,
 };
+// clang-format on
 
 } // namespace
 

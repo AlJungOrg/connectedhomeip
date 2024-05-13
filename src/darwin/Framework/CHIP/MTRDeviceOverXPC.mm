@@ -133,6 +133,67 @@ typedef void (^MTRFetchProxyHandleCompletion)(MTRDeviceControllerXPCProxyHandle 
     [self fetchProxyHandleWithQueue:queue completion:workBlock];
 }
 
+- (void)readAttributePaths:(NSArray<MTRAttributeRequestPath *> * _Nullable)attributePaths
+                eventPaths:(NSArray<MTREventRequestPath *> * _Nullable)eventPaths
+                    params:(MTRReadParams * _Nullable)params
+                     queue:(dispatch_queue_t)queue
+                completion:(MTRDeviceResponseHandler)completion
+{
+    [self readAttributePaths:attributePaths eventPaths:eventPaths params:params includeDataVersion:NO queue:queue completion:completion];
+}
+
+- (void)readAttributePaths:(NSArray<MTRAttributeRequestPath *> * _Nullable)attributePaths
+                eventPaths:(NSArray<MTREventRequestPath *> * _Nullable)eventPaths
+                    params:(MTRReadParams * _Nullable)params
+        includeDataVersion:(BOOL)includeDataVersion
+                     queue:(dispatch_queue_t)queue
+                completion:(MTRDeviceResponseHandler)completion
+{
+    if (attributePaths == nil || eventPaths != nil) {
+        MTR_LOG_ERROR("MTRBaseDevice doesn't support reading event paths over XPC");
+        dispatch_async(queue, ^{
+            completion(nil, [NSError errorWithDomain:MTRErrorDomain code:MTRErrorCodeInvalidState userInfo:nil]);
+        });
+        return;
+    }
+
+    // TODO: Have a better XPC setup for the multiple-paths case, instead of
+    // just converting it into a bunch of separate reads.
+    auto expectedResponses = attributePaths.count;
+    __block decltype(expectedResponses) responses = 0;
+    NSMutableArray<NSDictionary<NSString *, id> *> * seenValues = [[NSMutableArray alloc] init];
+    __block BOOL dispatched = NO;
+
+    for (MTRAttributeRequestPath * path in attributePaths) {
+        __auto_type singleAttributeResponseHandler = ^(NSArray<NSDictionary<NSString *, id> *> * _Nullable values, NSError * _Nullable error) {
+            if (dispatched) {
+                // We hit an error earlier or something.
+                return;
+            }
+
+            if (error != nil) {
+                dispatched = YES;
+                completion(nil, error);
+                return;
+            }
+
+            [seenValues addObjectsFromArray:values];
+            ++responses;
+            if (responses == expectedResponses) {
+                dispatched = YES;
+                completion([seenValues copy], nil);
+            };
+        };
+
+        [self readAttributesWithEndpointID:path.endpoint
+                                 clusterID:path.cluster
+                               attributeID:path.attribute
+                                    params:params
+                                     queue:queue
+                                completion:singleAttributeResponseHandler];
+    }
+}
+
 - (void)writeAttributeWithEndpointID:(NSNumber *)endpointID
                            clusterID:(NSNumber *)clusterID
                          attributeID:(NSNumber *)attributeID
@@ -207,6 +268,32 @@ typedef void (^MTRFetchProxyHandleCompletion)(MTRDeviceControllerXPCProxyHandle 
     };
 
     [self fetchProxyHandleWithQueue:queue completion:workBlock];
+}
+
+- (void)_invokeCommandWithEndpointID:(NSNumber *)endpointID
+                           clusterID:(NSNumber *)clusterID
+                           commandID:(NSNumber *)commandID
+                       commandFields:(id)commandFields
+                  timedInvokeTimeout:(NSNumber * _Nullable)timeoutMs
+         serverSideProcessingTimeout:(NSNumber * _Nullable)serverSideProcessingTimeout
+                               queue:(dispatch_queue_t)queue
+                          completion:(MTRDeviceResponseHandler)completion
+{
+    if (serverSideProcessingTimeout != nil) {
+        MTR_LOG_ERROR("MTRBaseDevice doesn't support invokes with a server-side processing timeout over XPC");
+        dispatch_async(queue, ^{
+            completion(nil, [NSError errorWithDomain:MTRErrorDomain code:MTRErrorCodeInvalidState userInfo:nil]);
+        });
+        return;
+    }
+
+    [self invokeCommandWithEndpointID:endpointID
+                            clusterID:clusterID
+                            commandID:commandID
+                        commandFields:commandFields
+                   timedInvokeTimeout:timeoutMs
+                                queue:queue
+                           completion:completion];
 }
 
 - (void)subscribeToAttributesWithEndpointID:(NSNumber * _Nullable)endpointID
@@ -323,7 +410,7 @@ typedef void (^MTRFetchProxyHandleCompletion)(MTRDeviceControllerXPCProxyHandle 
                                            queue:(dispatch_queue_t)queue
                                       completion:(MTRDeviceOpenCommissioningWindowHandler)completion
 {
-    MTR_LOG_ERROR("MTRDevice doesn't support openCommissioningWindowWithSetupPasscode over XPC");
+    MTR_LOG_ERROR("MTRBaseDevice doesn't support openCommissioningWindowWithSetupPasscode over XPC");
     dispatch_async(queue, ^{
         completion(nil, [NSError errorWithDomain:MTRErrorDomain code:MTRErrorCodeInvalidState userInfo:nil]);
     });
@@ -334,10 +421,42 @@ typedef void (^MTRFetchProxyHandleCompletion)(MTRDeviceControllerXPCProxyHandle 
                                            queue:(dispatch_queue_t)queue
                                       completion:(MTRDeviceOpenCommissioningWindowHandler)completion
 {
-    MTR_LOG_ERROR("MTRDevice doesn't support openCommissioningWindowWithDiscriminator over XPC");
+    MTR_LOG_ERROR("MTRBaseDevice doesn't support openCommissioningWindowWithDiscriminator over XPC");
     dispatch_async(queue, ^{
         completion(nil, [NSError errorWithDomain:MTRErrorDomain code:MTRErrorCodeInvalidState userInfo:nil]);
     });
+}
+
+- (void)downloadLogOfType:(MTRDiagnosticLogType)type
+                  timeout:(NSTimeInterval)timeout
+                    queue:(dispatch_queue_t)queue
+               completion:(void (^)(NSURL * _Nullable url, NSError * _Nullable error))completion
+{
+    MTR_LOG_DEBUG("Downloading log ...");
+
+    __auto_type workBlock = ^(MTRDeviceControllerXPCProxyHandle * _Nullable handle, NSError * _Nullable error) {
+        if (error != nil) {
+            completion(nil, error);
+            return;
+        }
+
+        [handle.proxy downloadLogWithController:self.controllerID
+                                         nodeId:self.nodeID
+                                           type:type
+                                        timeout:timeout
+                                     completion:^(NSString * _Nullable url, NSError * _Nullable error) {
+                                         dispatch_async(queue, ^{
+                                             MTR_LOG_DEBUG("Download log");
+                                             completion([NSURL URLWithString:url], error);
+                                             // The following captures the proxy handle in the closure so that the
+                                             // handle won't be released prior to block call.
+                                             __auto_type handleRetainer = handle;
+                                             (void) handleRetainer;
+                                         });
+                                     }];
+    };
+
+    [self fetchProxyHandleWithQueue:queue completion:workBlock];
 }
 
 - (void)fetchProxyHandleWithQueue:(dispatch_queue_t)queue completion:(MTRFetchProxyHandleCompletion)completion

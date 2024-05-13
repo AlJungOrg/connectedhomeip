@@ -108,14 +108,12 @@ struct JsonObjectElementContext
         {
             if (TLV::ProfileIdFromTag(tag) == implicitProfileId)
             {
-                // Explicit assume implicit tags are just things we want
-                // 32-bit numbers for
                 str = std::to_string(TLV::TagNumFromTag(tag));
             }
             else
             {
-                // UNEXPECTED, create a full 64-bit number here
-                str = std::to_string(TLV::ProfileIdFromTag(tag)) + "/" + std::to_string(TLV::TagNumFromTag(tag));
+                uint32_t tagNumber = (static_cast<uint32_t>(TLV::VendorIdFromTag(tag)) << 16) | TLV::TagNumFromTag(tag);
+                str                = std::to_string(tagNumber);
             }
         }
         str = str + ":" + GetJsonElementStrFromType(type);
@@ -173,11 +171,8 @@ CHIP_ERROR TlvStructToJson(TLV::TLVReader & reader, Json::Value & jsonObj)
         TLV::Tag tag = reader.GetTag();
         VerifyOrReturnError(TLV::IsContextTag(tag) || TLV::IsProfileTag(tag), CHIP_ERROR_INVALID_TLV_TAG);
 
-        // Profile tags are expected to be implicit profile tags and they are
-        // used to encode > 8bit values from json
-        if (TLV::IsProfileTag(tag))
+        if (TLV::IsProfileTag(tag) && TLV::VendorIdFromTag(tag) == 0)
         {
-            VerifyOrReturnError(TLV::ProfileIdFromTag(tag) == reader.ImplicitProfileId, CHIP_ERROR_INVALID_TLV_TAG);
             VerifyOrReturnError(TLV::TagNumFromTag(tag) > UINT8_MAX, CHIP_ERROR_INVALID_TLV_TAG);
         }
 
@@ -362,21 +357,4 @@ CHIP_ERROR TlvToJson(TLV::TLVReader & reader, std::string & jsonString)
     jsonString = writer.write(jsonObject);
     return CHIP_NO_ERROR;
 }
-
-std::string PrettyPrintJsonString(const std::string & jsonString)
-{
-    Json::Reader reader;
-    Json::Value jsonObject;
-    reader.parse(jsonString, jsonObject);
-    Json::StyledWriter writer;
-    return writer.write(jsonObject);
-}
-
-std::string MakeJsonSingleLine(const std::string & jsonString)
-{
-    std::string str = PrettyPrintJsonString(jsonString);
-    str.erase(std::remove_if(str.begin(), str.end(), ::isspace), str.end());
-    return str;
-}
-
 } // namespace chip

@@ -36,10 +36,37 @@ namespace app {
 namespace Clusters {
 namespace ResourceMonitoring {
 
+// forward declarations
+class Delegate;
+
 class Instance : public CommandHandlerInterface, public AttributeAccessInterface
 {
 
 public:
+    /**
+     * Creates a resource monitoring cluster instance. The Init() method needs to be called for this instance to be registered and
+     * called by the interaction model at the appropriate times.
+     *
+     * @param aDelegate A pointer to the delegate to be used by this server.
+     * Note: the caller must ensure that the delegate lives throughout the instance's lifetime.
+     * @param aEndpointId                       The endpoint on which this cluster exists. This must match the zap configuration.
+     * @param aClusterId                        The ID of the ResourceMonitoring aliased cluster to be instantiated.
+     * @param aFeatureMap                       The feature map of the cluster.
+     * @param aDegradationDirection             The degradation direction of the cluster.
+     * @param aResetConditionCommandSupported   Whether the ResetCondition command is supported by the cluster.
+     */
+    Instance(Delegate * aDelegate, EndpointId aEndpointId, ClusterId aClusterId, uint32_t aFeatureMap,
+             ResourceMonitoring::Attributes::DegradationDirection::TypeInfo::Type aDegradationDirection,
+             bool aResetConditionCommandSupported);
+
+    ~Instance() override;
+
+    // Not copyable or movable
+    Instance(const Instance &)             = delete;
+    Instance & operator=(const Instance &) = delete;
+    Instance(Instance &&)                  = delete;
+    Instance & operator=(Instance &&)      = delete;
+
     /**
      * Initialise the Resource Monitoring cluster.
      *
@@ -64,10 +91,10 @@ public:
     bool HasFeature(ResourceMonitoring::Feature aFeature) const;
 
     // Attribute setters
-    chip::Protocols::InteractionModel::Status UpdateCondition(uint8_t aNewCondition);
-    chip::Protocols::InteractionModel::Status UpdateChangeIndication(ChangeIndicationEnum aNewChangeIndication);
-    chip::Protocols::InteractionModel::Status UpdateInPlaceIndicator(bool aNewInPlaceIndicator);
-    chip::Protocols::InteractionModel::Status UpdateLastChangedTime(DataModel::Nullable<uint32_t> aNewLastChangedTime);
+    Protocols::InteractionModel::Status UpdateCondition(uint8_t aNewCondition);
+    Protocols::InteractionModel::Status UpdateChangeIndication(ChangeIndicationEnum aNewChangeIndication);
+    Protocols::InteractionModel::Status UpdateInPlaceIndicator(bool aNewInPlaceIndicator);
+    Protocols::InteractionModel::Status UpdateLastChangedTime(DataModel::Nullable<uint32_t> aNewLastChangedTime);
 
     void SetReplacementProductListManagerInstance(ReplacementProductListManager * instance);
 
@@ -79,83 +106,11 @@ public:
     DataModel::Nullable<uint32_t> GetLastChangedTime() const;
 
     EndpointId GetEndpointId() const { return mEndpointId; }
-
-    /**
-     * Creates a resource monitoring cluster instance. The Init() method needs to be called for this instance to be registered and
-     * called by the interaction model at the appropriate times.
-     * @param aEndpointId                       The endpoint on which this cluster exists. This must match the zap configuration.
-     * @param aClusterId                        The ID of the ResourceMonitoring aliased cluster to be instantiated.
-     * @param aFeatureMap                       The feature map of the cluster.
-     * @param aDegradationDirection             The degradation direction of the cluster.
-     * @param aResetConditionCommandSupported   Whether the ResetCondition command is supported by the cluster.
-     */
-    Instance(EndpointId aEndpointId, ClusterId aClusterId, uint32_t aFeatureMap,
-             ResourceMonitoring::Attributes::DegradationDirection::TypeInfo::Type aDegradationDirection,
-             bool aResetConditionCommandSupported) :
-        CommandHandlerInterface(Optional<EndpointId>(aEndpointId), aClusterId),
-        AttributeAccessInterface(Optional<EndpointId>(aEndpointId), aClusterId), mEndpointId(aEndpointId), mClusterId(aClusterId),
-        mDegradationDirection(aDegradationDirection), mFeatureMap(aFeatureMap),
-        mResetConditionCommandSupported(aResetConditionCommandSupported)
-    {}
-
-    ~Instance() = default;
-
-    // Not copyable or movable
-    Instance(const Instance &) = delete;
-    Instance & operator=(const Instance &) = delete;
-    Instance(Instance &&)                  = delete;
-    Instance & operator=(Instance &&) = delete;
-
-    // The following methods should be overridden by the SDK user to implement the business logic of their application
-
-    /**
-     * This init method will be called during Resource Monitoring Server initialization after the instance information has been
-     * validated and the instance has been registered. This method should be overridden by the SDK user to initialize the
-     * application logic.
-     *
-     * @return CHIP_NO_ERROR    If the application was initialized successfully. All other values will cause the initialization to
-     * fail.
-     */
-    virtual CHIP_ERROR AppInit() = 0;
-
-    /**
-     * This method may be overwritten by the SDK User, if the default behaviour is not desired.
-     * Preferably, the SDK User should implement the PreResetCondition() and PostResetCondition() methods instead.
-     *
-     * The cluster implementation will handle all of the resets needed by the spec.
-     * - Update the Condition attribute according to the DegradationDirection (if supported)
-     * - Update the ChangeIndicator attribute to kOk
-     * - Update the LastChangedTime attribute (if supported)
-     *
-     * The return value will depend on the PreResetCondition() and PostResetCondition() method, if one of them does not return
-     * Success, this method will return the failure as well.
-     * @return Status::Success      If the command was handled successfully.
-     * @return All Other            PreResetCondition() or PostResetCondition() failed, these are application specific.
-     */
-    virtual chip::Protocols::InteractionModel::Status OnResetCondition();
-
-    /**
-     * This method may be overwritten by the SDK User, if the SDK User wants to do something before the reset.
-     * If there are some internal states of the devices or some specific methods that must be called, that are needed for the reset
-     * and that can fail, they should be done here and not in PostResetCondition().
-     *
-     * @return Status::Success      All good, the reset may proceed.
-     * @return All Other            The reset should not proceed. The reset command will fail.
-     */
-    virtual chip::Protocols::InteractionModel::Status PreResetCondition();
-
-    /**
-     * This method may be overwritten by the SDK User, if the SDK User wants to do something after the reset.
-     * If this fails, the attributes will already be updated, so the SDK User should not do something here
-     * that can fail and that will affect the state of the device. Do the checks in the PreResetCondition() method instead.
-     *
-     * @return Status::Success      All good
-     * @return All Other            Something went wrong. The attributes will already be updated. But the reset command will report
-     *                              the failure.
-     */
-    virtual chip::Protocols::InteractionModel::Status PostResetCondition();
+    ClusterId GetClusterId() const { return mClusterId; }
 
 private:
+    Delegate * mDelegate;
+
     EndpointId mEndpointId{};
     ClusterId mClusterId{};
 
@@ -173,7 +128,7 @@ private:
 
     ReplacementProductListManager * GetReplacementProductListManagerInstance();
 
-    CHIP_ERROR ReadReplacableProductList(AttributeValueEncoder & aEncoder);
+    CHIP_ERROR ReadReplaceableProductList(AttributeValueEncoder & aEncoder);
 
     // CommandHandlerInterface
     void InvokeCommand(HandlerContext & ctx) override;
@@ -189,16 +144,80 @@ private:
     void LoadPersistentAttributes();
 
     /**
-     * This checks if the clusters instance is a valid ResourceMonitoring cluster based on the AliasedClusters list.
-     * @return true     if the cluster is a valid ResourceMonitoring cluster.
-     */
-    bool IsValidAliasCluster() const;
-
-    /**
      * Internal method to handle the ResetCondition command.
      */
     void HandleResetCondition(HandlerContext & ctx,
                               const ResourceMonitoring::Commands::ResetCondition::DecodableType & commandData);
+}; // class Instance
+
+class Delegate
+{
+    friend class Instance;
+
+private:
+    Instance * mInstance = nullptr;
+
+    /**
+     * This method is used by the SDK to set the instance pointer. This is done during the instantiation of an Instance object.
+     * @param aInstance A pointer to the Instance object related to this delegate object.
+     */
+    void SetInstance(Instance * aInstance) { mInstance = aInstance; }
+
+protected:
+    Instance * GetInstance() { return mInstance; }
+
+public:
+    Delegate()          = default;
+    virtual ~Delegate() = default;
+
+    // The following methods should be overridden by the SDK user to implement the business logic of their application
+
+    /**
+     * This init method will be called during Resource Monitoring Server initialization after the instance information has been
+     * validated and the instance has been registered. This method should be overridden by the SDK user to initialize the
+     * application logic.
+     *
+     * @return CHIP_NO_ERROR    If the application was initialized successfully. All other values will cause the initialization to
+     * fail.
+     */
+    virtual CHIP_ERROR Init() = 0;
+
+    /**
+     * This method may be overwritten by the SDK User, if the default behaviour is not desired.
+     * Preferably, the SDK User should implement the PreResetCondition() and PostResetCondition() methods instead.
+     *
+     * The cluster implementation will handle all of the resets needed by the spec.
+     * - Update the Condition attribute according to the DegradationDirection (if supported)
+     * - Update the ChangeIndicator attribute to kOk
+     * - Update the LastChangedTime attribute (if supported)
+     *
+     * The return value will depend on the PreResetCondition() and PostResetCondition() method, if one of them does not return
+     * Success, this method will return the failure as well.
+     * @return Status::Success      If the command was handled successfully.
+     * @return All Other            PreResetCondition() or PostResetCondition() failed, these are application specific.
+     */
+    virtual Protocols::InteractionModel::Status OnResetCondition();
+
+    /**
+     * This method may be overwritten by the SDK User, if the SDK User wants to do something before the reset.
+     * If there are some internal states of the devices or some specific methods that must be called, that are needed for the reset
+     * and that can fail, they should be done here and not in PostResetCondition().
+     *
+     * @return Status::Success      All good, the reset may proceed.
+     * @return All Other            The reset should not proceed. The reset command will fail.
+     */
+    virtual Protocols::InteractionModel::Status PreResetCondition();
+
+    /**
+     * This method may be overwritten by the SDK User, if the SDK User wants to do something after the reset.
+     * If this fails, the attributes will already be updated, so the SDK User should not do something here
+     * that can fail and that will affect the state of the device. Do the checks in the PreResetCondition() method instead.
+     *
+     * @return Status::Success      All good
+     * @return All Other            Something went wrong. The attributes will already be updated. But the reset command will report
+     *                              the failure.
+     */
+    virtual Protocols::InteractionModel::Status PostResetCondition();
 };
 
 } // namespace ResourceMonitoring

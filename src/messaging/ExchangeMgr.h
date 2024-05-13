@@ -49,12 +49,16 @@ static constexpr int16_t kAnyMessageType = -1;
  *    handling the registration/unregistration of unsolicited message handlers.
  */
 class DLL_EXPORT ExchangeManager : public SessionMessageDelegate
+#if INET_CONFIG_ENABLE_TCP_ENDPOINT
+    ,
+                                   public SessionConnectionDelegate
+#endif // INET_CONFIG_ENABLE_TCP_ENDPOINT
 {
     friend class ExchangeContext;
 
 public:
     ExchangeManager();
-    ExchangeManager(const ExchangeManager &) = delete;
+    ExchangeManager(const ExchangeManager &)           = delete;
     ExchangeManager operator=(const ExchangeManager &) = delete;
 
     /**
@@ -242,6 +246,9 @@ private:
                            DuplicateMessage isDuplicate, System::PacketBufferHandle && msgBuf) override;
     void SendStandaloneAckIfNeeded(const PacketHeader & packetHeader, const PayloadHeader & payloadHeader,
                                    const SessionHandle & session, MessageFlags msgFlags, System::PacketBufferHandle && msgBuf);
+#if INET_CONFIG_ENABLE_TCP_ENDPOINT
+    void OnTCPConnectionClosed(const SessionHandle & session, CHIP_ERROR conErr) override;
+#endif // INET_CONFIG_ENABLE_TCP_ENDPOINT
 };
 
 } // namespace Messaging

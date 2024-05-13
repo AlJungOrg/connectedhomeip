@@ -60,6 +60,7 @@ CHIP_ERROR SetUpCodePairer::PairDevice(NodeId remoteId, const char * setUpCode, 
                                        DiscoveryType discoveryType, Optional<Dnssd::CommonResolutionData> resolutionData)
 {
     VerifyOrReturnError(mSystemLayer != nullptr, CHIP_ERROR_INCORRECT_STATE);
+    VerifyOrReturnError(remoteId != kUndefinedNodeId, CHIP_ERROR_INVALID_ARGUMENT);
 
     SetupPayload payload;
     ReturnErrorOnFailure(GetPayload(setUpCode, payload));
@@ -329,25 +330,29 @@ bool SetUpCodePairer::IdIsPresent(uint16_t vendorOrProductID)
     return vendorOrProductID != kNotAvailable;
 }
 
-bool SetUpCodePairer::NodeMatchesCurrentFilter(const Dnssd::DiscoveredNodeData & nodeData) const
+bool SetUpCodePairer::NodeMatchesCurrentFilter(const Dnssd::DiscoveredNodeData & discNodeData) const
 {
-    if (nodeData.commissionData.commissioningMode == 0)
+    if (!discNodeData.Is<Dnssd::CommissionNodeData>())
+    {
+        return false;
+    }
+
+    const Dnssd::CommissionNodeData & nodeData = discNodeData.Get<Dnssd::CommissionNodeData>();
+    if (nodeData.commissioningMode == 0)
     {
         ChipLogProgress(Controller, "Discovered device does not have an open commissioning window.");
         return false;
     }
 
     // The advertisement may not include a vendor id.
-    if (IdIsPresent(mPayloadVendorID) && IdIsPresent(nodeData.commissionData.vendorId) &&
-        mPayloadVendorID != nodeData.commissionData.vendorId)
+    if (IdIsPresent(mPayloadVendorID) && IdIsPresent(nodeData.vendorId) && mPayloadVendorID != nodeData.vendorId)
     {
         ChipLogProgress(Controller, "Discovered device does not match our vendor id.");
         return false;
     }
 
     // The advertisement may not include a product id.
-    if (IdIsPresent(mPayloadProductID) && IdIsPresent(nodeData.commissionData.productId) &&
-        mPayloadProductID != nodeData.commissionData.productId)
+    if (IdIsPresent(mPayloadProductID) && IdIsPresent(nodeData.productId) && mPayloadProductID != nodeData.productId)
     {
         ChipLogProgress(Controller, "Discovered device does not match our product id.");
         return false;
@@ -357,10 +362,10 @@ bool SetUpCodePairer::NodeMatchesCurrentFilter(const Dnssd::DiscoveredNodeData &
     switch (mCurrentFilter.type)
     {
     case Dnssd::DiscoveryFilterType::kShortDiscriminator:
-        discriminatorMatches = (((nodeData.commissionData.longDiscriminator >> 8) & 0x0F) == mCurrentFilter.code);
+        discriminatorMatches = (((nodeData.longDiscriminator >> 8) & 0x0F) == mCurrentFilter.code);
         break;
     case Dnssd::DiscoveryFilterType::kLongDiscriminator:
-        discriminatorMatches = (nodeData.commissionData.longDiscriminator == mCurrentFilter.code);
+        discriminatorMatches = (nodeData.longDiscriminator == mCurrentFilter.code);
         break;
     default:
         ChipLogError(Controller, "Unknown filter type; all matches will fail");
@@ -382,7 +387,7 @@ void SetUpCodePairer::NotifyCommissionableDeviceDiscovered(const Dnssd::Discover
 
     ChipLogProgress(Controller, "Discovered device to be commissioned over DNS-SD");
 
-    NotifyCommissionableDeviceDiscovered(nodeData.resolutionData);
+    NotifyCommissionableDeviceDiscovered(nodeData.Get<Dnssd::CommissionNodeData>());
 }
 
 void SetUpCodePairer::NotifyCommissionableDeviceDiscovered(const Dnssd::CommonResolutionData & resolutionData)
@@ -405,9 +410,19 @@ void SetUpCodePairer::NotifyCommissionableDeviceDiscovered(const Dnssd::CommonRe
     ConnectToDiscoveredDevice();
 }
 
-void SetUpCodePairer::CommissionerShuttingDown()
+bool SetUpCodePairer::StopPairing(NodeId remoteId)
 {
+    VerifyOrReturnValue(mRemoteId != kUndefinedNodeId, false);
+    VerifyOrReturnValue(remoteId == kUndefinedNodeId || remoteId == mRemoteId, false);
+
+    if (mWaitingForPASE)
+    {
+        PASEEstablishmentComplete();
+    }
+
     ResetDiscoveryState();
+    mRemoteId = kUndefinedNodeId;
+    return true;
 }
 
 bool SetUpCodePairer::TryNextRendezvousParameters()
@@ -452,32 +467,26 @@ void SetUpCodePairer::ResetDiscoveryState()
         waiting = false;
     }
 
-    while (!mDiscoveredParameters.empty())
-    {
-        mDiscoveredParameters.pop_front();
-    }
-
+    mDiscoveredParameters.clear();
     mCurrentPASEParameters.ClearValue();
     mLastPASEError = CHIP_NO_ERROR;
+
+    mSystemLayer->CancelTimer(OnDeviceDiscoveredTimeoutCallback, this);
 }
 
 void SetUpCodePairer::ExpectPASEEstablishment()
 {
+    VerifyOrDie(!mWaitingForPASE);
     mWaitingForPASE = true;
     auto * delegate = mCommissioner->GetPairingDelegate();
-    if (this == delegate)
-    {
-        // This should really not happen, but if it does, do nothing, to avoid
-        // delegate loops.
-        return;
-    }
-
+    VerifyOrDie(delegate != this);
     mPairingDelegate = delegate;
     mCommissioner->RegisterPairingDelegate(this);
 }
 
 void SetUpCodePairer::PASEEstablishmentComplete()
 {
+    VerifyOrDie(mWaitingForPASE);
     mWaitingForPASE = false;
     mCommissioner->RegisterPairingDelegate(mPairingDelegate);
     mPairingDelegate = nullptr;
@@ -524,9 +533,9 @@ void SetUpCodePairer::OnPairingComplete(CHIP_ERROR error)
 
     if (CHIP_NO_ERROR == error)
     {
-        mSystemLayer->CancelTimer(OnDeviceDiscoveredTimeoutCallback, this);
-
+        ChipLogProgress(Controller, "PASE session established with commissionee. Stopping discovery.");
         ResetDiscoveryState();
+        mRemoteId = kUndefinedNodeId;
         if (pairingDelegate != nullptr)
         {
             pairingDelegate->OnPairingComplete(error);
@@ -611,14 +620,14 @@ SetUpCodePairerParameters::SetUpCodePairerParameters(const Dnssd::CommonResoluti
     auto & ip = data.ipAddress[index];
     SetPeerAddress(Transport::PeerAddress::UDP(ip, data.port, ip.IsIPv6LinkLocal() ? data.interfaceId : Inet::InterfaceId::Null()));
 
-    if (data.mrpRetryIntervalIdle.HasValue())
+    if (data.mrpRetryIntervalIdle.has_value())
     {
-        SetIdleInterval(data.mrpRetryIntervalIdle.Value());
+        SetIdleInterval(*data.mrpRetryIntervalIdle);
     }
 
-    if (data.mrpRetryIntervalActive.HasValue())
+    if (data.mrpRetryIntervalActive.has_value())
     {
-        SetActiveInterval(data.mrpRetryIntervalActive.Value());
+        SetActiveInterval(*data.mrpRetryIntervalActive);
     }
 }
 

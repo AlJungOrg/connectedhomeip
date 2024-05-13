@@ -28,21 +28,36 @@ using namespace ::chip;
     if (self = [super init]) {
         // TODO consider range-checking the incoming number to make sure it's
         // actually in the EndpointId range
-        _endpoint = endpointID.unsignedShortValue;
+        _endpointID = endpointID;
         _callbackQueue = queue;
     }
     return self;
 }
 
-- (chip::ByteSpan)asByteSpan:(NSData *)value
+@end
+
+@implementation MTRGenericBaseCluster
+
+- (instancetype)initWithDevice:(MTRBaseDevice *)device endpointID:(NSNumber *)endpointID queue:(dispatch_queue_t)queue
 {
-    return AsByteSpan(value);
+    if (self = [super initWithEndpointID:endpointID queue:queue]) {
+        _device = device;
+    }
+    return self;
 }
 
-- (chip::CharSpan)asCharSpan:(NSString *)value
+@end
+
+@implementation MTRGenericCluster
+
+- (instancetype)initWithDevice:(MTRDevice *)device endpointID:(NSNumber *)endpointID queue:(dispatch_queue_t)queue
 {
-    return AsCharSpan(value);
+    if (self = [super initWithEndpointID:endpointID queue:queue]) {
+        _device = device;
+    }
+    return self;
 }
+
 @end
 
 @implementation MTRWriteParams
@@ -69,6 +84,7 @@ using namespace ::chip;
 {
     if (self = [super init]) {
         _filterByFabric = YES;
+        _assumeUnknownAttributesReportable = YES;
     }
     return self;
 }
@@ -78,6 +94,7 @@ using namespace ::chip;
     auto other = [[MTRReadParams alloc] init];
     other.filterByFabric = self.filterByFabric;
     other.minEventNumber = self.minEventNumber;
+    other.assumeUnknownAttributesReportable = self.assumeUnknownAttributesReportable;
     return other;
 }
 
@@ -109,6 +126,7 @@ using namespace ::chip;
     auto other = [[MTRSubscribeParams alloc] initWithMinInterval:self.minInterval maxInterval:self.maxInterval];
     other.filterByFabric = self.filterByFabric;
     other.minEventNumber = self.minEventNumber;
+    other.assumeUnknownAttributesReportable = self.assumeUnknownAttributesReportable;
     other.replaceExistingSubscriptions = self.replaceExistingSubscriptions;
     other.reportEventsUrgently = self.reportEventsUrgently;
     other.resubscribeAutomatically = self.resubscribeAutomatically;

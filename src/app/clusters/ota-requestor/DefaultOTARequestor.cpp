@@ -22,12 +22,12 @@
 
 #include <app/clusters/basic-information/basic-information.h>
 #include <app/clusters/ota-requestor/ota-requestor-server.h>
+#include <controller/CHIPCluster.h>
 #include <lib/core/CHIPEncoding.h>
 #include <platform/CHIPDeviceLayer.h>
 #include <platform/DeviceInstanceInfoProvider.h>
 #include <platform/OTAImageProcessor.h>
 #include <protocols/bdx/BdxUri.h>
-#include <zap-generated/CHIPClusters.h>
 
 #include "BDXDownloader.h"
 #include "DefaultOTARequestor.h"
@@ -410,14 +410,13 @@ void DefaultOTARequestor::CancelImageUpdate()
 
 CHIP_ERROR DefaultOTARequestor::GetUpdateStateProgressAttribute(EndpointId endpointId, app::DataModel::Nullable<uint8_t> & progress)
 {
-    VerifyOrReturnError(OtaRequestorServerGetUpdateStateProgress(endpointId, progress) == EMBER_ZCL_STATUS_SUCCESS,
-                        CHIP_ERROR_BAD_REQUEST);
+    VerifyOrReturnError(OtaRequestorServerGetUpdateStateProgress(endpointId, progress) == Status::Success, CHIP_ERROR_BAD_REQUEST);
     return CHIP_NO_ERROR;
 }
 
 CHIP_ERROR DefaultOTARequestor::GetUpdateStateAttribute(EndpointId endpointId, OTAUpdateStateEnum & state)
 {
-    VerifyOrReturnError(OtaRequestorServerGetUpdateState(endpointId, state) == EMBER_ZCL_STATUS_SUCCESS, CHIP_ERROR_BAD_REQUEST);
+    VerifyOrReturnError(OtaRequestorServerGetUpdateState(endpointId, state) == Status::Success, CHIP_ERROR_BAD_REQUEST);
     return CHIP_NO_ERROR;
 }
 
@@ -761,11 +760,11 @@ CHIP_ERROR DefaultOTARequestor::SendQueryImageRequest(Messaging::ExchangeManager
     else
     {
         // Country code unavailable or invalid, use default
-        args.location.SetValue(CharSpan("XX", strlen("XX")));
+        args.location.SetValue(CharSpan::fromCharString("XX"));
     }
 
     args.metadataForProvider = mMetadataForProvider;
-    Controller::OtaSoftwareUpdateProviderCluster cluster(exchangeMgr, sessionHandle, mProviderLocation.Value().endpoint);
+    Controller::ClusterBase cluster(exchangeMgr, sessionHandle, mProviderLocation.Value().endpoint);
 
     return cluster.InvokeCommand(args, this, OnQueryImageResponse, OnQueryImageFailure);
 }
@@ -778,7 +777,7 @@ CHIP_ERROR DefaultOTARequestor::ExtractUpdateDescription(const QueryImageRespons
 
     VerifyOrReturnError(response.imageURI.HasValue(), CHIP_ERROR_INVALID_ARGUMENT);
     ReturnErrorOnFailure(bdx::ParseURI(response.imageURI.Value(), nodeId, fileDesignator));
-    VerifyOrReturnError(IsSpanUsable(fileDesignator), CHIP_ERROR_INVALID_ARGUMENT);
+    VerifyOrReturnError(!fileDesignator.empty(), CHIP_ERROR_INVALID_ARGUMENT);
     update.nodeId         = nodeId;
     update.fileDesignator = fileDesignator;
 
@@ -839,7 +838,7 @@ CHIP_ERROR DefaultOTARequestor::SendApplyUpdateRequest(Messaging::ExchangeManage
     args.updateToken = mUpdateToken;
     args.newVersion  = mTargetVersion;
 
-    Controller::OtaSoftwareUpdateProviderCluster cluster(exchangeMgr, sessionHandle, mProviderLocation.Value().endpoint);
+    Controller::ClusterBase cluster(exchangeMgr, sessionHandle, mProviderLocation.Value().endpoint);
 
     return cluster.InvokeCommand(args, this, OnApplyUpdateResponse, OnApplyUpdateFailure);
 }
@@ -854,7 +853,7 @@ CHIP_ERROR DefaultOTARequestor::SendNotifyUpdateAppliedRequest(Messaging::Exchan
     args.updateToken     = mUpdateToken;
     args.softwareVersion = mCurrentVersion;
 
-    Controller::OtaSoftwareUpdateProviderCluster cluster(exchangeMgr, sessionHandle, mProviderLocation.Value().endpoint);
+    Controller::ClusterBase cluster(exchangeMgr, sessionHandle, mProviderLocation.Value().endpoint);
 
     // There is no response for a notify so consider this OTA complete. Clear the provider location and reset any states to indicate
     // so.

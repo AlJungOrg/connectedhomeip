@@ -31,11 +31,8 @@
 #include <credentials/OperationalCertificateStore.h>
 #include <crypto/CHIPCryptoPAL.h>
 #include <crypto/OperationalKeystore.h>
-#include <lib/core/CHIPPersistentStorageDelegate.h>
-#if CHIP_CRYPTO_HSM
-#include <crypto/hsm/CHIPCryptoPALHsm.h>
-#endif
 #include <lib/core/CHIPEncoding.h>
+#include <lib/core/CHIPPersistentStorageDelegate.h>
 #include <lib/core/CHIPSafeCasts.h>
 #include <lib/core/Optional.h>
 #include <lib/core/ScopedNodeId.h>
@@ -78,7 +75,7 @@ public:
     ~FabricInfo() { Reset(); }
 
     // Non-copyable
-    FabricInfo(FabricInfo const &) = delete;
+    FabricInfo(FabricInfo const &)     = delete;
     void operator=(FabricInfo const &) = delete;
 
     // Returns a span into our internal storage.
@@ -119,15 +116,15 @@ public:
 private:
     struct InitParams
     {
-        NodeId nodeId                         = kUndefinedNodeId;
-        FabricId fabricId                     = kUndefinedFabricId;
-        FabricIndex fabricIndex               = kUndefinedFabricIndex;
-        CompressedFabricId compressedFabricId = kUndefinedCompressedFabricId;
-        Crypto::P256PublicKey rootPublicKey;
-        VendorId vendorId                        = VendorId::NotSpecified; /**< Vendor ID for commissioner of fabric */
+        CompressedFabricId compressedFabricId    = kUndefinedCompressedFabricId;
+        NodeId nodeId                            = kUndefinedNodeId;
+        FabricIndex fabricIndex                  = kUndefinedFabricIndex;
         Crypto::P256Keypair * operationalKeypair = nullptr;
-        bool hasExternallyOwnedKeypair           = false;
-        bool advertiseIdentity                   = false;
+        FabricId fabricId                        = kUndefinedFabricId;
+        Crypto::P256PublicKey rootPublicKey;
+        VendorId vendorId              = VendorId::NotSpecified; /**< Vendor ID for commissioner of fabric */
+        bool hasExternallyOwnedKeypair = false;
+        bool advertiseIdentity         = false;
 
         CHIP_ERROR AreValid() const
         {
@@ -277,7 +274,7 @@ public:
             Advance();
         }
     }
-    ConstFabricIterator(const ConstFabricIterator &) = default;
+    ConstFabricIterator(const ConstFabricIterator &)             = default;
     ConstFabricIterator & operator=(const ConstFabricIterator &) = default;
 
     ConstFabricIterator & operator++() { return Advance(); }
@@ -301,7 +298,7 @@ public:
         return GetCurrent();
     }
 
-    bool operator==(const ConstFabricIterator & other)
+    bool operator==(const ConstFabricIterator & other) const
     {
         if (IsAtEnd())
         {
@@ -311,7 +308,7 @@ public:
         // Pending entry does not participate in finding this.
         return (mStart == other.mStart) && (mIndex == other.mIndex) && (mMaxSize == other.mMaxSize);
     }
-    bool operator!=(const ConstFabricIterator & other) { return !(*this == other); }
+    bool operator!=(const ConstFabricIterator & other) const { return !(*this == other); }
 
     bool IsAtEnd() const { return (mIndex == mMaxSize); }
 
@@ -404,7 +401,7 @@ public:
     ~FabricTable() = default;
 
     // Non-copyable
-    FabricTable(FabricTable const &) = delete;
+    FabricTable(FabricTable const &)    = delete;
     void operator=(FabricTable const &) = delete;
 
     enum class AdvertiseIdentity : uint8_t
@@ -712,7 +709,7 @@ public:
      * @param fabricIndex - Existing FabricIndex for which a new keypair must be made available. If it
      *                      doesn't have a value, the key will be marked pending for the next available
      *                      fabric index that would apply for `AddNewFabric`.
-     * @param outputCsr - Buffer to contain the CSR. Must be at least `kMAX_CSR_Length` large.
+     * @param outputCsr - Buffer to contain the CSR. Must be at least `kMIN_CSR_Buffer_Size` large.
      *
      * @retval CHIP_NO_ERROR on success
      * @retval CHIP_ERROR_BUFFER_TOO_SMALL if `outputCsr` buffer is too small

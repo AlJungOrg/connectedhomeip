@@ -25,13 +25,25 @@ limitations under the License.
     <client tick="false" init="false">true</client>
     <server tick="false" init="false">true</server>
 
+    <features>
+      <feature bit="0" code="CON" name="Condition" summary="Supports monitoring the condition of the resource in percentage">
+        <optionalConform/>
+      </feature>
+      <feature bit="1" code="WRN" name="Warning" summary="Supports warning indication">
+        <optionalConform/>
+      </feature>
+      <feature bit="2" code="REP" name="Replacement Product List" summary="Supports specifying the list of replacement products">
+        <optionalConform/>
+      </feature>
+    </features>
+
     <!-- Attributes -->
     <attribute side="server" code="0x0000" define="CONDITION" type="percent" min="0" max="100" writable="false" isNullable="false" optional="true">Condition</attribute>
     <attribute side="server" code="0x0001" define="DEGRADATION_DIRECTION" type="DegradationDirectionEnum" min="0" max="1" writable="false" isNullable="false" optional="true">DegradationDirection</attribute>
     <attribute side="server" code="0x0002" define="CHANGE_INDICATION" type="ChangeIndicationEnum" min="0" max="2" writable="false" isNullable="false" default="0" optional="false">ChangeIndication</attribute>
     <attribute side="server" code="0x0003" define="IN_PLACE_INDICATOR" type="boolean" writable="false" isNullable="false" optional="true">InPlaceIndicator</attribute>
     <attribute side="server" code="0x0004" define="LAST_CHANGED_TIME" type="epoch_s" writable="true" isNullable="true" optional="true">LastChangedTime</attribute>
-    <attribute side="server" code="0x0005" define="REPLACEMENT_PRODUCT_LIST" type="ARRAY" entryType="ReplacementProductStruct" length="5" writable="false" isNullable="false" optional="true">ReplacementProductList</attribute>
+    <attribute side="server" code="0x0005" define="REPLACEMENT_PRODUCT_LIST" type="array" entryType="ReplacementProductStruct" length="5" writable="false" isNullable="false" optional="true">ReplacementProductList</attribute>
 
     <!-- Commands -->
     <command source="client" code="0x00" name="ResetCondition" optional="true">
@@ -48,13 +60,25 @@ limitations under the License.
     <client tick="false" init="false">true</client>
     <server tick="false" init="false">true</server>
 
+    <features>
+      <feature bit="0" code="CON" name="Condition" summary="Supports monitoring the condition of the resource in percentage">
+        <optionalConform/>
+      </feature>
+      <feature bit="1" code="WRN" name="Warning" summary="Supports warning indication">
+        <optionalConform/>
+      </feature>
+      <feature bit="2" code="REP" name="Replacement Product List" summary="Supports specifying the list of replacement products">
+        <optionalConform/>
+      </feature>
+    </features>
+
     <!-- Attributes -->
     <attribute side="server" code="0x0000" define="CONDITION" type="percent" min="0" max="100" writable="false" isNullable="false" optional="true">Condition</attribute>
     <attribute side="server" code="0x0001" define="DEGRADATION_DIRECTION" type="DegradationDirectionEnum" min="0" max="1" writable="false" isNullable="false" optional="true">DegradationDirection</attribute>
     <attribute side="server" code="0x0002" define="CHANGE_INDICATION" type="ChangeIndicationEnum" min="0" max="2" writable="false" isNullable="false" default="0" optional="false">ChangeIndication</attribute>
     <attribute side="server" code="0x0003" define="IN_PLACE_INDICATOR" type="boolean" writable="false" isNullable="false" optional="true">InPlaceIndicator</attribute>
     <attribute side="server" code="0x0004" define="LAST_CHANGED_TIME" type="epoch_s" writable="true" isNullable="true" optional="true">LastChangedTime</attribute>
-    <attribute side="server" code="0x0005" define="REPLACEMENT_PRODUCT_LIST" type="ARRAY" entryType="ReplacementProductStruct" length="5" writable="false" isNullable="false" optional="true">ReplacementProductList</attribute>
+    <attribute side="server" code="0x0005" define="REPLACEMENT_PRODUCT_LIST" type="array" entryType="ReplacementProductStruct" length="5" writable="false" isNullable="false" optional="true">ReplacementProductList</attribute>
 
     <!-- Commands -->
     <command source="client" code="0x00" name="ResetCondition" optional="true">
@@ -62,24 +86,16 @@ limitations under the License.
     </command>
   </cluster>
 
-  <!-- Feature Map -->
-  <bitmap name="Feature" type="BITMAP32">
-    <cluster code="0x0071" />
-    <cluster code="0x0072" />
-    <field name="Condition" mask="0x01" />
-    <field name="Warning" mask="0x02" />
-    <field name="ReplacementProductList" mask="0x03" />
-  </bitmap>
 
   <!-- Cluster Data Types -->
-  <enum name="DegradationDirectionEnum" type="ENUM8">
+  <enum name="DegradationDirectionEnum" type="enum8">
     <cluster code="0x0071" />
     <cluster code="0x0072" />
     <item value="0" name="Up" />
     <item value="1" name="Down" />
   </enum>
 
-  <enum name="ChangeIndicationEnum" type="ENUM8">
+  <enum name="ChangeIndicationEnum" type="enum8">
     <cluster code="0x0071" />
     <cluster code="0x0072" />
     <item value="0" name="OK" />
@@ -87,7 +103,7 @@ limitations under the License.
     <item value="2" name="Critical" />
   </enum>
 
-  <enum name="ProductIdentifierTypeEnum" type="ENUM8">
+  <enum name="ProductIdentifierTypeEnum" type="enum8">
     <cluster code="0x0071" />
     <cluster code="0x0072" />
     <item value="0" name="UPC" />
@@ -105,12 +121,12 @@ limitations under the License.
   <struct name="ReplacementProductStruct">
     <cluster code="0x0071" />
     <item name="ProductIdentifierType" type="ProductIdentifierTypeEnum" optional="false"/>
-    <item name="ProductIdentifierValue" type="CHAR_STRING" length="20" optional="false"/>
+    <item name="ProductIdentifierValue" type="char_string" length="20" optional="false"/>
   </struct>
 
   <struct name="ReplacementProductStruct">
     <cluster code="0x0072" />
     <item name="ProductIdentifierType" type="ProductIdentifierTypeEnum" optional="false"/>
-    <item name="ProductIdentifierValue" type="CHAR_STRING" length="20" optional="false"/>
+    <item name="ProductIdentifierValue" type="char_string" length="20" optional="false"/>
   </struct>
 </configurator>

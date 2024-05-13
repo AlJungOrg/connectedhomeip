@@ -47,6 +47,10 @@ declare_args() {
   # Configure chip logging to output through pigweed logging.
   chip_use_pw_logging = false
 
+  # Enable logging of node Id in exchange context log messages.
+  # Will cause increase in code size and is therefore disabled by default.
+  chip_exchange_node_id_logging = false
+
   # Configure chip logging to output through external logging implementation.
   # External code will need to provide implementation for CHIP log output
   # function (LogV), which is defined in "src/platform/logging/LogV.h".
@@ -84,6 +88,24 @@ declare_args() {
 
   # When using minmdns, set the number of parallel resolves
   chip_config_minmdns_max_parallel_resolves = 2
+
+  # If set to true, adds a string "info" field to Cancelable.
+  # Only here for backwards compat.  Generally, THIS SHOULD NOT BE SET TO TRUE.
+  chip_config_cancelable_has_info_string_field = false
+
+  # Whether the target architecture is big-endian (true) or little-endian (false).
+  chip_target_is_big_endian = false
+
+  # Validation on TLV encode/decode for string validity of character
+  # strings:
+  #   - SHALL NOT end with binary 0 (spec still allows embedded 0)
+  #   - SHALL be valid UTF8
+  chip_tlv_validate_char_string_on_write = true
+  chip_tlv_validate_char_string_on_read = false
+
+  chip_enable_sending_batch_commands =
+      current_os == "linux" || current_os == "mac" || current_os == "ios" ||
+      current_os == "android"
 }
 
 if (chip_target_style == "") {

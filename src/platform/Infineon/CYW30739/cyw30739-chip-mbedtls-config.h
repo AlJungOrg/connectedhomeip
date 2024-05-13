@@ -17,6 +17,8 @@
 
 #pragma once
 
+#define MBEDTLS_PLATFORM_SETUP_TEARDOWN_ALT
+
 /**
  * \def MBEDTLS_AES_ALT
  *
@@ -43,29 +45,40 @@
  *
  */
 #define MBEDTLS_AES_ALT
-//#define MBEDTLS_ARC4_ALT
-//#define MBEDTLS_ARIA_ALT
-//#define MBEDTLS_BLOWFISH_ALT
-//#define MBEDTLS_CAMELLIA_ALT
+// #define MBEDTLS_ARC4_ALT
+// #define MBEDTLS_ARIA_ALT
+// #define MBEDTLS_BLOWFISH_ALT
+// #define MBEDTLS_CAMELLIA_ALT
 #define MBEDTLS_CCM_ALT
-//#define MBEDTLS_CHACHA20_ALT
-//#define MBEDTLS_CHACHAPOLY_ALT
-//#define MBEDTLS_CMAC_ALT
-//#define MBEDTLS_DES_ALT
-//#define MBEDTLS_DHM_ALT
-//#define MBEDTLS_ECJPAKE_ALT
-//#define MBEDTLS_GCM_ALT
-//#define MBEDTLS_NIST_KW_ALT
-//#define MBEDTLS_MD2_ALT
-//#define MBEDTLS_MD4_ALT
-//#define MBEDTLS_MD5_ALT
-//#define MBEDTLS_POLY1305_ALT
-//#define MBEDTLS_RIPEMD160_ALT
-//#define MBEDTLS_RSA_ALT
-//#define MBEDTLS_SHA1_ALT
+// #define MBEDTLS_CHACHA20_ALT
+// #define MBEDTLS_CHACHAPOLY_ALT
+// #define MBEDTLS_CMAC_ALT
+// #define MBEDTLS_DES_ALT
+// #define MBEDTLS_DHM_ALT
+// #define MBEDTLS_ECJPAKE_ALT
+// #define MBEDTLS_GCM_ALT
+// #define MBEDTLS_NIST_KW_ALT
+// #define MBEDTLS_MD2_ALT
+// #define MBEDTLS_MD4_ALT
+// #define MBEDTLS_MD5_ALT
+// #define MBEDTLS_POLY1305_ALT
+// #define MBEDTLS_RIPEMD160_ALT
+// #define MBEDTLS_RSA_ALT
+// #define MBEDTLS_SHA1_ALT
 #define MBEDTLS_SHA256_ALT
-//#define MBEDTLS_SHA512_ALT
-//#define MBEDTLS_XTEA_ALT
+// #define MBEDTLS_SHA512_ALT
+// #define MBEDTLS_XTEA_ALT
+
+/*
+ * When replacing the elliptic curve module, please consider, that it is
+ * implemented with two .c files:
+ *      - ecp.c
+ *      - ecp_curves.c
+ * You can replace them very much like all the other MBEDTLS__MODULE_NAME__ALT
+ * macros as described above. The only difference is that you have to make sure
+ * that you provide functionality for both .c files.
+ */
+#define MBEDTLS_ECP_ALT
 
 /**
  * \def MBEDTLS_ERROR_STRERROR_DUMMY

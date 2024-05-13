@@ -32,7 +32,10 @@
 
 #include "sl_status.h"
 
-#define SL_WIFI_ALLOCATE_COMMAND_BUFFER_WAIT_TIME 1000
+#include "rsi_common_apis.h"
+#include "sl_wifi_device.h"
+
+#define SL_WIFI_ALLOCATE_COMMAND_BUFFER_WAIT_TIME_MS 1000
 /* Wi-Fi events*/
 #define SL_WFX_STARTUP_IND_ID (1)
 #define SL_WFX_CONNECT_IND_ID (2)
@@ -127,7 +130,6 @@
 #define SCAN_BITMAP_OPTN_1 (1)
 #define IP_CONF_RSP_BUFF_LENGTH_4 (4)
 #define STATION (0)
-#define BG_SCAN_RES_SIZE (500)
 
 #define SPI_CONFIG_SUCCESS (0)
 
@@ -243,11 +245,9 @@ void wfx_dhcp_got_ipv4(uint32_t);
 void wfx_ip_changed_notify(int got_ip);
 #endif /* CHIP_DEVICE_CONFIG_ENABLE_IPV4 */
 
-sl_status_t sl_si91x_host_process_data_frame(sl_wifi_interface_t interface, sl_wifi_buffer_t * buffer);
-void * sl_si91x_host_get_buffer_data(sl_wifi_buffer_t * buffer, uint16_t offset, uint16_t * data_length);
-
 #if SL_ICD_ENABLED
-sl_status_t wfx_power_save();
+sl_status_t wfx_power_save(rsi_power_save_profile_mode_t sl_si91x_ble_state, sl_si91x_performance_profile_t sl_si91x_wifi_state);
+void sl_button_on_change(uint8_t btn, uint8_t btnAction);
 #endif /* SL_ICD_ENABLED */
 
 void wfx_ipv6_notify(int got_ip);

@@ -21,20 +21,21 @@
 #include <lib/support/SafeInt.h>
 #include <lib/support/jsontlv/TlvJson.h>
 
-constexpr const char * kDataVersionKey    = "dataVersion";
-constexpr const char * kClusterIdKey      = "clusterId";
-constexpr const char * kEndpointIdKey     = "endpointId";
-constexpr const char * kAttributeIdKey    = "attributeId";
-constexpr const char * kEventIdKey        = "eventId";
-constexpr const char * kCommandIdKey      = "commandId";
-constexpr const char * kErrorIdKey        = "error";
-constexpr const char * kClusterErrorIdKey = "clusterError";
-constexpr const char * kValueKey          = "value";
-constexpr const char * kNodeIdKey         = "nodeId";
-constexpr const char * kNOCKey            = "NOC";
-constexpr const char * kICACKey           = "ICAC";
-constexpr const char * kRCACKey           = "RCAC";
-constexpr const char * kIPKKey            = "IPK";
+constexpr char kEventNumberKey[]    = "eventNumber";
+constexpr char kDataVersionKey[]    = "dataVersion";
+constexpr char kClusterIdKey[]      = "clusterId";
+constexpr char kEndpointIdKey[]     = "endpointId";
+constexpr char kAttributeIdKey[]    = "attributeId";
+constexpr char kEventIdKey[]        = "eventId";
+constexpr char kCommandIdKey[]      = "commandId";
+constexpr char kErrorIdKey[]        = "error";
+constexpr char kClusterErrorIdKey[] = "clusterError";
+constexpr char kValueKey[]          = "value";
+constexpr char kNodeIdKey[]         = "nodeId";
+constexpr char kNOCKey[]            = "NOC";
+constexpr char kICACKey[]           = "ICAC";
+constexpr char kRCACKey[]           = "RCAC";
+constexpr char kIPKKey[]            = "IPK";
 
 namespace {
 RemoteDataModelLoggerDelegate * gDelegate;
@@ -129,9 +130,10 @@ CHIP_ERROR LogEventAsJSON(const chip::app::EventHeader & header, chip::TLV::TLVR
     VerifyOrReturnError(gDelegate != nullptr, CHIP_NO_ERROR);
 
     Json::Value value;
-    value[kClusterIdKey]  = header.mPath.mClusterId;
-    value[kEndpointIdKey] = header.mPath.mEndpointId;
-    value[kEventIdKey]    = header.mPath.mEventId;
+    value[kClusterIdKey]   = header.mPath.mClusterId;
+    value[kEndpointIdKey]  = header.mPath.mEndpointId;
+    value[kEventIdKey]     = header.mPath.mEventId;
+    value[kEventNumberKey] = header.mEventNumber;
 
     chip::TLV::TLVReader reader;
     reader.Init(*data);
@@ -202,12 +204,12 @@ CHIP_ERROR LogIssueNOCChain(const char * noc, const char * icac, const char * rc
     return gDelegate->LogJSON(valueStr.c_str());
 }
 
-CHIP_ERROR LogDiscoveredNodeData(const chip::Dnssd::DiscoveredNodeData & nodeData)
+CHIP_ERROR LogDiscoveredNodeData(const chip::Dnssd::CommissionNodeData & nodeData)
 {
     VerifyOrReturnError(gDelegate != nullptr, CHIP_NO_ERROR);
 
-    auto & resolutionData = nodeData.resolutionData;
-    auto & commissionData = nodeData.commissionData;
+    auto & commissionData = nodeData;
+    auto & resolutionData = commissionData;
 
     if (!chip::CanCastTo<uint8_t>(resolutionData.numIPs))
     {
@@ -243,19 +245,24 @@ CHIP_ERROR LogDiscoveredNodeData(const chip::Dnssd::DiscoveredNodeData & nodeDat
     value["port"]               = resolutionData.port;
     value["numIPs"]             = static_cast<uint8_t>(resolutionData.numIPs);
 
-    if (resolutionData.mrpRetryIntervalIdle.HasValue())
+    if (resolutionData.mrpRetryIntervalIdle.has_value())
     {
-        value["mrpRetryIntervalIdle"] = resolutionData.mrpRetryIntervalIdle.Value().count();
+        value["mrpRetryIntervalIdle"] = resolutionData.mrpRetryIntervalIdle->count();
     }
 
-    if (resolutionData.mrpRetryIntervalActive.HasValue())
+    if (resolutionData.mrpRetryIntervalActive.has_value())
     {
-        value["mrpRetryIntervalActive"] = resolutionData.mrpRetryIntervalActive.Value().count();
+        value["mrpRetryIntervalActive"] = resolutionData.mrpRetryIntervalActive->count();
     }
 
-    if (resolutionData.mrpRetryActiveThreshold.HasValue())
+    if (resolutionData.mrpRetryActiveThreshold.has_value())
     {
-        value["mrpRetryActiveThreshold"] = resolutionData.mrpRetryActiveThreshold.Value().count();
+        value["mrpRetryActiveThreshold"] = resolutionData.mrpRetryActiveThreshold->count();
+    }
+
+    if (resolutionData.isICDOperatingAsLIT.has_value())
+    {
+        value["isICDOperatingAsLIT"] = *(resolutionData.isICDOperatingAsLIT);
     }
 
     Json::Value rootValue;

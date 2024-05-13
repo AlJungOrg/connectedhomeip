@@ -441,7 +441,7 @@ CHIP_ERROR TCPEndPointImplSockets::DisableKeepAlive()
     return CHIP_NO_ERROR;
 }
 
-CHIP_ERROR TCPEndPointImplSockets::AckReceive(uint16_t len)
+CHIP_ERROR TCPEndPointImplSockets::AckReceive(size_t len)
 {
     VerifyOrReturnError(IsConnected(), CHIP_ERROR_INCORRECT_STATE);
 
@@ -483,7 +483,7 @@ CHIP_ERROR TCPEndPointImplSockets::DriveSendingImpl()
 
     while (!mSendQueue.IsNull())
     {
-        uint16_t bufLen = mSendQueue->DataLength();
+        size_t bufLen = mSendQueue->DataLength();
 
         ssize_t lenSentRaw = send(mSocket, mSendQueue->Start(), bufLen, sendFlags);
 
@@ -496,14 +496,13 @@ CHIP_ERROR TCPEndPointImplSockets::DriveSendingImpl()
             break;
         }
 
-        if (lenSentRaw < 0 || lenSentRaw > bufLen)
+        if (lenSentRaw < 0 || bufLen < static_cast<size_t>(lenSentRaw))
         {
             err = CHIP_ERROR_INCORRECT_STATE;
             break;
         }
 
-        // Cast is safe because bufLen is uint16_t.
-        uint16_t lenSent = static_cast<uint16_t>(lenSentRaw);
+        size_t lenSent = static_cast<size_t>(lenSentRaw);
 
         // Mark the connection as being active.
         MarkActive();
@@ -797,7 +796,7 @@ void TCPEndPointImplSockets::HandlePendingIO(System::SocketEvents events)
         // The socket being writable indicates the connection has completed (successfully or otherwise).
         if (events.Has(System::SocketEventFlags::kWrite))
         {
-#if !__MBED__
+#ifndef __MBED__
             // Get the connection result from the socket.
             int osConRes;
             socklen_t optLen = sizeof(osConRes);
@@ -805,11 +804,11 @@ void TCPEndPointImplSockets::HandlePendingIO(System::SocketEvents events)
             {
                 osConRes = errno;
             }
-#else
-            // On Mbed OS, connect blocks and never returns EINPROGRESS
-            // The socket option SO_ERROR is not available.
+#else  // __MBED__
+       // On Mbed OS, connect blocks and never returns EINPROGRESS
+       // The socket option SO_ERROR is not available.
             int osConRes     = 0;
-#endif
+#endif // !__MBED__
             CHIP_ERROR conRes = CHIP_ERROR_POSIX(osConRes);
 
             // Process the connection result.

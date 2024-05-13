@@ -32,6 +32,10 @@ LOG_MODULE_DECLARE(app, CONFIG_CHIP_APP_LOG_LEVEL);
 #include "pigweed/rpc_services/Attributes.h"
 #endif // defined(PW_RPC_ATTRIBUTE_SERVICE) && PW_RPC_ATTRIBUTE_SERVICE
 
+#if defined(PW_RPC_BOOLEAN_STATE_SERVICE) && PW_RPC_BOOLEAN_STATE_SERVICE
+#include "pigweed/rpc_services/BooleanState.h"
+#endif // defined(PW_RPC_BOOLEAN_STATE_SERVICE) && PW_RPC_BOOLEAN_STATE_SERVICE
+
 #if defined(PW_RPC_BUTTON_SERVICE) && PW_RPC_BUTTON_SERVICE
 #include "pigweed/rpc_services/Button.h"
 #endif // defined(PW_RPC_BUTTON_SERVICE) && PW_RPC_BUTTON_SERVICE
@@ -95,9 +99,20 @@ K_TIMER_DEFINE(reboot_timer, reboot_timer_handler, NULL);
 class NrfDevice final : public Device
 {
 public:
-    pw::Status Reboot(const pw_protobuf_Empty & request, pw_protobuf_Empty & response) override
+    pw::Status Reboot(const chip_rpc_RebootRequest & request, pw_protobuf_Empty & response) override
     {
-        k_timer_start(&reboot_timer, K_SECONDS(1), K_FOREVER);
+        k_timeout_t delay;
+        if (request.delay_ms != 0)
+        {
+            delay = K_MSEC(request.delay_ms);
+        }
+        else
+        {
+            ChipLogProgress(NotSpecified, "Did not receive a reboot delay. Defaulting to 1s");
+            delay = K_SECONDS(1);
+        }
+
+        k_timer_start(&reboot_timer, delay, K_FOREVER);
         return pw::OkStatus();
     }
 };
@@ -127,6 +142,10 @@ struct k_thread rpc_thread_data;
 #if defined(PW_RPC_ATTRIBUTE_SERVICE) && PW_RPC_ATTRIBUTE_SERVICE
 Attributes attributes_service;
 #endif // defined(PW_RPC_ATTRIBUTE_SERVICE) && PW_RPC_ATTRIBUTE_SERVICE
+
+#if defined(PW_RPC_BOOLEAN_STATE_SERVICE) && PW_RPC_BOOLEAN_STATE_SERVICE
+BooleanState boolean_state_service;
+#endif // defined(PW_RPC_BOOLEAN_STATE_SERVICE) && PW_RPC_BOOLEAN_STATE_SERVICE
 
 #if defined(PW_RPC_BUTTON_SERVICE) && PW_RPC_BUTTON_SERVICE
 NrfButton button_service;
@@ -165,6 +184,10 @@ void RegisterServices(pw::rpc::Server & server)
 #if defined(PW_RPC_ATTRIBUTE_SERVICE) && PW_RPC_ATTRIBUTE_SERVICE
     server.RegisterService(attributes_service);
 #endif // defined(PW_RPC_ATTRIBUTE_SERVICE) && PW_RPC_ATTRIBUTE_SERVICE
+
+#if defined(PW_RPC_BOOLEAN_STATE_SERVICE) && PW_RPC_BOOLEAN_STATE_SERVICE
+    server.RegisterService(boolean_state_service);
+#endif // defined(PW_RPC_BOOLEAN_STATE_SERVICE) && PW_RPC_BOOLEAN_STATE_SERVICE
 
 #if defined(PW_RPC_BUTTON_SERVICE) && PW_RPC_BUTTON_SERVICE
     server.RegisterService(button_service);

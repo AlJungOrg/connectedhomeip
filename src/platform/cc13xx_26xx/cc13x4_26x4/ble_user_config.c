@@ -68,7 +68,7 @@
 #ifndef CC23X0
 #if !defined(DeviceFamily_CC26X1)
 #include <driverlib/pka.h>
-#if !defined(DeviceFamily_CC13X4)
+#if !defined(DeviceFamily_CC13X4) && !defined(DeviceFamily_CC26X4)
 #include <driverlib/rf_bt5_coex.h>
 #endif
 #else
@@ -312,7 +312,7 @@ const stackSpecific_t bleStackConfig = { .maxNumConns        = MAX_NUM_BLE_CONNS
                                          .maxPduSize         = 0,
                                          .maxNumPSM          = L2CAP_NUM_PSM,
                                          .maxNumCoChannels   = L2CAP_NUM_CO_CHANNELS,
-                                         .maxWhiteListElems  = MAX_NUM_WL_ENTRIES,
+                                         .maxAcceptListElems = MAX_NUM_AL_ENTRIES,
                                          .maxResolvListElems = CFG_MAX_NUM_RL_ENTRIES,
                                          .pfnBMAlloc         = &pfnBMAlloc,
                                          .pfnBMFree          = &pfnBMFree,

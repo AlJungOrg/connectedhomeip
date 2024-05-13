@@ -24,17 +24,19 @@
 #include <type_traits>
 
 #include <app-common/zap-generated/cluster-objects.h>
+#include <app-common/zap-generated/ids/Clusters.h>
+#include <app-common/zap-generated/ids/Commands.h>
 #include <commands/clusters/ClusterCommand.h>
 #include <commands/clusters/ComplexArgument.h>
 #include <commands/clusters/ReportCommand.h>
 #include <commands/clusters/WriteAttributeCommand.h>
+#include <commands/common/Commands.h>
 
 /*----------------------------------------------------------------------------*\
 | Cluster Name                                                        |   ID   |
 |---------------------------------------------------------------------+--------|
 | Identify                                                            | 0x0003 |
 | Groups                                                              | 0x0004 |
-| Scenes                                                              | 0x0005 |
 | OnOff                                                               | 0x0006 |
 | OnOffSwitchConfiguration                                            | 0x0007 |
 | LevelControl                                                        | 0x0008 |
@@ -73,6 +75,10 @@
 | ProxyValid                                                          | 0x0044 |
 | BooleanState                                                        | 0x0045 |
 | IcdManagement                                                       | 0x0046 |
+| Timer                                                               | 0x0047 |
+| OvenCavityOperationalState                                          | 0x0048 |
+| OvenMode                                                            | 0x0049 |
+| LaundryDryerControls                                                | 0x004A |
 | ModeSelect                                                          | 0x0050 |
 | LaundryWasherMode                                                   | 0x0051 |
 | RefrigeratorAndTemperatureControlledCabinetMode                     | 0x0052 |
@@ -85,10 +91,25 @@
 | AirQuality                                                          | 0x005B |
 | SmokeCoAlarm                                                        | 0x005C |
 | DishwasherAlarm                                                     | 0x005D |
+| MicrowaveOvenMode                                                   | 0x005E |
+| MicrowaveOvenControl                                                | 0x005F |
 | OperationalState                                                    | 0x0060 |
 | RvcOperationalState                                                 | 0x0061 |
+| ScenesManagement                                                    | 0x0062 |
 | HepaFilterMonitoring                                                | 0x0071 |
 | ActivatedCarbonFilterMonitoring                                     | 0x0072 |
+| BooleanStateConfiguration                                           | 0x0080 |
+| ValveConfigurationAndControl                                        | 0x0081 |
+| ElectricalPowerMeasurement                                          | 0x0090 |
+| ElectricalEnergyMeasurement                                         | 0x0091 |
+| DemandResponseLoadControl                                           | 0x0096 |
+| Messages                                                            | 0x0097 |
+| DeviceEnergyManagement                                              | 0x0098 |
+| EnergyEvse                                                          | 0x0099 |
+| EnergyPreference                                                    | 0x009B |
+| PowerTopology                                                       | 0x009C |
+| EnergyEvseMode                                                      | 0x009D |
+| DeviceEnergyManagementMode                                          | 0x009F |
 | DoorLock                                                            | 0x0101 |
 | WindowCovering                                                      | 0x0102 |
 | BarrierControl                                                      | 0x0103 |
@@ -126,9 +147,12 @@
 | ApplicationLauncher                                                 | 0x050C |
 | ApplicationBasic                                                    | 0x050D |
 | AccountLogin                                                        | 0x050E |
+| ContentControl                                                      | 0x050F |
+| ContentAppObserver                                                  | 0x0510 |
 | ElectricalMeasurement                                               | 0x0B04 |
 | UnitTesting                                                         | 0xFFF1FC05|
 | FaultInjection                                                      | 0xFFF1FC06|
+| SampleMei                                                           | 0xFFF1FC20|
 \*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*\
@@ -165,16 +189,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000003) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Identify::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Identify::Commands::Identify::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000003, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000003) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Identify::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Identify::Commands::Identify::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000003, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -196,16 +227,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000003) command (0x00000040) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Identify::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Identify::Commands::TriggerEffect::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000003, 0x00000040, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000003) command (0x00000040) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Identify::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Identify::Commands::TriggerEffect::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000003, 0x00000040, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -250,16 +288,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000004) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groups::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Groups::Commands::AddGroup::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000004, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000004) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groups::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Groups::Commands::AddGroup::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000004, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -280,16 +325,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000004) command (0x00000001) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groups::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Groups::Commands::ViewGroup::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000004, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000004) command (0x00000001) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groups::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Groups::Commands::ViewGroup::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000004, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -311,16 +363,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000004) command (0x00000002) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groups::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Groups::Commands::GetGroupMembership::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000004, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000004) command (0x00000002) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groups::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Groups::Commands::GetGroupMembership::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000004, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -342,16 +401,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000004) command (0x00000003) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groups::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Groups::Commands::RemoveGroup::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000004, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000004) command (0x00000003) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groups::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Groups::Commands::RemoveGroup::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000004, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -371,16 +437,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000004) command (0x00000004) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groups::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Groups::Commands::RemoveAllGroups::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000004, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000004) command (0x00000004) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groups::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Groups::Commands::RemoveAllGroups::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000004, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -403,379 +476,27 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000004) command (0x00000005) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groups::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Groups::Commands::AddGroupIfIdentifying::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000004, 0x00000005, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000004) command (0x00000005) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groups::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Groups::Commands::AddGroupIfIdentifying::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000004, 0x00000005, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
     chip::app::Clusters::Groups::Commands::AddGroupIfIdentifying::Type mRequest;
-};
-
-/*----------------------------------------------------------------------------*\
-| Cluster Scenes                                                      | 0x0005 |
-|------------------------------------------------------------------------------|
-| Commands:                                                           |        |
-| * AddScene                                                          |   0x00 |
-| * ViewScene                                                         |   0x01 |
-| * RemoveScene                                                       |   0x02 |
-| * RemoveAllScenes                                                   |   0x03 |
-| * StoreScene                                                        |   0x04 |
-| * RecallScene                                                       |   0x05 |
-| * GetSceneMembership                                                |   0x06 |
-| * EnhancedAddScene                                                  |   0x40 |
-| * EnhancedViewScene                                                 |   0x41 |
-| * CopyScene                                                         |   0x42 |
-|------------------------------------------------------------------------------|
-| Attributes:                                                         |        |
-| * SceneCount                                                        | 0x0000 |
-| * CurrentScene                                                      | 0x0001 |
-| * CurrentGroup                                                      | 0x0002 |
-| * SceneValid                                                        | 0x0003 |
-| * NameSupport                                                       | 0x0004 |
-| * LastConfiguredBy                                                  | 0x0005 |
-| * SceneTableSize                                                    | 0x0006 |
-| * RemainingCapacity                                                 | 0x0007 |
-| * GeneratedCommandList                                              | 0xFFF8 |
-| * AcceptedCommandList                                               | 0xFFF9 |
-| * EventList                                                         | 0xFFFA |
-| * AttributeList                                                     | 0xFFFB |
-| * FeatureMap                                                        | 0xFFFC |
-| * ClusterRevision                                                   | 0xFFFD |
-|------------------------------------------------------------------------------|
-| Events:                                                             |        |
-\*----------------------------------------------------------------------------*/
-
-/*
- * Command AddScene
- */
-class ScenesAddScene : public ClusterCommand
-{
-public:
-    ScenesAddScene(CredentialIssuerCommands * credsIssuerConfig) :
-        ClusterCommand("add-scene", credsIssuerConfig), mComplex_ExtensionFieldSets(&mRequest.extensionFieldSets)
-    {
-        AddArgument("GroupID", 0, UINT16_MAX, &mRequest.groupID);
-        AddArgument("SceneID", 0, UINT8_MAX, &mRequest.sceneID);
-        AddArgument("TransitionTime", 0, UINT16_MAX, &mRequest.transitionTime);
-        AddArgument("SceneName", &mRequest.sceneName);
-        AddArgument("ExtensionFieldSets", &mComplex_ExtensionFieldSets);
-        ClusterCommand::AddArguments();
-    }
-
-    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000005) command (0x00000000) on endpoint %u", endpointIds.at(0));
-
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000005, 0x00000000, mRequest);
-    }
-
-    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000005) command (0x00000000) on Group %u", groupId);
-
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000005, 0x00000000, mRequest);
-    }
-
-private:
-    chip::app::Clusters::Scenes::Commands::AddScene::Type mRequest;
-    TypedComplexArgument<chip::app::DataModel::List<const chip::app::Clusters::Scenes::Structs::ExtensionFieldSet::Type>>
-        mComplex_ExtensionFieldSets;
-};
-
-/*
- * Command ViewScene
- */
-class ScenesViewScene : public ClusterCommand
-{
-public:
-    ScenesViewScene(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("view-scene", credsIssuerConfig)
-    {
-        AddArgument("GroupID", 0, UINT16_MAX, &mRequest.groupID);
-        AddArgument("SceneID", 0, UINT8_MAX, &mRequest.sceneID);
-        ClusterCommand::AddArguments();
-    }
-
-    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000005) command (0x00000001) on endpoint %u", endpointIds.at(0));
-
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000005, 0x00000001, mRequest);
-    }
-
-    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000005) command (0x00000001) on Group %u", groupId);
-
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000005, 0x00000001, mRequest);
-    }
-
-private:
-    chip::app::Clusters::Scenes::Commands::ViewScene::Type mRequest;
-};
-
-/*
- * Command RemoveScene
- */
-class ScenesRemoveScene : public ClusterCommand
-{
-public:
-    ScenesRemoveScene(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("remove-scene", credsIssuerConfig)
-    {
-        AddArgument("GroupID", 0, UINT16_MAX, &mRequest.groupID);
-        AddArgument("SceneID", 0, UINT8_MAX, &mRequest.sceneID);
-        ClusterCommand::AddArguments();
-    }
-
-    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000005) command (0x00000002) on endpoint %u", endpointIds.at(0));
-
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000005, 0x00000002, mRequest);
-    }
-
-    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000005) command (0x00000002) on Group %u", groupId);
-
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000005, 0x00000002, mRequest);
-    }
-
-private:
-    chip::app::Clusters::Scenes::Commands::RemoveScene::Type mRequest;
-};
-
-/*
- * Command RemoveAllScenes
- */
-class ScenesRemoveAllScenes : public ClusterCommand
-{
-public:
-    ScenesRemoveAllScenes(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("remove-all-scenes", credsIssuerConfig)
-    {
-        AddArgument("GroupID", 0, UINT16_MAX, &mRequest.groupID);
-        ClusterCommand::AddArguments();
-    }
-
-    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000005) command (0x00000003) on endpoint %u", endpointIds.at(0));
-
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000005, 0x00000003, mRequest);
-    }
-
-    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000005) command (0x00000003) on Group %u", groupId);
-
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000005, 0x00000003, mRequest);
-    }
-
-private:
-    chip::app::Clusters::Scenes::Commands::RemoveAllScenes::Type mRequest;
-};
-
-/*
- * Command StoreScene
- */
-class ScenesStoreScene : public ClusterCommand
-{
-public:
-    ScenesStoreScene(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("store-scene", credsIssuerConfig)
-    {
-        AddArgument("GroupID", 0, UINT16_MAX, &mRequest.groupID);
-        AddArgument("SceneID", 0, UINT8_MAX, &mRequest.sceneID);
-        ClusterCommand::AddArguments();
-    }
-
-    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000005) command (0x00000004) on endpoint %u", endpointIds.at(0));
-
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000005, 0x00000004, mRequest);
-    }
-
-    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000005) command (0x00000004) on Group %u", groupId);
-
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000005, 0x00000004, mRequest);
-    }
-
-private:
-    chip::app::Clusters::Scenes::Commands::StoreScene::Type mRequest;
-};
-
-/*
- * Command RecallScene
- */
-class ScenesRecallScene : public ClusterCommand
-{
-public:
-    ScenesRecallScene(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("recall-scene", credsIssuerConfig)
-    {
-        AddArgument("GroupID", 0, UINT16_MAX, &mRequest.groupID);
-        AddArgument("SceneID", 0, UINT8_MAX, &mRequest.sceneID);
-        AddArgument("TransitionTime", 0, UINT16_MAX, &mRequest.transitionTime);
-        ClusterCommand::AddArguments();
-    }
-
-    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000005) command (0x00000005) on endpoint %u", endpointIds.at(0));
-
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000005, 0x00000005, mRequest);
-    }
-
-    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000005) command (0x00000005) on Group %u", groupId);
-
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000005, 0x00000005, mRequest);
-    }
-
-private:
-    chip::app::Clusters::Scenes::Commands::RecallScene::Type mRequest;
-};
-
-/*
- * Command GetSceneMembership
- */
-class ScenesGetSceneMembership : public ClusterCommand
-{
-public:
-    ScenesGetSceneMembership(CredentialIssuerCommands * credsIssuerConfig) :
-        ClusterCommand("get-scene-membership", credsIssuerConfig)
-    {
-        AddArgument("GroupID", 0, UINT16_MAX, &mRequest.groupID);
-        ClusterCommand::AddArguments();
-    }
-
-    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000005) command (0x00000006) on endpoint %u", endpointIds.at(0));
-
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000005, 0x00000006, mRequest);
-    }
-
-    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000005) command (0x00000006) on Group %u", groupId);
-
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000005, 0x00000006, mRequest);
-    }
-
-private:
-    chip::app::Clusters::Scenes::Commands::GetSceneMembership::Type mRequest;
-};
-
-/*
- * Command EnhancedAddScene
- */
-class ScenesEnhancedAddScene : public ClusterCommand
-{
-public:
-    ScenesEnhancedAddScene(CredentialIssuerCommands * credsIssuerConfig) :
-        ClusterCommand("enhanced-add-scene", credsIssuerConfig), mComplex_ExtensionFieldSets(&mRequest.extensionFieldSets)
-    {
-        AddArgument("GroupID", 0, UINT16_MAX, &mRequest.groupID);
-        AddArgument("SceneID", 0, UINT8_MAX, &mRequest.sceneID);
-        AddArgument("TransitionTime", 0, UINT16_MAX, &mRequest.transitionTime);
-        AddArgument("SceneName", &mRequest.sceneName);
-        AddArgument("ExtensionFieldSets", &mComplex_ExtensionFieldSets);
-        ClusterCommand::AddArguments();
-    }
-
-    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000005) command (0x00000040) on endpoint %u", endpointIds.at(0));
-
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000005, 0x00000040, mRequest);
-    }
-
-    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000005) command (0x00000040) on Group %u", groupId);
-
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000005, 0x00000040, mRequest);
-    }
-
-private:
-    chip::app::Clusters::Scenes::Commands::EnhancedAddScene::Type mRequest;
-    TypedComplexArgument<chip::app::DataModel::List<const chip::app::Clusters::Scenes::Structs::ExtensionFieldSet::Type>>
-        mComplex_ExtensionFieldSets;
-};
-
-/*
- * Command EnhancedViewScene
- */
-class ScenesEnhancedViewScene : public ClusterCommand
-{
-public:
-    ScenesEnhancedViewScene(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("enhanced-view-scene", credsIssuerConfig)
-    {
-        AddArgument("GroupID", 0, UINT16_MAX, &mRequest.groupID);
-        AddArgument("SceneID", 0, UINT8_MAX, &mRequest.sceneID);
-        ClusterCommand::AddArguments();
-    }
-
-    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000005) command (0x00000041) on endpoint %u", endpointIds.at(0));
-
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000005, 0x00000041, mRequest);
-    }
-
-    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000005) command (0x00000041) on Group %u", groupId);
-
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000005, 0x00000041, mRequest);
-    }
-
-private:
-    chip::app::Clusters::Scenes::Commands::EnhancedViewScene::Type mRequest;
-};
-
-/*
- * Command CopyScene
- */
-class ScenesCopyScene : public ClusterCommand
-{
-public:
-    ScenesCopyScene(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("copy-scene", credsIssuerConfig)
-    {
-        AddArgument("Mode", 0, UINT8_MAX, &mRequest.mode);
-        AddArgument("GroupIdentifierFrom", 0, UINT16_MAX, &mRequest.groupIdentifierFrom);
-        AddArgument("SceneIdentifierFrom", 0, UINT8_MAX, &mRequest.sceneIdentifierFrom);
-        AddArgument("GroupIdentifierTo", 0, UINT16_MAX, &mRequest.groupIdentifierTo);
-        AddArgument("SceneIdentifierTo", 0, UINT8_MAX, &mRequest.sceneIdentifierTo);
-        ClusterCommand::AddArguments();
-    }
-
-    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000005) command (0x00000042) on endpoint %u", endpointIds.at(0));
-
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000005, 0x00000042, mRequest);
-    }
-
-    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000005) command (0x00000042) on Group %u", groupId);
-
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000005, 0x00000042, mRequest);
-    }
-
-private:
-    chip::app::Clusters::Scenes::Commands::CopyScene::Type mRequest;
 };
 
 /*----------------------------------------------------------------------------*\
@@ -818,16 +539,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000006) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OnOff::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OnOff::Commands::Off::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000006, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000006) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OnOff::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OnOff::Commands::Off::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000006, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -847,16 +575,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000006) command (0x00000001) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OnOff::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OnOff::Commands::On::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000006, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000006) command (0x00000001) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OnOff::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OnOff::Commands::On::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000006, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -876,16 +611,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000006) command (0x00000002) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OnOff::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OnOff::Commands::Toggle::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000006, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000006) command (0x00000002) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OnOff::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OnOff::Commands::Toggle::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000006, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -907,16 +649,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000006) command (0x00000040) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OnOff::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OnOff::Commands::OffWithEffect::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000006, 0x00000040, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000006) command (0x00000040) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OnOff::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OnOff::Commands::OffWithEffect::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000006, 0x00000040, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -937,16 +686,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000006) command (0x00000041) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OnOff::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OnOff::Commands::OnWithRecallGlobalScene::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000006, 0x00000041, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000006) command (0x00000041) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OnOff::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OnOff::Commands::OnWithRecallGlobalScene::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000006, 0x00000041, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -969,16 +725,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000006) command (0x00000042) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OnOff::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OnOff::Commands::OnWithTimedOff::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000006, 0x00000042, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000006) command (0x00000042) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OnOff::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OnOff::Commands::OnWithTimedOff::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000006, 0x00000042, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1059,16 +822,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000008) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::LevelControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::LevelControl::Commands::MoveToLevel::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000008, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000008) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::LevelControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::LevelControl::Commands::MoveToLevel::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000008, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1092,16 +862,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000008) command (0x00000001) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::LevelControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::LevelControl::Commands::Move::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000008, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000008) command (0x00000001) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::LevelControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::LevelControl::Commands::Move::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000008, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1126,16 +903,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000008) command (0x00000002) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::LevelControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::LevelControl::Commands::Step::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000008, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000008) command (0x00000002) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::LevelControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::LevelControl::Commands::Step::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000008, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1157,16 +941,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000008) command (0x00000003) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::LevelControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::LevelControl::Commands::Stop::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000008, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000008) command (0x00000003) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::LevelControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::LevelControl::Commands::Stop::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000008, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1191,16 +982,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000008) command (0x00000004) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::LevelControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::LevelControl::Commands::MoveToLevelWithOnOff::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000008, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000008) command (0x00000004) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::LevelControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::LevelControl::Commands::MoveToLevelWithOnOff::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000008, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1224,16 +1022,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000008) command (0x00000005) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::LevelControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::LevelControl::Commands::MoveWithOnOff::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000008, 0x00000005, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000008) command (0x00000005) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::LevelControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::LevelControl::Commands::MoveWithOnOff::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000008, 0x00000005, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1258,16 +1063,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000008) command (0x00000006) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::LevelControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::LevelControl::Commands::StepWithOnOff::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000008, 0x00000006, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000008) command (0x00000006) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::LevelControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::LevelControl::Commands::StepWithOnOff::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000008, 0x00000006, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1289,16 +1101,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000008) command (0x00000007) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::LevelControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::LevelControl::Commands::StopWithOnOff::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000008, 0x00000007, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000008) command (0x00000007) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::LevelControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::LevelControl::Commands::StopWithOnOff::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000008, 0x00000007, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1320,16 +1139,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000008) command (0x00000008) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::LevelControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::LevelControl::Commands::MoveToClosestFrequency::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000008, 0x00000008, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000008) command (0x00000008) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::LevelControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::LevelControl::Commands::MoveToClosestFrequency::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000008, 0x00000008, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1486,16 +1312,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::InstantAction::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000025, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::InstantAction::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000025, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1519,16 +1352,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x00000001) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::InstantActionWithTransition::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000025, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x00000001) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::InstantActionWithTransition::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000025, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1550,16 +1390,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x00000002) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::StartAction::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000025, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x00000002) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::StartAction::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000025, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1583,16 +1430,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x00000003) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::StartActionWithDuration::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000025, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x00000003) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::StartActionWithDuration::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000025, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1614,16 +1468,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x00000004) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::StopAction::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000025, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x00000004) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::StopAction::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000025, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1645,16 +1506,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x00000005) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::PauseAction::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000025, 0x00000005, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x00000005) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::PauseAction::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000025, 0x00000005, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1678,16 +1546,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x00000006) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::PauseActionWithDuration::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000025, 0x00000006, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x00000006) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::PauseActionWithDuration::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000025, 0x00000006, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1709,16 +1584,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x00000007) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::ResumeAction::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000025, 0x00000007, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x00000007) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::ResumeAction::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000025, 0x00000007, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1740,16 +1622,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x00000008) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::EnableAction::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000025, 0x00000008, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x00000008) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::EnableAction::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000025, 0x00000008, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1773,16 +1662,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x00000009) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::EnableActionWithDuration::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000025, 0x00000009, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x00000009) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::EnableActionWithDuration::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000025, 0x00000009, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1804,16 +1700,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x0000000A) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::DisableAction::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000025, 0x0000000A, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x0000000A) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::DisableAction::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000025, 0x0000000A, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1837,16 +1740,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x0000000B) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::DisableActionWithDuration::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000025, 0x0000000B, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000025) command (0x0000000B) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Actions::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Actions::Commands::DisableActionWithDuration::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000025, 0x0000000B, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1881,6 +1791,8 @@ private:
 | * UniqueID                                                          | 0x0012 |
 | * CapabilityMinima                                                  | 0x0013 |
 | * ProductAppearance                                                 | 0x0014 |
+| * SpecificationVersion                                              | 0x0015 |
+| * MaxPathsPerInvoke                                                 | 0x0016 |
 | * GeneratedCommandList                                              | 0xFFF8 |
 | * AcceptedCommandList                                               | 0xFFF9 |
 | * EventList                                                         | 0xFFFA |
@@ -1909,16 +1821,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000028) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::BasicInformation::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::BasicInformation::Commands::MfgSpecificPing::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000028, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000028) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::BasicInformation::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::BasicInformation::Commands::MfgSpecificPing::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000028, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -1966,21 +1885,28 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000029) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OtaSoftwareUpdateProvider::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OtaSoftwareUpdateProvider::Commands::QueryImage::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000029, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000029) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OtaSoftwareUpdateProvider::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OtaSoftwareUpdateProvider::Commands::QueryImage::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000029, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
     chip::app::Clusters::OtaSoftwareUpdateProvider::Commands::QueryImage::Type mRequest;
-    TypedComplexArgument<chip::app::DataModel::List<const chip::app::Clusters::OtaSoftwareUpdateProvider::OTADownloadProtocol>>
+    TypedComplexArgument<chip::app::DataModel::List<const chip::app::Clusters::OtaSoftwareUpdateProvider::DownloadProtocolEnum>>
         mComplex_ProtocolsSupported;
 };
 
@@ -2000,16 +1926,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000029) command (0x00000002) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OtaSoftwareUpdateProvider::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OtaSoftwareUpdateProvider::Commands::ApplyUpdateRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000029, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000029) command (0x00000002) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OtaSoftwareUpdateProvider::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OtaSoftwareUpdateProvider::Commands::ApplyUpdateRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000029, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -2032,16 +1965,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000029) command (0x00000004) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OtaSoftwareUpdateProvider::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OtaSoftwareUpdateProvider::Commands::NotifyUpdateApplied::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000029, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000029) command (0x00000004) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OtaSoftwareUpdateProvider::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OtaSoftwareUpdateProvider::Commands::NotifyUpdateApplied::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000029, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -2091,16 +2031,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000002A) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OtaSoftwareUpdateRequestor::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OtaSoftwareUpdateRequestor::Commands::AnnounceOTAProvider::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000002A, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000002A) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OtaSoftwareUpdateRequestor::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OtaSoftwareUpdateRequestor::Commands::AnnounceOTAProvider::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000002A, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -2269,16 +2216,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000030) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GeneralCommissioning::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::GeneralCommissioning::Commands::ArmFailSafe::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000030, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000030) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GeneralCommissioning::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::GeneralCommissioning::Commands::ArmFailSafe::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000030, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -2302,16 +2256,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000030) command (0x00000002) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GeneralCommissioning::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::GeneralCommissioning::Commands::SetRegulatoryConfig::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000030, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000030) command (0x00000002) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GeneralCommissioning::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::GeneralCommissioning::Commands::SetRegulatoryConfig::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000030, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -2332,16 +2293,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000030) command (0x00000004) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GeneralCommissioning::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::GeneralCommissioning::Commands::CommissioningComplete::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000030, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000030) command (0x00000004) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GeneralCommissioning::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::GeneralCommissioning::Commands::CommissioningComplete::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000030, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -2358,6 +2326,7 @@ private:
 | * RemoveNetwork                                                     |   0x04 |
 | * ConnectNetwork                                                    |   0x06 |
 | * ReorderNetwork                                                    |   0x08 |
+| * QueryIdentity                                                     |   0x09 |
 |------------------------------------------------------------------------------|
 | Attributes:                                                         |        |
 | * MaxNetworks                                                       | 0x0000 |
@@ -2368,6 +2337,9 @@ private:
 | * LastNetworkingStatus                                              | 0x0005 |
 | * LastNetworkID                                                     | 0x0006 |
 | * LastConnectErrorValue                                             | 0x0007 |
+| * SupportedWiFiBands                                                | 0x0008 |
+| * SupportedThreadFeatures                                           | 0x0009 |
+| * ThreadVersion                                                     | 0x000A |
 | * GeneratedCommandList                                              | 0xFFF8 |
 | * AcceptedCommandList                                               | 0xFFF9 |
 | * EventList                                                         | 0xFFFA |
@@ -2394,16 +2366,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000031) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::NetworkCommissioning::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::NetworkCommissioning::Commands::ScanNetworks::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000031, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000031) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::NetworkCommissioning::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::NetworkCommissioning::Commands::ScanNetworks::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000031, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -2422,21 +2401,31 @@ public:
         AddArgument("Ssid", &mRequest.ssid);
         AddArgument("Credentials", &mRequest.credentials);
         AddArgument("Breadcrumb", 0, UINT64_MAX, &mRequest.breadcrumb);
+        AddArgument("NetworkIdentity", &mRequest.networkIdentity);
+        AddArgument("ClientIdentifier", &mRequest.clientIdentifier);
+        AddArgument("PossessionNonce", &mRequest.possessionNonce);
         ClusterCommand::AddArguments();
     }
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000031) command (0x00000002) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::NetworkCommissioning::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::NetworkCommissioning::Commands::AddOrUpdateWiFiNetwork::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000031, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000031) command (0x00000002) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::NetworkCommissioning::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::NetworkCommissioning::Commands::AddOrUpdateWiFiNetwork::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000031, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -2459,16 +2448,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000031) command (0x00000003) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::NetworkCommissioning::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::NetworkCommissioning::Commands::AddOrUpdateThreadNetwork::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000031, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000031) command (0x00000003) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::NetworkCommissioning::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::NetworkCommissioning::Commands::AddOrUpdateThreadNetwork::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000031, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -2491,16 +2487,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000031) command (0x00000004) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::NetworkCommissioning::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::NetworkCommissioning::Commands::RemoveNetwork::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000031, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000031) command (0x00000004) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::NetworkCommissioning::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::NetworkCommissioning::Commands::RemoveNetwork::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000031, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -2523,16 +2526,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000031) command (0x00000006) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::NetworkCommissioning::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::NetworkCommissioning::Commands::ConnectNetwork::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000031, 0x00000006, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000031) command (0x00000006) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::NetworkCommissioning::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::NetworkCommissioning::Commands::ConnectNetwork::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000031, 0x00000006, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -2556,20 +2566,66 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000031) command (0x00000008) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::NetworkCommissioning::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::NetworkCommissioning::Commands::ReorderNetwork::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000031, 0x00000008, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000031) command (0x00000008) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::NetworkCommissioning::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::NetworkCommissioning::Commands::ReorderNetwork::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000031, 0x00000008, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
     chip::app::Clusters::NetworkCommissioning::Commands::ReorderNetwork::Type mRequest;
+};
+
+/*
+ * Command QueryIdentity
+ */
+class NetworkCommissioningQueryIdentity : public ClusterCommand
+{
+public:
+    NetworkCommissioningQueryIdentity(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("query-identity", credsIssuerConfig)
+    {
+        AddArgument("KeyIdentifier", &mRequest.keyIdentifier);
+        AddArgument("PossessionNonce", &mRequest.possessionNonce);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::NetworkCommissioning::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::NetworkCommissioning::Commands::QueryIdentity::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::NetworkCommissioning::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::NetworkCommissioning::Commands::QueryIdentity::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::NetworkCommissioning::Commands::QueryIdentity::Type mRequest;
 };
 
 /*----------------------------------------------------------------------------*\
@@ -2606,16 +2662,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000032) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DiagnosticLogs::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DiagnosticLogs::Commands::RetrieveLogsRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000032, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000032) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DiagnosticLogs::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DiagnosticLogs::Commands::RetrieveLogsRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000032, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -2627,6 +2690,8 @@ private:
 |------------------------------------------------------------------------------|
 | Commands:                                                           |        |
 | * TestEventTrigger                                                  |   0x00 |
+| * TimeSnapshot                                                      |   0x01 |
+| * PayloadTestRequest                                                |   0x03 |
 |------------------------------------------------------------------------------|
 | Attributes:                                                         |        |
 | * NetworkInterfaces                                                 | 0x0000 |
@@ -2668,20 +2733,104 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000033) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GeneralDiagnostics::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::GeneralDiagnostics::Commands::TestEventTrigger::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000033, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000033) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GeneralDiagnostics::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::GeneralDiagnostics::Commands::TestEventTrigger::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000033, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
     chip::app::Clusters::GeneralDiagnostics::Commands::TestEventTrigger::Type mRequest;
+};
+
+/*
+ * Command TimeSnapshot
+ */
+class GeneralDiagnosticsTimeSnapshot : public ClusterCommand
+{
+public:
+    GeneralDiagnosticsTimeSnapshot(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("time-snapshot", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GeneralDiagnostics::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::GeneralDiagnostics::Commands::TimeSnapshot::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GeneralDiagnostics::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::GeneralDiagnostics::Commands::TimeSnapshot::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::GeneralDiagnostics::Commands::TimeSnapshot::Type mRequest;
+};
+
+/*
+ * Command PayloadTestRequest
+ */
+class GeneralDiagnosticsPayloadTestRequest : public ClusterCommand
+{
+public:
+    GeneralDiagnosticsPayloadTestRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("payload-test-request", credsIssuerConfig)
+    {
+        AddArgument("EnableKey", &mRequest.enableKey);
+        AddArgument("Value", 0, UINT8_MAX, &mRequest.value);
+        AddArgument("Count", 0, UINT16_MAX, &mRequest.count);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GeneralDiagnostics::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::GeneralDiagnostics::Commands::PayloadTestRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GeneralDiagnostics::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::GeneralDiagnostics::Commands::PayloadTestRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::GeneralDiagnostics::Commands::PayloadTestRequest::Type mRequest;
 };
 
 /*----------------------------------------------------------------------------*\
@@ -2720,16 +2869,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000034) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::SoftwareDiagnostics::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::SoftwareDiagnostics::Commands::ResetWatermarks::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000034, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000034) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::SoftwareDiagnostics::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::SoftwareDiagnostics::Commands::ResetWatermarks::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000034, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -2832,16 +2988,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000035) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ThreadNetworkDiagnostics::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ThreadNetworkDiagnostics::Commands::ResetCounts::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000035, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000035) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ThreadNetworkDiagnostics::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ThreadNetworkDiagnostics::Commands::ResetCounts::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000035, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -2895,16 +3058,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000036) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WiFiNetworkDiagnostics::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::WiFiNetworkDiagnostics::Commands::ResetCounts::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000036, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000036) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WiFiNetworkDiagnostics::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::WiFiNetworkDiagnostics::Commands::ResetCounts::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000036, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -2951,16 +3121,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000037) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::EthernetNetworkDiagnostics::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::EthernetNetworkDiagnostics::Commands::ResetCounts::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000037, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000037) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::EthernetNetworkDiagnostics::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::EthernetNetworkDiagnostics::Commands::ResetCounts::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000037, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3022,16 +3199,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000038) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::TimeSynchronization::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::TimeSynchronization::Commands::SetUTCTime::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000038, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000038) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::TimeSynchronization::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::TimeSynchronization::Commands::SetUTCTime::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000038, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3053,16 +3237,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000038) command (0x00000001) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::TimeSynchronization::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::TimeSynchronization::Commands::SetTrustedTimeSource::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000038, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000038) command (0x00000001) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::TimeSynchronization::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::TimeSynchronization::Commands::SetTrustedTimeSource::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000038, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3087,16 +3278,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000038) command (0x00000002) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::TimeSynchronization::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::TimeSynchronization::Commands::SetTimeZone::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000038, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000038) command (0x00000002) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::TimeSynchronization::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::TimeSynchronization::Commands::SetTimeZone::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000038, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3120,16 +3318,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000038) command (0x00000004) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::TimeSynchronization::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::TimeSynchronization::Commands::SetDSTOffset::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000038, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000038) command (0x00000004) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::TimeSynchronization::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::TimeSynchronization::Commands::SetDSTOffset::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000038, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3153,16 +3358,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000038) command (0x00000005) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::TimeSynchronization::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::TimeSynchronization::Commands::SetDefaultNTP::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000038, 0x00000005, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000038) command (0x00000005) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::TimeSynchronization::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::TimeSynchronization::Commands::SetDefaultNTP::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000038, 0x00000005, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3272,16 +3484,25 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003C) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::AdministratorCommissioning::Id;
+        constexpr chip::CommandId commandId =
+            chip::app::Clusters::AdministratorCommissioning::Commands::OpenCommissioningWindow::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000003C, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003C) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::AdministratorCommissioning::Id;
+        constexpr chip::CommandId commandId =
+            chip::app::Clusters::AdministratorCommissioning::Commands::OpenCommissioningWindow::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000003C, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3303,16 +3524,25 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003C) command (0x00000001) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::AdministratorCommissioning::Id;
+        constexpr chip::CommandId commandId =
+            chip::app::Clusters::AdministratorCommissioning::Commands::OpenBasicCommissioningWindow::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000003C, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003C) command (0x00000001) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::AdministratorCommissioning::Id;
+        constexpr chip::CommandId commandId =
+            chip::app::Clusters::AdministratorCommissioning::Commands::OpenBasicCommissioningWindow::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000003C, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3333,16 +3563,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003C) command (0x00000002) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::AdministratorCommissioning::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::AdministratorCommissioning::Commands::RevokeCommissioning::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000003C, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003C) command (0x00000002) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::AdministratorCommissioning::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::AdministratorCommissioning::Commands::RevokeCommissioning::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000003C, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3394,16 +3631,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003E) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalCredentials::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalCredentials::Commands::AttestationRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000003E, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003E) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalCredentials::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalCredentials::Commands::AttestationRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000003E, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3425,16 +3669,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003E) command (0x00000002) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalCredentials::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalCredentials::Commands::CertificateChainRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000003E, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003E) command (0x00000002) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalCredentials::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalCredentials::Commands::CertificateChainRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000003E, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3456,16 +3707,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003E) command (0x00000004) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalCredentials::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalCredentials::Commands::CSRRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000003E, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003E) command (0x00000004) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalCredentials::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalCredentials::Commands::CSRRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000003E, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3490,16 +3748,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003E) command (0x00000006) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalCredentials::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalCredentials::Commands::AddNOC::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000003E, 0x00000006, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003E) command (0x00000006) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalCredentials::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalCredentials::Commands::AddNOC::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000003E, 0x00000006, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3521,16 +3786,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003E) command (0x00000007) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalCredentials::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalCredentials::Commands::UpdateNOC::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000003E, 0x00000007, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003E) command (0x00000007) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalCredentials::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalCredentials::Commands::UpdateNOC::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000003E, 0x00000007, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3552,16 +3824,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003E) command (0x00000009) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalCredentials::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalCredentials::Commands::UpdateFabricLabel::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000003E, 0x00000009, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003E) command (0x00000009) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalCredentials::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalCredentials::Commands::UpdateFabricLabel::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000003E, 0x00000009, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3583,16 +3862,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003E) command (0x0000000A) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalCredentials::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalCredentials::Commands::RemoveFabric::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000003E, 0x0000000A, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003E) command (0x0000000A) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalCredentials::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalCredentials::Commands::RemoveFabric::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000003E, 0x0000000A, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3614,16 +3900,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003E) command (0x0000000B) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalCredentials::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalCredentials::Commands::AddTrustedRootCertificate::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000003E, 0x0000000B, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003E) command (0x0000000B) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalCredentials::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalCredentials::Commands::AddTrustedRootCertificate::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000003E, 0x0000000B, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3669,16 +3962,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003F) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GroupKeyManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::GroupKeyManagement::Commands::KeySetWrite::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000003F, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003F) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GroupKeyManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::GroupKeyManagement::Commands::KeySetWrite::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000003F, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3700,16 +4000,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003F) command (0x00000001) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GroupKeyManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::GroupKeyManagement::Commands::KeySetRead::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000003F, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003F) command (0x00000001) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GroupKeyManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::GroupKeyManagement::Commands::KeySetRead::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000003F, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3731,16 +4038,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003F) command (0x00000003) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GroupKeyManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::GroupKeyManagement::Commands::KeySetRemove::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000003F, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003F) command (0x00000003) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GroupKeyManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::GroupKeyManagement::Commands::KeySetRemove::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000003F, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3761,16 +4075,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003F) command (0x00000004) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GroupKeyManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::GroupKeyManagement::Commands::KeySetReadAllIndices::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000003F, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000003F) command (0x00000004) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GroupKeyManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::GroupKeyManagement::Commands::KeySetReadAllIndices::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000003F, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3886,12 +4207,15 @@ private:
 | * StayActiveRequest                                                 |   0x03 |
 |------------------------------------------------------------------------------|
 | Attributes:                                                         |        |
-| * IdleModeInterval                                                  | 0x0000 |
-| * ActiveModeInterval                                                | 0x0001 |
+| * IdleModeDuration                                                  | 0x0000 |
+| * ActiveModeDuration                                                | 0x0001 |
 | * ActiveModeThreshold                                               | 0x0002 |
 | * RegisteredClients                                                 | 0x0003 |
 | * ICDCounter                                                        | 0x0004 |
 | * ClientsSupportedPerFabric                                         | 0x0005 |
+| * UserActiveModeTriggerHint                                         | 0x0006 |
+| * UserActiveModeTriggerInstruction                                  | 0x0007 |
+| * OperatingMode                                                     | 0x0008 |
 | * GeneratedCommandList                                              | 0xFFF8 |
 | * AcceptedCommandList                                               | 0xFFF9 |
 | * EventList                                                         | 0xFFFA |
@@ -3919,16 +4243,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000046) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::IcdManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::IcdManagement::Commands::RegisterClient::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000046, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000046) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::IcdManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::IcdManagement::Commands::RegisterClient::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000046, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3951,16 +4282,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000046) command (0x00000002) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::IcdManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::IcdManagement::Commands::UnregisterClient::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000046, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000046) command (0x00000002) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::IcdManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::IcdManagement::Commands::UnregisterClient::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000046, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -3976,26 +4314,452 @@ public:
     IcdManagementStayActiveRequest(CredentialIssuerCommands * credsIssuerConfig) :
         ClusterCommand("stay-active-request", credsIssuerConfig)
     {
+        AddArgument("StayActiveDuration", 0, UINT32_MAX, &mRequest.stayActiveDuration);
         ClusterCommand::AddArguments();
     }
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000046) command (0x00000003) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::IcdManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::IcdManagement::Commands::StayActiveRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000046, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000046) command (0x00000003) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::IcdManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::IcdManagement::Commands::StayActiveRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000046, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
     chip::app::Clusters::IcdManagement::Commands::StayActiveRequest::Type mRequest;
 };
+
+/*----------------------------------------------------------------------------*\
+| Cluster Timer                                                       | 0x0047 |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+| * SetTimer                                                          |   0x00 |
+| * ResetTimer                                                        |   0x01 |
+| * AddTime                                                           |   0x02 |
+| * ReduceTime                                                        |   0x03 |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * SetTime                                                           | 0x0000 |
+| * TimeRemaining                                                     | 0x0001 |
+| * TimerState                                                        | 0x0002 |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * EventList                                                         | 0xFFFA |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+\*----------------------------------------------------------------------------*/
+
+/*
+ * Command SetTimer
+ */
+class TimerSetTimer : public ClusterCommand
+{
+public:
+    TimerSetTimer(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("set-timer", credsIssuerConfig)
+    {
+        AddArgument("NewTime", 0, UINT32_MAX, &mRequest.newTime);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Timer::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Timer::Commands::SetTimer::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Timer::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Timer::Commands::SetTimer::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::Timer::Commands::SetTimer::Type mRequest;
+};
+
+/*
+ * Command ResetTimer
+ */
+class TimerResetTimer : public ClusterCommand
+{
+public:
+    TimerResetTimer(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("reset-timer", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Timer::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Timer::Commands::ResetTimer::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Timer::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Timer::Commands::ResetTimer::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::Timer::Commands::ResetTimer::Type mRequest;
+};
+
+/*
+ * Command AddTime
+ */
+class TimerAddTime : public ClusterCommand
+{
+public:
+    TimerAddTime(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("add-time", credsIssuerConfig)
+    {
+        AddArgument("AdditionalTime", 0, UINT32_MAX, &mRequest.additionalTime);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Timer::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Timer::Commands::AddTime::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Timer::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Timer::Commands::AddTime::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::Timer::Commands::AddTime::Type mRequest;
+};
+
+/*
+ * Command ReduceTime
+ */
+class TimerReduceTime : public ClusterCommand
+{
+public:
+    TimerReduceTime(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("reduce-time", credsIssuerConfig)
+    {
+        AddArgument("TimeReduction", 0, UINT32_MAX, &mRequest.timeReduction);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Timer::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Timer::Commands::ReduceTime::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Timer::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Timer::Commands::ReduceTime::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::Timer::Commands::ReduceTime::Type mRequest;
+};
+
+/*----------------------------------------------------------------------------*\
+| Cluster OvenCavityOperationalState                                  | 0x0048 |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+| * Pause                                                             |   0x00 |
+| * Stop                                                              |   0x01 |
+| * Start                                                             |   0x02 |
+| * Resume                                                            |   0x03 |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * PhaseList                                                         | 0x0000 |
+| * CurrentPhase                                                      | 0x0001 |
+| * CountdownTime                                                     | 0x0002 |
+| * OperationalStateList                                              | 0x0003 |
+| * OperationalState                                                  | 0x0004 |
+| * OperationalError                                                  | 0x0005 |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * EventList                                                         | 0xFFFA |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+| * OperationalError                                                  | 0x0000 |
+| * OperationCompletion                                               | 0x0001 |
+\*----------------------------------------------------------------------------*/
+
+/*
+ * Command Pause
+ */
+class OvenCavityOperationalStatePause : public ClusterCommand
+{
+public:
+    OvenCavityOperationalStatePause(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("pause", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OvenCavityOperationalState::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OvenCavityOperationalState::Commands::Pause::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OvenCavityOperationalState::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OvenCavityOperationalState::Commands::Pause::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::OvenCavityOperationalState::Commands::Pause::Type mRequest;
+};
+
+/*
+ * Command Stop
+ */
+class OvenCavityOperationalStateStop : public ClusterCommand
+{
+public:
+    OvenCavityOperationalStateStop(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("stop", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OvenCavityOperationalState::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OvenCavityOperationalState::Commands::Stop::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OvenCavityOperationalState::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OvenCavityOperationalState::Commands::Stop::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::OvenCavityOperationalState::Commands::Stop::Type mRequest;
+};
+
+/*
+ * Command Start
+ */
+class OvenCavityOperationalStateStart : public ClusterCommand
+{
+public:
+    OvenCavityOperationalStateStart(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("start", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OvenCavityOperationalState::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OvenCavityOperationalState::Commands::Start::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OvenCavityOperationalState::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OvenCavityOperationalState::Commands::Start::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::OvenCavityOperationalState::Commands::Start::Type mRequest;
+};
+
+/*
+ * Command Resume
+ */
+class OvenCavityOperationalStateResume : public ClusterCommand
+{
+public:
+    OvenCavityOperationalStateResume(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("resume", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OvenCavityOperationalState::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OvenCavityOperationalState::Commands::Resume::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OvenCavityOperationalState::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OvenCavityOperationalState::Commands::Resume::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::OvenCavityOperationalState::Commands::Resume::Type mRequest;
+};
+
+/*----------------------------------------------------------------------------*\
+| Cluster OvenMode                                                    | 0x0049 |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+| * ChangeToMode                                                      |   0x00 |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * SupportedModes                                                    | 0x0000 |
+| * CurrentMode                                                       | 0x0001 |
+| * StartUpMode                                                       | 0x0002 |
+| * OnMode                                                            | 0x0003 |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * EventList                                                         | 0xFFFA |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+\*----------------------------------------------------------------------------*/
+
+/*
+ * Command ChangeToMode
+ */
+class OvenModeChangeToMode : public ClusterCommand
+{
+public:
+    OvenModeChangeToMode(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("change-to-mode", credsIssuerConfig)
+    {
+        AddArgument("NewMode", 0, UINT8_MAX, &mRequest.newMode);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OvenMode::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OvenMode::Commands::ChangeToMode::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OvenMode::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OvenMode::Commands::ChangeToMode::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::OvenMode::Commands::ChangeToMode::Type mRequest;
+};
+
+/*----------------------------------------------------------------------------*\
+| Cluster LaundryDryerControls                                        | 0x004A |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * SupportedDrynessLevels                                            | 0x0000 |
+| * SelectedDrynessLevel                                              | 0x0001 |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * EventList                                                         | 0xFFFA |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+\*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*\
 | Cluster ModeSelect                                                  | 0x0050 |
@@ -4034,16 +4798,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000050) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ModeSelect::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ModeSelect::Commands::ChangeToMode::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000050, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000050) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ModeSelect::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ModeSelect::Commands::ChangeToMode::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000050, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -4086,16 +4857,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000051) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::LaundryWasherMode::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::LaundryWasherMode::Commands::ChangeToMode::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000051, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000051) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::LaundryWasherMode::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::LaundryWasherMode::Commands::ChangeToMode::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000051, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -4138,16 +4916,25 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000052) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::RefrigeratorAndTemperatureControlledCabinetMode::Id;
+        constexpr chip::CommandId commandId =
+            chip::app::Clusters::RefrigeratorAndTemperatureControlledCabinetMode::Commands::ChangeToMode::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000052, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000052) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::RefrigeratorAndTemperatureControlledCabinetMode::Id;
+        constexpr chip::CommandId commandId =
+            chip::app::Clusters::RefrigeratorAndTemperatureControlledCabinetMode::Commands::ChangeToMode::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000052, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -4183,8 +4970,6 @@ private:
 | Attributes:                                                         |        |
 | * SupportedModes                                                    | 0x0000 |
 | * CurrentMode                                                       | 0x0001 |
-| * StartUpMode                                                       | 0x0002 |
-| * OnMode                                                            | 0x0003 |
 | * GeneratedCommandList                                              | 0xFFF8 |
 | * AcceptedCommandList                                               | 0xFFF9 |
 | * EventList                                                         | 0xFFFA |
@@ -4209,16 +4994,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000054) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::RvcRunMode::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::RvcRunMode::Commands::ChangeToMode::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000054, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000054) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::RvcRunMode::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::RvcRunMode::Commands::ChangeToMode::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000054, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -4234,8 +5026,6 @@ private:
 | Attributes:                                                         |        |
 | * SupportedModes                                                    | 0x0000 |
 | * CurrentMode                                                       | 0x0001 |
-| * StartUpMode                                                       | 0x0002 |
-| * OnMode                                                            | 0x0003 |
 | * GeneratedCommandList                                              | 0xFFF8 |
 | * AcceptedCommandList                                               | 0xFFF9 |
 | * EventList                                                         | 0xFFFA |
@@ -4260,16 +5050,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000055) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::RvcCleanMode::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::RvcCleanMode::Commands::ChangeToMode::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000055, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000055) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::RvcCleanMode::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::RvcCleanMode::Commands::ChangeToMode::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000055, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -4315,16 +5112,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000056) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::TemperatureControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::TemperatureControl::Commands::SetTemperature::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000056, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000056) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::TemperatureControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::TemperatureControl::Commands::SetTemperature::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000056, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -4386,16 +5190,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000059) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DishwasherMode::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DishwasherMode::Commands::ChangeToMode::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000059, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000059) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DishwasherMode::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DishwasherMode::Commands::ChangeToMode::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000059, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -4474,16 +5285,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000005C) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::SmokeCoAlarm::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::SmokeCoAlarm::Commands::SelfTestRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000005C, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000005C) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::SmokeCoAlarm::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::SmokeCoAlarm::Commands::SelfTestRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000005C, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -4527,16 +5345,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000005D) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DishwasherAlarm::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DishwasherAlarm::Commands::Reset::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000005D, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000005D) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DishwasherAlarm::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DishwasherAlarm::Commands::Reset::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000005D, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -4558,20 +5383,152 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000005D) command (0x00000001) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DishwasherAlarm::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DishwasherAlarm::Commands::ModifyEnabledAlarms::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000005D, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000005D) command (0x00000001) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DishwasherAlarm::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DishwasherAlarm::Commands::ModifyEnabledAlarms::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000005D, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
     chip::app::Clusters::DishwasherAlarm::Commands::ModifyEnabledAlarms::Type mRequest;
+};
+
+/*----------------------------------------------------------------------------*\
+| Cluster MicrowaveOvenMode                                           | 0x005E |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * SupportedModes                                                    | 0x0000 |
+| * CurrentMode                                                       | 0x0001 |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * EventList                                                         | 0xFFFA |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+\*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*\
+| Cluster MicrowaveOvenControl                                        | 0x005F |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+| * SetCookingParameters                                              |   0x00 |
+| * AddMoreTime                                                       |   0x01 |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * CookTime                                                          | 0x0000 |
+| * MaxCookTime                                                       | 0x0001 |
+| * PowerSetting                                                      | 0x0002 |
+| * MinPower                                                          | 0x0003 |
+| * MaxPower                                                          | 0x0004 |
+| * PowerStep                                                         | 0x0005 |
+| * SupportedWatts                                                    | 0x0006 |
+| * SelectedWattIndex                                                 | 0x0007 |
+| * WattRating                                                        | 0x0008 |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * EventList                                                         | 0xFFFA |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+\*----------------------------------------------------------------------------*/
+
+/*
+ * Command SetCookingParameters
+ */
+class MicrowaveOvenControlSetCookingParameters : public ClusterCommand
+{
+public:
+    MicrowaveOvenControlSetCookingParameters(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("set-cooking-parameters", credsIssuerConfig)
+    {
+        AddArgument("CookMode", 0, UINT8_MAX, &mRequest.cookMode);
+        AddArgument("CookTime", 0, UINT32_MAX, &mRequest.cookTime);
+        AddArgument("PowerSetting", 0, UINT8_MAX, &mRequest.powerSetting);
+        AddArgument("WattSettingIndex", 0, UINT8_MAX, &mRequest.wattSettingIndex);
+        AddArgument("StartAfterSetting", 0, 1, &mRequest.startAfterSetting);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MicrowaveOvenControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MicrowaveOvenControl::Commands::SetCookingParameters::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MicrowaveOvenControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MicrowaveOvenControl::Commands::SetCookingParameters::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::MicrowaveOvenControl::Commands::SetCookingParameters::Type mRequest;
+};
+
+/*
+ * Command AddMoreTime
+ */
+class MicrowaveOvenControlAddMoreTime : public ClusterCommand
+{
+public:
+    MicrowaveOvenControlAddMoreTime(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("add-more-time", credsIssuerConfig)
+    {
+        AddArgument("TimeToAdd", 0, UINT32_MAX, &mRequest.timeToAdd);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MicrowaveOvenControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MicrowaveOvenControl::Commands::AddMoreTime::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MicrowaveOvenControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MicrowaveOvenControl::Commands::AddMoreTime::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::MicrowaveOvenControl::Commands::AddMoreTime::Type mRequest;
 };
 
 /*----------------------------------------------------------------------------*\
@@ -4615,16 +5572,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000060) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalState::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalState::Commands::Pause::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000060, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000060) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalState::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalState::Commands::Pause::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000060, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -4644,16 +5608,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000060) command (0x00000001) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalState::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalState::Commands::Stop::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000060, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000060) command (0x00000001) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalState::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalState::Commands::Stop::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000060, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -4673,16 +5644,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000060) command (0x00000002) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalState::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalState::Commands::Start::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000060, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000060) command (0x00000002) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalState::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalState::Commands::Start::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000060, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -4702,16 +5680,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000060) command (0x00000003) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalState::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalState::Commands::Resume::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000060, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000060) command (0x00000003) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::OperationalState::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::OperationalState::Commands::Resume::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000060, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -4723,9 +5708,8 @@ private:
 |------------------------------------------------------------------------------|
 | Commands:                                                           |        |
 | * Pause                                                             |   0x00 |
-| * Stop                                                              |   0x01 |
-| * Start                                                             |   0x02 |
 | * Resume                                                            |   0x03 |
+| * GoHome                                                            |   0x80 |
 |------------------------------------------------------------------------------|
 | Attributes:                                                         |        |
 | * PhaseList                                                         | 0x0000 |
@@ -4759,78 +5743,27 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000061) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::RvcOperationalState::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::RvcOperationalState::Commands::Pause::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000061, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000061) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::RvcOperationalState::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::RvcOperationalState::Commands::Pause::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000061, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
     chip::app::Clusters::RvcOperationalState::Commands::Pause::Type mRequest;
-};
-
-/*
- * Command Stop
- */
-class RvcOperationalStateStop : public ClusterCommand
-{
-public:
-    RvcOperationalStateStop(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("stop", credsIssuerConfig)
-    {
-        ClusterCommand::AddArguments();
-    }
-
-    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000061) command (0x00000001) on endpoint %u", endpointIds.at(0));
-
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000061, 0x00000001, mRequest);
-    }
-
-    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000061) command (0x00000001) on Group %u", groupId);
-
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000061, 0x00000001, mRequest);
-    }
-
-private:
-    chip::app::Clusters::RvcOperationalState::Commands::Stop::Type mRequest;
-};
-
-/*
- * Command Start
- */
-class RvcOperationalStateStart : public ClusterCommand
-{
-public:
-    RvcOperationalStateStart(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("start", credsIssuerConfig)
-    {
-        ClusterCommand::AddArguments();
-    }
-
-    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000061) command (0x00000002) on endpoint %u", endpointIds.at(0));
-
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000061, 0x00000002, mRequest);
-    }
-
-    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
-    {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000061) command (0x00000002) on Group %u", groupId);
-
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000061, 0x00000002, mRequest);
-    }
-
-private:
-    chip::app::Clusters::RvcOperationalState::Commands::Start::Type mRequest;
 };
 
 /*
@@ -4846,20 +5779,404 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000061) command (0x00000003) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::RvcOperationalState::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::RvcOperationalState::Commands::Resume::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000061, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000061) command (0x00000003) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::RvcOperationalState::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::RvcOperationalState::Commands::Resume::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000061, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
     chip::app::Clusters::RvcOperationalState::Commands::Resume::Type mRequest;
+};
+
+/*
+ * Command GoHome
+ */
+class RvcOperationalStateGoHome : public ClusterCommand
+{
+public:
+    RvcOperationalStateGoHome(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("go-home", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::RvcOperationalState::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::RvcOperationalState::Commands::GoHome::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::RvcOperationalState::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::RvcOperationalState::Commands::GoHome::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::RvcOperationalState::Commands::GoHome::Type mRequest;
+};
+
+/*----------------------------------------------------------------------------*\
+| Cluster ScenesManagement                                            | 0x0062 |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+| * AddScene                                                          |   0x00 |
+| * ViewScene                                                         |   0x01 |
+| * RemoveScene                                                       |   0x02 |
+| * RemoveAllScenes                                                   |   0x03 |
+| * StoreScene                                                        |   0x04 |
+| * RecallScene                                                       |   0x05 |
+| * GetSceneMembership                                                |   0x06 |
+| * CopyScene                                                         |   0x40 |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * LastConfiguredBy                                                  | 0x0000 |
+| * SceneTableSize                                                    | 0x0001 |
+| * FabricSceneInfo                                                   | 0x0002 |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * EventList                                                         | 0xFFFA |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+\*----------------------------------------------------------------------------*/
+
+/*
+ * Command AddScene
+ */
+class ScenesManagementAddScene : public ClusterCommand
+{
+public:
+    ScenesManagementAddScene(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("add-scene", credsIssuerConfig), mComplex_ExtensionFieldSets(&mRequest.extensionFieldSets)
+    {
+        AddArgument("GroupID", 0, UINT16_MAX, &mRequest.groupID);
+        AddArgument("SceneID", 0, UINT8_MAX, &mRequest.sceneID);
+        AddArgument("TransitionTime", 0, UINT32_MAX, &mRequest.transitionTime);
+        AddArgument("SceneName", &mRequest.sceneName);
+        AddArgument("ExtensionFieldSets", &mComplex_ExtensionFieldSets);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ScenesManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ScenesManagement::Commands::AddScene::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ScenesManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ScenesManagement::Commands::AddScene::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::ScenesManagement::Commands::AddScene::Type mRequest;
+    TypedComplexArgument<chip::app::DataModel::List<const chip::app::Clusters::ScenesManagement::Structs::ExtensionFieldSet::Type>>
+        mComplex_ExtensionFieldSets;
+};
+
+/*
+ * Command ViewScene
+ */
+class ScenesManagementViewScene : public ClusterCommand
+{
+public:
+    ScenesManagementViewScene(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("view-scene", credsIssuerConfig)
+    {
+        AddArgument("GroupID", 0, UINT16_MAX, &mRequest.groupID);
+        AddArgument("SceneID", 0, UINT8_MAX, &mRequest.sceneID);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ScenesManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ScenesManagement::Commands::ViewScene::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ScenesManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ScenesManagement::Commands::ViewScene::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::ScenesManagement::Commands::ViewScene::Type mRequest;
+};
+
+/*
+ * Command RemoveScene
+ */
+class ScenesManagementRemoveScene : public ClusterCommand
+{
+public:
+    ScenesManagementRemoveScene(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("remove-scene", credsIssuerConfig)
+    {
+        AddArgument("GroupID", 0, UINT16_MAX, &mRequest.groupID);
+        AddArgument("SceneID", 0, UINT8_MAX, &mRequest.sceneID);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ScenesManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ScenesManagement::Commands::RemoveScene::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ScenesManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ScenesManagement::Commands::RemoveScene::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::ScenesManagement::Commands::RemoveScene::Type mRequest;
+};
+
+/*
+ * Command RemoveAllScenes
+ */
+class ScenesManagementRemoveAllScenes : public ClusterCommand
+{
+public:
+    ScenesManagementRemoveAllScenes(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("remove-all-scenes", credsIssuerConfig)
+    {
+        AddArgument("GroupID", 0, UINT16_MAX, &mRequest.groupID);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ScenesManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ScenesManagement::Commands::RemoveAllScenes::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ScenesManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ScenesManagement::Commands::RemoveAllScenes::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::ScenesManagement::Commands::RemoveAllScenes::Type mRequest;
+};
+
+/*
+ * Command StoreScene
+ */
+class ScenesManagementStoreScene : public ClusterCommand
+{
+public:
+    ScenesManagementStoreScene(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("store-scene", credsIssuerConfig)
+    {
+        AddArgument("GroupID", 0, UINT16_MAX, &mRequest.groupID);
+        AddArgument("SceneID", 0, UINT8_MAX, &mRequest.sceneID);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ScenesManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ScenesManagement::Commands::StoreScene::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ScenesManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ScenesManagement::Commands::StoreScene::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::ScenesManagement::Commands::StoreScene::Type mRequest;
+};
+
+/*
+ * Command RecallScene
+ */
+class ScenesManagementRecallScene : public ClusterCommand
+{
+public:
+    ScenesManagementRecallScene(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("recall-scene", credsIssuerConfig)
+    {
+        AddArgument("GroupID", 0, UINT16_MAX, &mRequest.groupID);
+        AddArgument("SceneID", 0, UINT8_MAX, &mRequest.sceneID);
+        AddArgument("TransitionTime", 0, UINT32_MAX, &mRequest.transitionTime);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ScenesManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ScenesManagement::Commands::RecallScene::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ScenesManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ScenesManagement::Commands::RecallScene::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::ScenesManagement::Commands::RecallScene::Type mRequest;
+};
+
+/*
+ * Command GetSceneMembership
+ */
+class ScenesManagementGetSceneMembership : public ClusterCommand
+{
+public:
+    ScenesManagementGetSceneMembership(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("get-scene-membership", credsIssuerConfig)
+    {
+        AddArgument("GroupID", 0, UINT16_MAX, &mRequest.groupID);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ScenesManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ScenesManagement::Commands::GetSceneMembership::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ScenesManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ScenesManagement::Commands::GetSceneMembership::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::ScenesManagement::Commands::GetSceneMembership::Type mRequest;
+};
+
+/*
+ * Command CopyScene
+ */
+class ScenesManagementCopyScene : public ClusterCommand
+{
+public:
+    ScenesManagementCopyScene(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("copy-scene", credsIssuerConfig)
+    {
+        AddArgument("Mode", 0, UINT8_MAX, &mRequest.mode);
+        AddArgument("GroupIdentifierFrom", 0, UINT16_MAX, &mRequest.groupIdentifierFrom);
+        AddArgument("SceneIdentifierFrom", 0, UINT8_MAX, &mRequest.sceneIdentifierFrom);
+        AddArgument("GroupIdentifierTo", 0, UINT16_MAX, &mRequest.groupIdentifierTo);
+        AddArgument("SceneIdentifierTo", 0, UINT8_MAX, &mRequest.sceneIdentifierTo);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ScenesManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ScenesManagement::Commands::CopyScene::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ScenesManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ScenesManagement::Commands::CopyScene::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::ScenesManagement::Commands::CopyScene::Type mRequest;
 };
 
 /*----------------------------------------------------------------------------*\
@@ -4899,16 +6216,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000071) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::HepaFilterMonitoring::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::HepaFilterMonitoring::Commands::ResetCondition::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000071, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000071) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::HepaFilterMonitoring::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::HepaFilterMonitoring::Commands::ResetCondition::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000071, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -4952,20 +6276,1463 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000072) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ActivatedCarbonFilterMonitoring::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ActivatedCarbonFilterMonitoring::Commands::ResetCondition::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000072, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000072) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ActivatedCarbonFilterMonitoring::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ActivatedCarbonFilterMonitoring::Commands::ResetCondition::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000072, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
     chip::app::Clusters::ActivatedCarbonFilterMonitoring::Commands::ResetCondition::Type mRequest;
+};
+
+/*----------------------------------------------------------------------------*\
+| Cluster BooleanStateConfiguration                                   | 0x0080 |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+| * SuppressAlarm                                                     |   0x00 |
+| * EnableDisableAlarm                                                |   0x01 |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * CurrentSensitivityLevel                                           | 0x0000 |
+| * SupportedSensitivityLevels                                        | 0x0001 |
+| * DefaultSensitivityLevel                                           | 0x0002 |
+| * AlarmsActive                                                      | 0x0003 |
+| * AlarmsSuppressed                                                  | 0x0004 |
+| * AlarmsEnabled                                                     | 0x0005 |
+| * AlarmsSupported                                                   | 0x0006 |
+| * SensorFault                                                       | 0x0007 |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * EventList                                                         | 0xFFFA |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+| * AlarmsStateChanged                                                | 0x0000 |
+| * SensorFault                                                       | 0x0001 |
+\*----------------------------------------------------------------------------*/
+
+/*
+ * Command SuppressAlarm
+ */
+class BooleanStateConfigurationSuppressAlarm : public ClusterCommand
+{
+public:
+    BooleanStateConfigurationSuppressAlarm(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("suppress-alarm", credsIssuerConfig)
+    {
+        AddArgument("AlarmsToSuppress", 0, UINT8_MAX, &mRequest.alarmsToSuppress);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::BooleanStateConfiguration::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::BooleanStateConfiguration::Commands::SuppressAlarm::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::BooleanStateConfiguration::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::BooleanStateConfiguration::Commands::SuppressAlarm::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::BooleanStateConfiguration::Commands::SuppressAlarm::Type mRequest;
+};
+
+/*
+ * Command EnableDisableAlarm
+ */
+class BooleanStateConfigurationEnableDisableAlarm : public ClusterCommand
+{
+public:
+    BooleanStateConfigurationEnableDisableAlarm(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("enable-disable-alarm", credsIssuerConfig)
+    {
+        AddArgument("AlarmsToEnableDisable", 0, UINT8_MAX, &mRequest.alarmsToEnableDisable);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::BooleanStateConfiguration::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::BooleanStateConfiguration::Commands::EnableDisableAlarm::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::BooleanStateConfiguration::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::BooleanStateConfiguration::Commands::EnableDisableAlarm::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::BooleanStateConfiguration::Commands::EnableDisableAlarm::Type mRequest;
+};
+
+/*----------------------------------------------------------------------------*\
+| Cluster ValveConfigurationAndControl                                | 0x0081 |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+| * Open                                                              |   0x00 |
+| * Close                                                             |   0x01 |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * OpenDuration                                                      | 0x0000 |
+| * DefaultOpenDuration                                               | 0x0001 |
+| * AutoCloseTime                                                     | 0x0002 |
+| * RemainingDuration                                                 | 0x0003 |
+| * CurrentState                                                      | 0x0004 |
+| * TargetState                                                       | 0x0005 |
+| * CurrentLevel                                                      | 0x0006 |
+| * TargetLevel                                                       | 0x0007 |
+| * DefaultOpenLevel                                                  | 0x0008 |
+| * ValveFault                                                        | 0x0009 |
+| * LevelStep                                                         | 0x000A |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * EventList                                                         | 0xFFFA |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+| * ValveStateChanged                                                 | 0x0000 |
+| * ValveFault                                                        | 0x0001 |
+\*----------------------------------------------------------------------------*/
+
+/*
+ * Command Open
+ */
+class ValveConfigurationAndControlOpen : public ClusterCommand
+{
+public:
+    ValveConfigurationAndControlOpen(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("open", credsIssuerConfig)
+    {
+        AddArgument("OpenDuration", 0, UINT32_MAX, &mRequest.openDuration);
+        AddArgument("TargetLevel", 0, UINT8_MAX, &mRequest.targetLevel);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ValveConfigurationAndControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ValveConfigurationAndControl::Commands::Open::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ValveConfigurationAndControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ValveConfigurationAndControl::Commands::Open::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::ValveConfigurationAndControl::Commands::Open::Type mRequest;
+};
+
+/*
+ * Command Close
+ */
+class ValveConfigurationAndControlClose : public ClusterCommand
+{
+public:
+    ValveConfigurationAndControlClose(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("close", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ValveConfigurationAndControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ValveConfigurationAndControl::Commands::Close::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ValveConfigurationAndControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ValveConfigurationAndControl::Commands::Close::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::ValveConfigurationAndControl::Commands::Close::Type mRequest;
+};
+
+/*----------------------------------------------------------------------------*\
+| Cluster ElectricalPowerMeasurement                                  | 0x0090 |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * PowerMode                                                         | 0x0000 |
+| * NumberOfMeasurementTypes                                          | 0x0001 |
+| * Accuracy                                                          | 0x0002 |
+| * Ranges                                                            | 0x0003 |
+| * Voltage                                                           | 0x0004 |
+| * ActiveCurrent                                                     | 0x0005 |
+| * ReactiveCurrent                                                   | 0x0006 |
+| * ApparentCurrent                                                   | 0x0007 |
+| * ActivePower                                                       | 0x0008 |
+| * ReactivePower                                                     | 0x0009 |
+| * ApparentPower                                                     | 0x000A |
+| * RMSVoltage                                                        | 0x000B |
+| * RMSCurrent                                                        | 0x000C |
+| * RMSPower                                                          | 0x000D |
+| * Frequency                                                         | 0x000E |
+| * HarmonicCurrents                                                  | 0x000F |
+| * HarmonicPhases                                                    | 0x0010 |
+| * PowerFactor                                                       | 0x0011 |
+| * NeutralCurrent                                                    | 0x0012 |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * EventList                                                         | 0xFFFA |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+| * MeasurementPeriodRanges                                           | 0x0000 |
+\*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*\
+| Cluster ElectricalEnergyMeasurement                                 | 0x0091 |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * Accuracy                                                          | 0x0000 |
+| * CumulativeEnergyImported                                          | 0x0001 |
+| * CumulativeEnergyExported                                          | 0x0002 |
+| * PeriodicEnergyImported                                            | 0x0003 |
+| * PeriodicEnergyExported                                            | 0x0004 |
+| * CumulativeEnergyReset                                             | 0x0005 |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * EventList                                                         | 0xFFFA |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+| * CumulativeEnergyMeasured                                          | 0x0000 |
+| * PeriodicEnergyMeasured                                            | 0x0001 |
+\*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*\
+| Cluster DemandResponseLoadControl                                   | 0x0096 |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+| * RegisterLoadControlProgramRequest                                 |   0x00 |
+| * UnregisterLoadControlProgramRequest                               |   0x01 |
+| * AddLoadControlEventRequest                                        |   0x02 |
+| * RemoveLoadControlEventRequest                                     |   0x03 |
+| * ClearLoadControlEventsRequest                                     |   0x04 |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * LoadControlPrograms                                               | 0x0000 |
+| * NumberOfLoadControlPrograms                                       | 0x0001 |
+| * Events                                                            | 0x0002 |
+| * ActiveEvents                                                      | 0x0003 |
+| * NumberOfEventsPerProgram                                          | 0x0004 |
+| * NumberOfTransitions                                               | 0x0005 |
+| * DefaultRandomStart                                                | 0x0006 |
+| * DefaultRandomDuration                                             | 0x0007 |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * EventList                                                         | 0xFFFA |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+| * LoadControlEventStatusChange                                      | 0x0000 |
+\*----------------------------------------------------------------------------*/
+
+/*
+ * Command RegisterLoadControlProgramRequest
+ */
+class DemandResponseLoadControlRegisterLoadControlProgramRequest : public ClusterCommand
+{
+public:
+    DemandResponseLoadControlRegisterLoadControlProgramRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("register-load-control-program-request", credsIssuerConfig),
+        mComplex_LoadControlProgram(&mRequest.loadControlProgram)
+    {
+        AddArgument("LoadControlProgram", &mComplex_LoadControlProgram);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DemandResponseLoadControl::Id;
+        constexpr chip::CommandId commandId =
+            chip::app::Clusters::DemandResponseLoadControl::Commands::RegisterLoadControlProgramRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DemandResponseLoadControl::Id;
+        constexpr chip::CommandId commandId =
+            chip::app::Clusters::DemandResponseLoadControl::Commands::RegisterLoadControlProgramRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::DemandResponseLoadControl::Commands::RegisterLoadControlProgramRequest::Type mRequest;
+    TypedComplexArgument<chip::app::Clusters::DemandResponseLoadControl::Structs::LoadControlProgramStruct::Type>
+        mComplex_LoadControlProgram;
+};
+
+/*
+ * Command UnregisterLoadControlProgramRequest
+ */
+class DemandResponseLoadControlUnregisterLoadControlProgramRequest : public ClusterCommand
+{
+public:
+    DemandResponseLoadControlUnregisterLoadControlProgramRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("unregister-load-control-program-request", credsIssuerConfig)
+    {
+        AddArgument("LoadControlProgramID", &mRequest.loadControlProgramID);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DemandResponseLoadControl::Id;
+        constexpr chip::CommandId commandId =
+            chip::app::Clusters::DemandResponseLoadControl::Commands::UnregisterLoadControlProgramRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DemandResponseLoadControl::Id;
+        constexpr chip::CommandId commandId =
+            chip::app::Clusters::DemandResponseLoadControl::Commands::UnregisterLoadControlProgramRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::DemandResponseLoadControl::Commands::UnregisterLoadControlProgramRequest::Type mRequest;
+};
+
+/*
+ * Command AddLoadControlEventRequest
+ */
+class DemandResponseLoadControlAddLoadControlEventRequest : public ClusterCommand
+{
+public:
+    DemandResponseLoadControlAddLoadControlEventRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("add-load-control-event-request", credsIssuerConfig), mComplex_Event(&mRequest.event)
+    {
+        AddArgument("Event", &mComplex_Event);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DemandResponseLoadControl::Id;
+        constexpr chip::CommandId commandId =
+            chip::app::Clusters::DemandResponseLoadControl::Commands::AddLoadControlEventRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DemandResponseLoadControl::Id;
+        constexpr chip::CommandId commandId =
+            chip::app::Clusters::DemandResponseLoadControl::Commands::AddLoadControlEventRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::DemandResponseLoadControl::Commands::AddLoadControlEventRequest::Type mRequest;
+    TypedComplexArgument<chip::app::Clusters::DemandResponseLoadControl::Structs::LoadControlEventStruct::Type> mComplex_Event;
+};
+
+/*
+ * Command RemoveLoadControlEventRequest
+ */
+class DemandResponseLoadControlRemoveLoadControlEventRequest : public ClusterCommand
+{
+public:
+    DemandResponseLoadControlRemoveLoadControlEventRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("remove-load-control-event-request", credsIssuerConfig)
+    {
+        AddArgument("EventID", &mRequest.eventID);
+        AddArgument("CancelControl", 0, UINT16_MAX, &mRequest.cancelControl);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DemandResponseLoadControl::Id;
+        constexpr chip::CommandId commandId =
+            chip::app::Clusters::DemandResponseLoadControl::Commands::RemoveLoadControlEventRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DemandResponseLoadControl::Id;
+        constexpr chip::CommandId commandId =
+            chip::app::Clusters::DemandResponseLoadControl::Commands::RemoveLoadControlEventRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::DemandResponseLoadControl::Commands::RemoveLoadControlEventRequest::Type mRequest;
+};
+
+/*
+ * Command ClearLoadControlEventsRequest
+ */
+class DemandResponseLoadControlClearLoadControlEventsRequest : public ClusterCommand
+{
+public:
+    DemandResponseLoadControlClearLoadControlEventsRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("clear-load-control-events-request", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DemandResponseLoadControl::Id;
+        constexpr chip::CommandId commandId =
+            chip::app::Clusters::DemandResponseLoadControl::Commands::ClearLoadControlEventsRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DemandResponseLoadControl::Id;
+        constexpr chip::CommandId commandId =
+            chip::app::Clusters::DemandResponseLoadControl::Commands::ClearLoadControlEventsRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::DemandResponseLoadControl::Commands::ClearLoadControlEventsRequest::Type mRequest;
+};
+
+/*----------------------------------------------------------------------------*\
+| Cluster Messages                                                    | 0x0097 |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+| * PresentMessagesRequest                                            |   0x00 |
+| * CancelMessagesRequest                                             |   0x01 |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * Messages                                                          | 0x0000 |
+| * ActiveMessageIDs                                                  | 0x0001 |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * EventList                                                         | 0xFFFA |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+| * MessageQueued                                                     | 0x0000 |
+| * MessagePresented                                                  | 0x0001 |
+| * MessageComplete                                                   | 0x0002 |
+\*----------------------------------------------------------------------------*/
+
+/*
+ * Command PresentMessagesRequest
+ */
+class MessagesPresentMessagesRequest : public ClusterCommand
+{
+public:
+    MessagesPresentMessagesRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("present-messages-request", credsIssuerConfig), mComplex_Responses(&mRequest.responses)
+    {
+        AddArgument("MessageID", &mRequest.messageID);
+        AddArgument("Priority", 0, UINT8_MAX, &mRequest.priority);
+        AddArgument("MessageControl", 0, UINT8_MAX, &mRequest.messageControl);
+        AddArgument("StartTime", 0, UINT32_MAX, &mRequest.startTime);
+        AddArgument("Duration", 0, UINT64_MAX, &mRequest.duration);
+        AddArgument("MessageText", &mRequest.messageText);
+        AddArgument("Responses", &mComplex_Responses, "", Argument::kOptional);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Messages::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Messages::Commands::PresentMessagesRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Messages::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Messages::Commands::PresentMessagesRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::Messages::Commands::PresentMessagesRequest::Type mRequest;
+    TypedComplexArgument<
+        chip::Optional<chip::app::DataModel::List<const chip::app::Clusters::Messages::Structs::MessageResponseOptionStruct::Type>>>
+        mComplex_Responses;
+};
+
+/*
+ * Command CancelMessagesRequest
+ */
+class MessagesCancelMessagesRequest : public ClusterCommand
+{
+public:
+    MessagesCancelMessagesRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("cancel-messages-request", credsIssuerConfig), mComplex_MessageIDs(&mRequest.messageIDs)
+    {
+        AddArgument("MessageIDs", &mComplex_MessageIDs);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Messages::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Messages::Commands::CancelMessagesRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Messages::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Messages::Commands::CancelMessagesRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::Messages::Commands::CancelMessagesRequest::Type mRequest;
+    TypedComplexArgument<chip::app::DataModel::List<const chip::ByteSpan>> mComplex_MessageIDs;
+};
+
+/*----------------------------------------------------------------------------*\
+| Cluster DeviceEnergyManagement                                      | 0x0098 |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+| * PowerAdjustRequest                                                |   0x00 |
+| * CancelPowerAdjustRequest                                          |   0x01 |
+| * StartTimeAdjustRequest                                            |   0x02 |
+| * PauseRequest                                                      |   0x03 |
+| * ResumeRequest                                                     |   0x04 |
+| * ModifyForecastRequest                                             |   0x05 |
+| * RequestConstraintBasedForecast                                    |   0x06 |
+| * CancelRequest                                                     |   0x07 |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * ESAType                                                           | 0x0000 |
+| * ESACanGenerate                                                    | 0x0001 |
+| * ESAState                                                          | 0x0002 |
+| * AbsMinPower                                                       | 0x0003 |
+| * AbsMaxPower                                                       | 0x0004 |
+| * PowerAdjustmentCapability                                         | 0x0005 |
+| * Forecast                                                          | 0x0006 |
+| * OptOutState                                                       | 0x0007 |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * EventList                                                         | 0xFFFA |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+| * PowerAdjustStart                                                  | 0x0000 |
+| * PowerAdjustEnd                                                    | 0x0001 |
+| * Paused                                                            | 0x0002 |
+| * Resumed                                                           | 0x0003 |
+\*----------------------------------------------------------------------------*/
+
+/*
+ * Command PowerAdjustRequest
+ */
+class DeviceEnergyManagementPowerAdjustRequest : public ClusterCommand
+{
+public:
+    DeviceEnergyManagementPowerAdjustRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("power-adjust-request", credsIssuerConfig)
+    {
+        AddArgument("Power", INT64_MIN, INT64_MAX, &mRequest.power);
+        AddArgument("Duration", 0, UINT32_MAX, &mRequest.duration);
+        AddArgument("Cause", 0, UINT8_MAX, &mRequest.cause);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DeviceEnergyManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DeviceEnergyManagement::Commands::PowerAdjustRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DeviceEnergyManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DeviceEnergyManagement::Commands::PowerAdjustRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::DeviceEnergyManagement::Commands::PowerAdjustRequest::Type mRequest;
+};
+
+/*
+ * Command CancelPowerAdjustRequest
+ */
+class DeviceEnergyManagementCancelPowerAdjustRequest : public ClusterCommand
+{
+public:
+    DeviceEnergyManagementCancelPowerAdjustRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("cancel-power-adjust-request", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DeviceEnergyManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DeviceEnergyManagement::Commands::CancelPowerAdjustRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DeviceEnergyManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DeviceEnergyManagement::Commands::CancelPowerAdjustRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::DeviceEnergyManagement::Commands::CancelPowerAdjustRequest::Type mRequest;
+};
+
+/*
+ * Command StartTimeAdjustRequest
+ */
+class DeviceEnergyManagementStartTimeAdjustRequest : public ClusterCommand
+{
+public:
+    DeviceEnergyManagementStartTimeAdjustRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("start-time-adjust-request", credsIssuerConfig)
+    {
+        AddArgument("RequestedStartTime", 0, UINT32_MAX, &mRequest.requestedStartTime);
+        AddArgument("Cause", 0, UINT8_MAX, &mRequest.cause);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DeviceEnergyManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DeviceEnergyManagement::Commands::StartTimeAdjustRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DeviceEnergyManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DeviceEnergyManagement::Commands::StartTimeAdjustRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::DeviceEnergyManagement::Commands::StartTimeAdjustRequest::Type mRequest;
+};
+
+/*
+ * Command PauseRequest
+ */
+class DeviceEnergyManagementPauseRequest : public ClusterCommand
+{
+public:
+    DeviceEnergyManagementPauseRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("pause-request", credsIssuerConfig)
+    {
+        AddArgument("Duration", 0, UINT32_MAX, &mRequest.duration);
+        AddArgument("Cause", 0, UINT8_MAX, &mRequest.cause);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DeviceEnergyManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DeviceEnergyManagement::Commands::PauseRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DeviceEnergyManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DeviceEnergyManagement::Commands::PauseRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::DeviceEnergyManagement::Commands::PauseRequest::Type mRequest;
+};
+
+/*
+ * Command ResumeRequest
+ */
+class DeviceEnergyManagementResumeRequest : public ClusterCommand
+{
+public:
+    DeviceEnergyManagementResumeRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("resume-request", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DeviceEnergyManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DeviceEnergyManagement::Commands::ResumeRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DeviceEnergyManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DeviceEnergyManagement::Commands::ResumeRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::DeviceEnergyManagement::Commands::ResumeRequest::Type mRequest;
+};
+
+/*
+ * Command ModifyForecastRequest
+ */
+class DeviceEnergyManagementModifyForecastRequest : public ClusterCommand
+{
+public:
+    DeviceEnergyManagementModifyForecastRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("modify-forecast-request", credsIssuerConfig), mComplex_SlotAdjustments(&mRequest.slotAdjustments)
+    {
+        AddArgument("ForecastId", 0, UINT32_MAX, &mRequest.forecastId);
+        AddArgument("SlotAdjustments", &mComplex_SlotAdjustments);
+        AddArgument("Cause", 0, UINT8_MAX, &mRequest.cause);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DeviceEnergyManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DeviceEnergyManagement::Commands::ModifyForecastRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DeviceEnergyManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DeviceEnergyManagement::Commands::ModifyForecastRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::DeviceEnergyManagement::Commands::ModifyForecastRequest::Type mRequest;
+    TypedComplexArgument<
+        chip::app::DataModel::List<const chip::app::Clusters::DeviceEnergyManagement::Structs::SlotAdjustmentStruct::Type>>
+        mComplex_SlotAdjustments;
+};
+
+/*
+ * Command RequestConstraintBasedForecast
+ */
+class DeviceEnergyManagementRequestConstraintBasedForecast : public ClusterCommand
+{
+public:
+    DeviceEnergyManagementRequestConstraintBasedForecast(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("request-constraint-based-forecast", credsIssuerConfig), mComplex_Constraints(&mRequest.constraints)
+    {
+        AddArgument("Constraints", &mComplex_Constraints);
+        AddArgument("Cause", 0, UINT8_MAX, &mRequest.cause);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DeviceEnergyManagement::Id;
+        constexpr chip::CommandId commandId =
+            chip::app::Clusters::DeviceEnergyManagement::Commands::RequestConstraintBasedForecast::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DeviceEnergyManagement::Id;
+        constexpr chip::CommandId commandId =
+            chip::app::Clusters::DeviceEnergyManagement::Commands::RequestConstraintBasedForecast::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::DeviceEnergyManagement::Commands::RequestConstraintBasedForecast::Type mRequest;
+    TypedComplexArgument<
+        chip::app::DataModel::List<const chip::app::Clusters::DeviceEnergyManagement::Structs::ConstraintsStruct::Type>>
+        mComplex_Constraints;
+};
+
+/*
+ * Command CancelRequest
+ */
+class DeviceEnergyManagementCancelRequest : public ClusterCommand
+{
+public:
+    DeviceEnergyManagementCancelRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("cancel-request", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DeviceEnergyManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DeviceEnergyManagement::Commands::CancelRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DeviceEnergyManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DeviceEnergyManagement::Commands::CancelRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::DeviceEnergyManagement::Commands::CancelRequest::Type mRequest;
+};
+
+/*----------------------------------------------------------------------------*\
+| Cluster EnergyEvse                                                  | 0x0099 |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+| * Disable                                                           |   0x01 |
+| * EnableCharging                                                    |   0x02 |
+| * EnableDischarging                                                 |   0x03 |
+| * StartDiagnostics                                                  |   0x04 |
+| * SetTargets                                                        |   0x05 |
+| * GetTargets                                                        |   0x06 |
+| * ClearTargets                                                      |   0x07 |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * State                                                             | 0x0000 |
+| * SupplyState                                                       | 0x0001 |
+| * FaultState                                                        | 0x0002 |
+| * ChargingEnabledUntil                                              | 0x0003 |
+| * DischargingEnabledUntil                                           | 0x0004 |
+| * CircuitCapacity                                                   | 0x0005 |
+| * MinimumChargeCurrent                                              | 0x0006 |
+| * MaximumChargeCurrent                                              | 0x0007 |
+| * MaximumDischargeCurrent                                           | 0x0008 |
+| * UserMaximumChargeCurrent                                          | 0x0009 |
+| * RandomizationDelayWindow                                          | 0x000A |
+| * NextChargeStartTime                                               | 0x0023 |
+| * NextChargeTargetTime                                              | 0x0024 |
+| * NextChargeRequiredEnergy                                          | 0x0025 |
+| * NextChargeTargetSoC                                               | 0x0026 |
+| * ApproximateEVEfficiency                                           | 0x0027 |
+| * StateOfCharge                                                     | 0x0030 |
+| * BatteryCapacity                                                   | 0x0031 |
+| * VehicleID                                                         | 0x0032 |
+| * SessionID                                                         | 0x0040 |
+| * SessionDuration                                                   | 0x0041 |
+| * SessionEnergyCharged                                              | 0x0042 |
+| * SessionEnergyDischarged                                           | 0x0043 |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * EventList                                                         | 0xFFFA |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+| * EVConnected                                                       | 0x0000 |
+| * EVNotDetected                                                     | 0x0001 |
+| * EnergyTransferStarted                                             | 0x0002 |
+| * EnergyTransferStopped                                             | 0x0003 |
+| * Fault                                                             | 0x0004 |
+| * Rfid                                                              | 0x0005 |
+\*----------------------------------------------------------------------------*/
+
+/*
+ * Command Disable
+ */
+class EnergyEvseDisable : public ClusterCommand
+{
+public:
+    EnergyEvseDisable(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("disable", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::EnergyEvse::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::EnergyEvse::Commands::Disable::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::EnergyEvse::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::EnergyEvse::Commands::Disable::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::EnergyEvse::Commands::Disable::Type mRequest;
+};
+
+/*
+ * Command EnableCharging
+ */
+class EnergyEvseEnableCharging : public ClusterCommand
+{
+public:
+    EnergyEvseEnableCharging(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("enable-charging", credsIssuerConfig)
+    {
+        AddArgument("ChargingEnabledUntil", 0, UINT32_MAX, &mRequest.chargingEnabledUntil);
+        AddArgument("MinimumChargeCurrent", INT64_MIN, INT64_MAX, &mRequest.minimumChargeCurrent);
+        AddArgument("MaximumChargeCurrent", INT64_MIN, INT64_MAX, &mRequest.maximumChargeCurrent);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::EnergyEvse::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::EnergyEvse::Commands::EnableCharging::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::EnergyEvse::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::EnergyEvse::Commands::EnableCharging::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::EnergyEvse::Commands::EnableCharging::Type mRequest;
+};
+
+/*
+ * Command EnableDischarging
+ */
+class EnergyEvseEnableDischarging : public ClusterCommand
+{
+public:
+    EnergyEvseEnableDischarging(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("enable-discharging", credsIssuerConfig)
+    {
+        AddArgument("DischargingEnabledUntil", 0, UINT32_MAX, &mRequest.dischargingEnabledUntil);
+        AddArgument("MaximumDischargeCurrent", INT64_MIN, INT64_MAX, &mRequest.maximumDischargeCurrent);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::EnergyEvse::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::EnergyEvse::Commands::EnableDischarging::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::EnergyEvse::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::EnergyEvse::Commands::EnableDischarging::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::EnergyEvse::Commands::EnableDischarging::Type mRequest;
+};
+
+/*
+ * Command StartDiagnostics
+ */
+class EnergyEvseStartDiagnostics : public ClusterCommand
+{
+public:
+    EnergyEvseStartDiagnostics(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("start-diagnostics", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::EnergyEvse::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::EnergyEvse::Commands::StartDiagnostics::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::EnergyEvse::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::EnergyEvse::Commands::StartDiagnostics::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::EnergyEvse::Commands::StartDiagnostics::Type mRequest;
+};
+
+/*
+ * Command SetTargets
+ */
+class EnergyEvseSetTargets : public ClusterCommand
+{
+public:
+    EnergyEvseSetTargets(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("set-targets", credsIssuerConfig), mComplex_ChargingTargetSchedules(&mRequest.chargingTargetSchedules)
+    {
+        AddArgument("ChargingTargetSchedules", &mComplex_ChargingTargetSchedules);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::EnergyEvse::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::EnergyEvse::Commands::SetTargets::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::EnergyEvse::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::EnergyEvse::Commands::SetTargets::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::EnergyEvse::Commands::SetTargets::Type mRequest;
+    TypedComplexArgument<
+        chip::app::DataModel::List<const chip::app::Clusters::EnergyEvse::Structs::ChargingTargetScheduleStruct::Type>>
+        mComplex_ChargingTargetSchedules;
+};
+
+/*
+ * Command GetTargets
+ */
+class EnergyEvseGetTargets : public ClusterCommand
+{
+public:
+    EnergyEvseGetTargets(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("get-targets", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::EnergyEvse::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::EnergyEvse::Commands::GetTargets::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::EnergyEvse::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::EnergyEvse::Commands::GetTargets::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::EnergyEvse::Commands::GetTargets::Type mRequest;
+};
+
+/*
+ * Command ClearTargets
+ */
+class EnergyEvseClearTargets : public ClusterCommand
+{
+public:
+    EnergyEvseClearTargets(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("clear-targets", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::EnergyEvse::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::EnergyEvse::Commands::ClearTargets::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::EnergyEvse::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::EnergyEvse::Commands::ClearTargets::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::EnergyEvse::Commands::ClearTargets::Type mRequest;
+};
+
+/*----------------------------------------------------------------------------*\
+| Cluster EnergyPreference                                            | 0x009B |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * EnergyBalances                                                    | 0x0000 |
+| * CurrentEnergyBalance                                              | 0x0001 |
+| * EnergyPriorities                                                  | 0x0002 |
+| * LowPowerModeSensitivities                                         | 0x0003 |
+| * CurrentLowPowerModeSensitivity                                    | 0x0004 |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * EventList                                                         | 0xFFFA |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+\*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*\
+| Cluster PowerTopology                                               | 0x009C |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * AvailableEndpoints                                                | 0x0000 |
+| * ActiveEndpoints                                                   | 0x0001 |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * EventList                                                         | 0xFFFA |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+\*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*\
+| Cluster EnergyEvseMode                                              | 0x009D |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+| * ChangeToMode                                                      |   0x00 |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * SupportedModes                                                    | 0x0000 |
+| * CurrentMode                                                       | 0x0001 |
+| * StartUpMode                                                       | 0x0002 |
+| * OnMode                                                            | 0x0003 |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * EventList                                                         | 0xFFFA |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+\*----------------------------------------------------------------------------*/
+
+/*
+ * Command ChangeToMode
+ */
+class EnergyEvseModeChangeToMode : public ClusterCommand
+{
+public:
+    EnergyEvseModeChangeToMode(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("change-to-mode", credsIssuerConfig)
+    {
+        AddArgument("NewMode", 0, UINT8_MAX, &mRequest.newMode);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::EnergyEvseMode::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::EnergyEvseMode::Commands::ChangeToMode::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::EnergyEvseMode::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::EnergyEvseMode::Commands::ChangeToMode::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::EnergyEvseMode::Commands::ChangeToMode::Type mRequest;
+};
+
+/*----------------------------------------------------------------------------*\
+| Cluster DeviceEnergyManagementMode                                  | 0x009F |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+| * ChangeToMode                                                      |   0x00 |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * SupportedModes                                                    | 0x0000 |
+| * CurrentMode                                                       | 0x0001 |
+| * StartUpMode                                                       | 0x0002 |
+| * OnMode                                                            | 0x0003 |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * EventList                                                         | 0xFFFA |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+\*----------------------------------------------------------------------------*/
+
+/*
+ * Command ChangeToMode
+ */
+class DeviceEnergyManagementModeChangeToMode : public ClusterCommand
+{
+public:
+    DeviceEnergyManagementModeChangeToMode(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("change-to-mode", credsIssuerConfig)
+    {
+        AddArgument("NewMode", 0, UINT8_MAX, &mRequest.newMode);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DeviceEnergyManagementMode::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DeviceEnergyManagementMode::Commands::ChangeToMode::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DeviceEnergyManagementMode::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DeviceEnergyManagementMode::Commands::ChangeToMode::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::DeviceEnergyManagementMode::Commands::ChangeToMode::Type mRequest;
 };
 
 /*----------------------------------------------------------------------------*\
@@ -4991,6 +7758,8 @@ private:
 | * GetCredentialStatus                                               |   0x24 |
 | * ClearCredential                                                   |   0x26 |
 | * UnboltDoor                                                        |   0x27 |
+| * SetAliroReaderConfig                                              |   0x28 |
+| * ClearAliroReaderConfig                                            |   0x29 |
 |------------------------------------------------------------------------------|
 | Attributes:                                                         |        |
 | * LockState                                                         | 0x0000 |
@@ -5029,6 +7798,15 @@ private:
 | * SendPINOverTheAir                                                 | 0x0032 |
 | * RequirePINforRemoteOperation                                      | 0x0033 |
 | * ExpiringUserTimeout                                               | 0x0035 |
+| * AliroReaderVerificationKey                                        | 0x0080 |
+| * AliroReaderGroupIdentifier                                        | 0x0081 |
+| * AliroReaderGroupSubIdentifier                                     | 0x0082 |
+| * AliroExpeditedTransactionSupportedProtocolVersions                | 0x0083 |
+| * AliroGroupResolvingKey                                            | 0x0084 |
+| * AliroSupportedBLEUWBProtocolVersions                              | 0x0085 |
+| * AliroBLEAdvertisingVersion                                        | 0x0086 |
+| * NumberOfAliroCredentialIssuerKeysSupported                        | 0x0087 |
+| * NumberOfAliroEndpointKeysSupported                                | 0x0088 |
 | * GeneratedCommandList                                              | 0xFFF8 |
 | * AcceptedCommandList                                               | 0xFFF9 |
 | * EventList                                                         | 0xFFFA |
@@ -5058,16 +7836,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::LockDoor::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000101, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::LockDoor::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000101, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5088,16 +7873,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x00000001) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::UnlockDoor::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000101, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x00000001) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::UnlockDoor::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000101, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5120,16 +7912,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x00000003) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::UnlockWithTimeout::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000101, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x00000003) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::UnlockWithTimeout::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000101, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5157,16 +7956,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x0000000B) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::SetWeekDaySchedule::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000101, 0x0000000B, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x0000000B) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::SetWeekDaySchedule::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000101, 0x0000000B, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5189,16 +7995,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x0000000C) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::GetWeekDaySchedule::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000101, 0x0000000C, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x0000000C) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::GetWeekDaySchedule::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000101, 0x0000000C, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5221,16 +8034,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x0000000D) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::ClearWeekDaySchedule::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000101, 0x0000000D, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x0000000D) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::ClearWeekDaySchedule::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000101, 0x0000000D, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5255,16 +8075,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x0000000E) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::SetYearDaySchedule::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000101, 0x0000000E, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x0000000E) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::SetYearDaySchedule::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000101, 0x0000000E, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5287,16 +8114,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x0000000F) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::GetYearDaySchedule::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000101, 0x0000000F, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x0000000F) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::GetYearDaySchedule::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000101, 0x0000000F, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5319,16 +8153,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x00000010) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::ClearYearDaySchedule::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000101, 0x00000010, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x00000010) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::ClearYearDaySchedule::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000101, 0x00000010, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5353,16 +8194,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x00000011) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::SetHolidaySchedule::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000101, 0x00000011, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x00000011) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::SetHolidaySchedule::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000101, 0x00000011, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5384,16 +8232,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x00000012) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::GetHolidaySchedule::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000101, 0x00000012, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x00000012) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::GetHolidaySchedule::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000101, 0x00000012, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5415,16 +8270,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x00000013) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::ClearHolidaySchedule::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000101, 0x00000013, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x00000013) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::ClearHolidaySchedule::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000101, 0x00000013, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5451,16 +8313,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x0000001A) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::SetUser::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000101, 0x0000001A, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x0000001A) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::SetUser::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000101, 0x0000001A, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5481,16 +8350,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x0000001B) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::GetUser::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000101, 0x0000001B, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x0000001B) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::GetUser::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000101, 0x0000001B, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5511,16 +8387,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x0000001D) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::ClearUser::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000101, 0x0000001D, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x0000001D) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::ClearUser::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000101, 0x0000001D, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5547,16 +8430,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x00000022) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::SetCredential::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000101, 0x00000022, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x00000022) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::SetCredential::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000101, 0x00000022, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5579,16 +8469,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x00000024) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::GetCredentialStatus::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000101, 0x00000024, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x00000024) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::GetCredentialStatus::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000101, 0x00000024, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5611,16 +8508,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x00000026) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::ClearCredential::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000101, 0x00000026, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x00000026) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::ClearCredential::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000101, 0x00000026, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5643,20 +8547,105 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x00000027) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::UnboltDoor::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000101, 0x00000027, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000101) command (0x00000027) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::UnboltDoor::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000101, 0x00000027, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
     chip::app::Clusters::DoorLock::Commands::UnboltDoor::Type mRequest;
+};
+
+/*
+ * Command SetAliroReaderConfig
+ */
+class DoorLockSetAliroReaderConfig : public ClusterCommand
+{
+public:
+    DoorLockSetAliroReaderConfig(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("set-aliro-reader-config", credsIssuerConfig)
+    {
+        AddArgument("SigningKey", &mRequest.signingKey);
+        AddArgument("VerificationKey", &mRequest.verificationKey);
+        AddArgument("GroupIdentifier", &mRequest.groupIdentifier);
+        AddArgument("GroupResolvingKey", &mRequest.groupResolvingKey);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::SetAliroReaderConfig::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::SetAliroReaderConfig::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::DoorLock::Commands::SetAliroReaderConfig::Type mRequest;
+};
+
+/*
+ * Command ClearAliroReaderConfig
+ */
+class DoorLockClearAliroReaderConfig : public ClusterCommand
+{
+public:
+    DoorLockClearAliroReaderConfig(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("clear-aliro-reader-config", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::ClearAliroReaderConfig::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::DoorLock::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::DoorLock::Commands::ClearAliroReaderConfig::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::DoorLock::Commands::ClearAliroReaderConfig::Type mRequest;
 };
 
 /*----------------------------------------------------------------------------*\
@@ -5717,16 +8706,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000102) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WindowCovering::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::WindowCovering::Commands::UpOrOpen::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000102, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000102) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WindowCovering::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::WindowCovering::Commands::UpOrOpen::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000102, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5746,16 +8742,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000102) command (0x00000001) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WindowCovering::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::WindowCovering::Commands::DownOrClose::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000102, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000102) command (0x00000001) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WindowCovering::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::WindowCovering::Commands::DownOrClose::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000102, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5775,16 +8778,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000102) command (0x00000002) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WindowCovering::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::WindowCovering::Commands::StopMotion::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000102, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000102) command (0x00000002) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WindowCovering::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::WindowCovering::Commands::StopMotion::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000102, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5806,16 +8816,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000102) command (0x00000004) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WindowCovering::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::WindowCovering::Commands::GoToLiftValue::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000102, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000102) command (0x00000004) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WindowCovering::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::WindowCovering::Commands::GoToLiftValue::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000102, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5837,16 +8854,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000102) command (0x00000005) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WindowCovering::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::WindowCovering::Commands::GoToLiftPercentage::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000102, 0x00000005, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000102) command (0x00000005) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WindowCovering::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::WindowCovering::Commands::GoToLiftPercentage::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000102, 0x00000005, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5868,16 +8892,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000102) command (0x00000007) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WindowCovering::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::WindowCovering::Commands::GoToTiltValue::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000102, 0x00000007, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000102) command (0x00000007) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WindowCovering::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::WindowCovering::Commands::GoToTiltValue::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000102, 0x00000007, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5899,16 +8930,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000102) command (0x00000008) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WindowCovering::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::WindowCovering::Commands::GoToTiltPercentage::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000102, 0x00000008, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000102) command (0x00000008) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WindowCovering::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::WindowCovering::Commands::GoToTiltPercentage::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000102, 0x00000008, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5958,16 +8996,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000103) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::BarrierControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::BarrierControl::Commands::BarrierControlGoToPercent::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000103, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000103) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::BarrierControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::BarrierControl::Commands::BarrierControlGoToPercent::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000103, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -5988,16 +9033,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000103) command (0x00000001) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::BarrierControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::BarrierControl::Commands::BarrierControlStop::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000103, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000103) command (0x00000001) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::BarrierControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::BarrierControl::Commands::BarrierControlStop::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000103, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -6068,6 +9120,13 @@ private:
 | * SetWeeklySchedule                                                 |   0x01 |
 | * GetWeeklySchedule                                                 |   0x02 |
 | * ClearWeeklySchedule                                               |   0x03 |
+| * SetActiveScheduleRequest                                          |   0x05 |
+| * SetActivePresetRequest                                            |   0x06 |
+| * StartPresetsSchedulesEditRequest                                  |   0x07 |
+| * CancelPresetsSchedulesEditRequest                                 |   0x08 |
+| * CommitPresetsSchedulesRequest                                     |   0x09 |
+| * CancelSetActivePresetRequest                                      |   0x0A |
+| * SetTemperatureSetpointHoldPolicy                                  |   0x0B |
 |------------------------------------------------------------------------------|
 | Attributes:                                                         |        |
 | * LocalTemperature                                                  | 0x0000 |
@@ -6119,6 +9178,20 @@ private:
 | * ACLouverPosition                                                  | 0x0045 |
 | * ACCoilTemperature                                                 | 0x0046 |
 | * ACCapacityformat                                                  | 0x0047 |
+| * PresetTypes                                                       | 0x0048 |
+| * ScheduleTypes                                                     | 0x0049 |
+| * NumberOfPresets                                                   | 0x004A |
+| * NumberOfSchedules                                                 | 0x004B |
+| * NumberOfScheduleTransitions                                       | 0x004C |
+| * NumberOfScheduleTransitionPerDay                                  | 0x004D |
+| * ActivePresetHandle                                                | 0x004E |
+| * ActiveScheduleHandle                                              | 0x004F |
+| * Presets                                                           | 0x0050 |
+| * Schedules                                                         | 0x0051 |
+| * PresetsSchedulesEditable                                          | 0x0052 |
+| * TemperatureSetpointHoldPolicy                                     | 0x0053 |
+| * SetpointHoldExpiryTimestamp                                       | 0x0054 |
+| * QueuedPreset                                                      | 0x0055 |
 | * GeneratedCommandList                                              | 0xFFF8 |
 | * AcceptedCommandList                                               | 0xFFF9 |
 | * EventList                                                         | 0xFFFA |
@@ -6145,16 +9218,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000201) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::SetpointRaiseLower::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000201, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000201) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::SetpointRaiseLower::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000201, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -6179,22 +9259,29 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000201) command (0x00000001) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::SetWeeklySchedule::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000201, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000201) command (0x00000001) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::SetWeeklySchedule::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000201, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
     chip::app::Clusters::Thermostat::Commands::SetWeeklySchedule::Type mRequest;
     TypedComplexArgument<
-        chip::app::DataModel::List<const chip::app::Clusters::Thermostat::Structs::ThermostatScheduleTransition::Type>>
+        chip::app::DataModel::List<const chip::app::Clusters::Thermostat::Structs::WeeklyScheduleTransitionStruct::Type>>
         mComplex_Transitions;
 };
 
@@ -6214,16 +9301,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000201) command (0x00000002) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::GetWeeklySchedule::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000201, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000201) command (0x00000002) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::GetWeeklySchedule::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000201, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -6244,20 +9338,291 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000201) command (0x00000003) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::ClearWeeklySchedule::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000201, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000201) command (0x00000003) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::ClearWeeklySchedule::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000201, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
     chip::app::Clusters::Thermostat::Commands::ClearWeeklySchedule::Type mRequest;
+};
+
+/*
+ * Command SetActiveScheduleRequest
+ */
+class ThermostatSetActiveScheduleRequest : public ClusterCommand
+{
+public:
+    ThermostatSetActiveScheduleRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("set-active-schedule-request", credsIssuerConfig)
+    {
+        AddArgument("ScheduleHandle", &mRequest.scheduleHandle);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::SetActiveScheduleRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::SetActiveScheduleRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::Thermostat::Commands::SetActiveScheduleRequest::Type mRequest;
+};
+
+/*
+ * Command SetActivePresetRequest
+ */
+class ThermostatSetActivePresetRequest : public ClusterCommand
+{
+public:
+    ThermostatSetActivePresetRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("set-active-preset-request", credsIssuerConfig)
+    {
+        AddArgument("PresetHandle", &mRequest.presetHandle);
+        AddArgument("DelayMinutes", 0, UINT16_MAX, &mRequest.delayMinutes);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::SetActivePresetRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::SetActivePresetRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::Thermostat::Commands::SetActivePresetRequest::Type mRequest;
+};
+
+/*
+ * Command StartPresetsSchedulesEditRequest
+ */
+class ThermostatStartPresetsSchedulesEditRequest : public ClusterCommand
+{
+public:
+    ThermostatStartPresetsSchedulesEditRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("start-presets-schedules-edit-request", credsIssuerConfig)
+    {
+        AddArgument("TimeoutSeconds", 0, UINT16_MAX, &mRequest.timeoutSeconds);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::StartPresetsSchedulesEditRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::StartPresetsSchedulesEditRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::Thermostat::Commands::StartPresetsSchedulesEditRequest::Type mRequest;
+};
+
+/*
+ * Command CancelPresetsSchedulesEditRequest
+ */
+class ThermostatCancelPresetsSchedulesEditRequest : public ClusterCommand
+{
+public:
+    ThermostatCancelPresetsSchedulesEditRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("cancel-presets-schedules-edit-request", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::CancelPresetsSchedulesEditRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::CancelPresetsSchedulesEditRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::Thermostat::Commands::CancelPresetsSchedulesEditRequest::Type mRequest;
+};
+
+/*
+ * Command CommitPresetsSchedulesRequest
+ */
+class ThermostatCommitPresetsSchedulesRequest : public ClusterCommand
+{
+public:
+    ThermostatCommitPresetsSchedulesRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("commit-presets-schedules-request", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::CommitPresetsSchedulesRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::CommitPresetsSchedulesRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::Thermostat::Commands::CommitPresetsSchedulesRequest::Type mRequest;
+};
+
+/*
+ * Command CancelSetActivePresetRequest
+ */
+class ThermostatCancelSetActivePresetRequest : public ClusterCommand
+{
+public:
+    ThermostatCancelSetActivePresetRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("cancel-set-active-preset-request", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::CancelSetActivePresetRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::CancelSetActivePresetRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::Thermostat::Commands::CancelSetActivePresetRequest::Type mRequest;
+};
+
+/*
+ * Command SetTemperatureSetpointHoldPolicy
+ */
+class ThermostatSetTemperatureSetpointHoldPolicy : public ClusterCommand
+{
+public:
+    ThermostatSetTemperatureSetpointHoldPolicy(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("set-temperature-setpoint-hold-policy", credsIssuerConfig)
+    {
+        AddArgument("TemperatureSetpointHoldPolicy", 0, UINT8_MAX, &mRequest.temperatureSetpointHoldPolicy);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::SetTemperatureSetpointHoldPolicy::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::SetTemperatureSetpointHoldPolicy::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::Thermostat::Commands::SetTemperatureSetpointHoldPolicy::Type mRequest;
 };
 
 /*----------------------------------------------------------------------------*\
@@ -6305,16 +9670,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000202) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::FanControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::FanControl::Commands::Step::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000202, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000202) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::FanControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::FanControl::Commands::Step::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000202, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -6445,16 +9817,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::MoveToHue::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000300, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::MoveToHue::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000300, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -6478,16 +9857,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000001) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::MoveHue::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000300, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000001) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::MoveHue::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000300, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -6512,16 +9898,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000002) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::StepHue::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000300, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000002) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::StepHue::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000300, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -6546,16 +9939,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000003) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::MoveToSaturation::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000300, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000003) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::MoveToSaturation::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000300, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -6579,16 +9979,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000004) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::MoveSaturation::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000300, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000004) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::MoveSaturation::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000300, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -6613,16 +10020,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000005) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::StepSaturation::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000300, 0x00000005, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000005) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::StepSaturation::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000300, 0x00000005, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -6648,16 +10062,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000006) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::MoveToHueAndSaturation::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000300, 0x00000006, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000006) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::MoveToHueAndSaturation::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000300, 0x00000006, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -6682,16 +10103,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000007) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::MoveToColor::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000300, 0x00000007, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000007) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::MoveToColor::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000300, 0x00000007, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -6715,16 +10143,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000008) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::MoveColor::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000300, 0x00000008, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000008) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::MoveColor::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000300, 0x00000008, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -6749,16 +10184,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000009) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::StepColor::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000300, 0x00000009, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000009) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::StepColor::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000300, 0x00000009, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -6783,16 +10225,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x0000000A) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::MoveToColorTemperature::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000300, 0x0000000A, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x0000000A) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::MoveToColorTemperature::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000300, 0x0000000A, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -6818,16 +10267,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000040) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::EnhancedMoveToHue::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000300, 0x00000040, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000040) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::EnhancedMoveToHue::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000300, 0x00000040, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -6852,16 +10308,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000041) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::EnhancedMoveHue::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000300, 0x00000041, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000041) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::EnhancedMoveHue::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000300, 0x00000041, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -6887,16 +10350,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000042) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::EnhancedStepHue::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000300, 0x00000042, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000042) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::EnhancedStepHue::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000300, 0x00000042, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -6922,16 +10392,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000043) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::EnhancedMoveToHueAndSaturation::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000300, 0x00000043, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000043) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::EnhancedMoveToHueAndSaturation::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000300, 0x00000043, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -6958,16 +10435,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000044) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::ColorLoopSet::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000300, 0x00000044, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000044) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::ColorLoopSet::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000300, 0x00000044, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -6989,16 +10473,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000047) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::StopMoveStep::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000300, 0x00000047, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x00000047) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::StopMoveStep::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000300, 0x00000047, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -7025,16 +10516,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x0000004B) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::MoveColorTemperature::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000300, 0x0000004B, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x0000004B) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::MoveColorTemperature::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000300, 0x0000004B, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -7062,16 +10560,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x0000004C) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::StepColorTemperature::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000300, 0x0000004C, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000300) command (0x0000004C) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ColorControl::Commands::StepColorTemperature::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000300, 0x0000004C, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -7519,6 +11024,7 @@ private:
 |------------------------------------------------------------------------------|
 | Attributes:                                                         |        |
 | * MACAddress                                                        | 0x0000 |
+| * LinkLocalAddress                                                  | 0x0001 |
 | * GeneratedCommandList                                              | 0xFFF8 |
 | * AcceptedCommandList                                               | 0xFFF9 |
 | * EventList                                                         | 0xFFFA |
@@ -7536,6 +11042,9 @@ private:
 | * ChangeChannel                                                     |   0x00 |
 | * ChangeChannelByNumber                                             |   0x02 |
 | * SkipChannel                                                       |   0x03 |
+| * GetProgramGuide                                                   |   0x04 |
+| * RecordProgram                                                     |   0x06 |
+| * CancelRecordProgram                                               |   0x07 |
 |------------------------------------------------------------------------------|
 | Attributes:                                                         |        |
 | * ChannelList                                                       | 0x0000 |
@@ -7565,16 +11074,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000504) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Channel::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Channel::Commands::ChangeChannel::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000504, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000504) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Channel::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Channel::Commands::ChangeChannel::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000504, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -7597,16 +11113,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000504) command (0x00000002) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Channel::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Channel::Commands::ChangeChannelByNumber::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000504, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000504) command (0x00000002) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Channel::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Channel::Commands::ChangeChannelByNumber::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000504, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -7627,20 +11150,165 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000504) command (0x00000003) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Channel::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Channel::Commands::SkipChannel::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000504, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000504) command (0x00000003) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Channel::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Channel::Commands::SkipChannel::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000504, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
     chip::app::Clusters::Channel::Commands::SkipChannel::Type mRequest;
+};
+
+/*
+ * Command GetProgramGuide
+ */
+class ChannelGetProgramGuide : public ClusterCommand
+{
+public:
+    ChannelGetProgramGuide(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("get-program-guide", credsIssuerConfig), mComplex_ChannelList(&mRequest.channelList),
+        mComplex_PageToken(&mRequest.pageToken), mComplex_ExternalIDList(&mRequest.externalIDList)
+    {
+        AddArgument("StartTime", 0, UINT32_MAX, &mRequest.startTime);
+        AddArgument("EndTime", 0, UINT32_MAX, &mRequest.endTime);
+        AddArgument("ChannelList", &mComplex_ChannelList, "", Argument::kOptional);
+        AddArgument("PageToken", &mComplex_PageToken, "", Argument::kOptional);
+        AddArgument("RecordingFlag", 0, UINT32_MAX, &mRequest.recordingFlag);
+        AddArgument("ExternalIDList", &mComplex_ExternalIDList, "", Argument::kOptional);
+        AddArgument("Data", &mRequest.data);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Channel::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Channel::Commands::GetProgramGuide::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Channel::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Channel::Commands::GetProgramGuide::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::Channel::Commands::GetProgramGuide::Type mRequest;
+    TypedComplexArgument<
+        chip::Optional<chip::app::DataModel::List<const chip::app::Clusters::Channel::Structs::ChannelInfoStruct::Type>>>
+        mComplex_ChannelList;
+    TypedComplexArgument<chip::Optional<chip::app::Clusters::Channel::Structs::PageTokenStruct::Type>> mComplex_PageToken;
+    TypedComplexArgument<
+        chip::Optional<chip::app::DataModel::List<const chip::app::Clusters::Channel::Structs::AdditionalInfoStruct::Type>>>
+        mComplex_ExternalIDList;
+};
+
+/*
+ * Command RecordProgram
+ */
+class ChannelRecordProgram : public ClusterCommand
+{
+public:
+    ChannelRecordProgram(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("record-program", credsIssuerConfig), mComplex_ExternalIDList(&mRequest.externalIDList)
+    {
+        AddArgument("ProgramIdentifier", &mRequest.programIdentifier);
+        AddArgument("ShouldRecordSeries", 0, 1, &mRequest.shouldRecordSeries);
+        AddArgument("ExternalIDList", &mComplex_ExternalIDList);
+        AddArgument("Data", &mRequest.data);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Channel::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Channel::Commands::RecordProgram::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Channel::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Channel::Commands::RecordProgram::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::Channel::Commands::RecordProgram::Type mRequest;
+    TypedComplexArgument<chip::app::DataModel::List<const chip::app::Clusters::Channel::Structs::AdditionalInfoStruct::Type>>
+        mComplex_ExternalIDList;
+};
+
+/*
+ * Command CancelRecordProgram
+ */
+class ChannelCancelRecordProgram : public ClusterCommand
+{
+public:
+    ChannelCancelRecordProgram(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("cancel-record-program", credsIssuerConfig), mComplex_ExternalIDList(&mRequest.externalIDList)
+    {
+        AddArgument("ProgramIdentifier", &mRequest.programIdentifier);
+        AddArgument("ShouldRecordSeries", 0, 1, &mRequest.shouldRecordSeries);
+        AddArgument("ExternalIDList", &mComplex_ExternalIDList);
+        AddArgument("Data", &mRequest.data);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Channel::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Channel::Commands::CancelRecordProgram::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Channel::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Channel::Commands::CancelRecordProgram::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::Channel::Commands::CancelRecordProgram::Type mRequest;
+    TypedComplexArgument<chip::app::DataModel::List<const chip::app::Clusters::Channel::Structs::AdditionalInfoStruct::Type>>
+        mComplex_ExternalIDList;
 };
 
 /*----------------------------------------------------------------------------*\
@@ -7660,6 +11328,7 @@ private:
 | * ClusterRevision                                                   | 0xFFFD |
 |------------------------------------------------------------------------------|
 | Events:                                                             |        |
+| * TargetUpdated                                                     | 0x0000 |
 \*----------------------------------------------------------------------------*/
 
 /*
@@ -7678,16 +11347,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000505) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::TargetNavigator::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::TargetNavigator::Commands::NavigateTarget::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000505, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000505) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::TargetNavigator::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::TargetNavigator::Commands::NavigateTarget::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000505, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -7709,6 +11385,9 @@ private:
 | * SkipForward                                                       |   0x08 |
 | * SkipBackward                                                      |   0x09 |
 | * Seek                                                              |   0x0B |
+| * ActivateAudioTrack                                                |   0x0C |
+| * ActivateTextTrack                                                 |   0x0D |
+| * DeactivateTextTrack                                               |   0x0E |
 |------------------------------------------------------------------------------|
 | Attributes:                                                         |        |
 | * CurrentState                                                      | 0x0000 |
@@ -7718,6 +11397,10 @@ private:
 | * PlaybackSpeed                                                     | 0x0004 |
 | * SeekRangeEnd                                                      | 0x0005 |
 | * SeekRangeStart                                                    | 0x0006 |
+| * ActiveAudioTrack                                                  | 0x0007 |
+| * AvailableAudioTracks                                              | 0x0008 |
+| * ActiveTextTrack                                                   | 0x0009 |
+| * AvailableTextTracks                                               | 0x000A |
 | * GeneratedCommandList                                              | 0xFFF8 |
 | * AcceptedCommandList                                               | 0xFFF9 |
 | * EventList                                                         | 0xFFFA |
@@ -7726,6 +11409,7 @@ private:
 | * ClusterRevision                                                   | 0xFFFD |
 |------------------------------------------------------------------------------|
 | Events:                                                             |        |
+| * StateChanged                                                      | 0x0000 |
 \*----------------------------------------------------------------------------*/
 
 /*
@@ -7741,16 +11425,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000506) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::Play::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000506, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000506) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::Play::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000506, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -7770,16 +11461,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000506) command (0x00000001) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::Pause::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000506, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000506) command (0x00000001) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::Pause::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000506, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -7799,16 +11497,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000506) command (0x00000002) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::Stop::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000506, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000506) command (0x00000002) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::Stop::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000506, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -7828,16 +11533,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000506) command (0x00000003) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::StartOver::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000506, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000506) command (0x00000003) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::StartOver::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000506, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -7857,16 +11569,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000506) command (0x00000004) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::Previous::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000506, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000506) command (0x00000004) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::Previous::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000506, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -7886,16 +11605,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000506) command (0x00000005) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::Next::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000506, 0x00000005, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000506) command (0x00000005) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::Next::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000506, 0x00000005, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -7910,21 +11636,29 @@ class MediaPlaybackRewind : public ClusterCommand
 public:
     MediaPlaybackRewind(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("rewind", credsIssuerConfig)
     {
+        AddArgument("AudioAdvanceUnmuted", 0, 1, &mRequest.audioAdvanceUnmuted);
         ClusterCommand::AddArguments();
     }
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000506) command (0x00000006) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::Rewind::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000506, 0x00000006, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000506) command (0x00000006) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::Rewind::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000506, 0x00000006, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -7939,21 +11673,29 @@ class MediaPlaybackFastForward : public ClusterCommand
 public:
     MediaPlaybackFastForward(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("fast-forward", credsIssuerConfig)
     {
+        AddArgument("AudioAdvanceUnmuted", 0, 1, &mRequest.audioAdvanceUnmuted);
         ClusterCommand::AddArguments();
     }
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000506) command (0x00000007) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::FastForward::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000506, 0x00000007, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000506) command (0x00000007) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::FastForward::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000506, 0x00000007, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -7974,16 +11716,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000506) command (0x00000008) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::SkipForward::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000506, 0x00000008, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000506) command (0x00000008) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::SkipForward::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000506, 0x00000008, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -8004,16 +11753,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000506) command (0x00000009) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::SkipBackward::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000506, 0x00000009, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000506) command (0x00000009) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::SkipBackward::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000506, 0x00000009, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -8034,20 +11790,141 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000506) command (0x0000000B) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::Seek::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000506, 0x0000000B, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000506) command (0x0000000B) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::Seek::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000506, 0x0000000B, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
     chip::app::Clusters::MediaPlayback::Commands::Seek::Type mRequest;
+};
+
+/*
+ * Command ActivateAudioTrack
+ */
+class MediaPlaybackActivateAudioTrack : public ClusterCommand
+{
+public:
+    MediaPlaybackActivateAudioTrack(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("activate-audio-track", credsIssuerConfig)
+    {
+        AddArgument("TrackID", &mRequest.trackID);
+        AddArgument("AudioOutputIndex", 0, UINT8_MAX, &mRequest.audioOutputIndex);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::ActivateAudioTrack::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::ActivateAudioTrack::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::MediaPlayback::Commands::ActivateAudioTrack::Type mRequest;
+};
+
+/*
+ * Command ActivateTextTrack
+ */
+class MediaPlaybackActivateTextTrack : public ClusterCommand
+{
+public:
+    MediaPlaybackActivateTextTrack(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("activate-text-track", credsIssuerConfig)
+    {
+        AddArgument("TrackID", &mRequest.trackID);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::ActivateTextTrack::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::ActivateTextTrack::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::MediaPlayback::Commands::ActivateTextTrack::Type mRequest;
+};
+
+/*
+ * Command DeactivateTextTrack
+ */
+class MediaPlaybackDeactivateTextTrack : public ClusterCommand
+{
+public:
+    MediaPlaybackDeactivateTextTrack(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("deactivate-text-track", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::DeactivateTextTrack::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaPlayback::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaPlayback::Commands::DeactivateTextTrack::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::MediaPlayback::Commands::DeactivateTextTrack::Type mRequest;
 };
 
 /*----------------------------------------------------------------------------*\
@@ -8086,16 +11963,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000507) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaInput::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaInput::Commands::SelectInput::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000507, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000507) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaInput::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaInput::Commands::SelectInput::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000507, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -8115,16 +11999,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000507) command (0x00000001) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaInput::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaInput::Commands::ShowInputStatus::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000507, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000507) command (0x00000001) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaInput::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaInput::Commands::ShowInputStatus::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000507, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -8144,16 +12035,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000507) command (0x00000002) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaInput::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaInput::Commands::HideInputStatus::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000507, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000507) command (0x00000002) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaInput::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaInput::Commands::HideInputStatus::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000507, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -8175,16 +12073,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000507) command (0x00000003) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaInput::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaInput::Commands::RenameInput::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000507, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000507) command (0x00000003) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::MediaInput::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::MediaInput::Commands::RenameInput::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000507, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -8221,16 +12126,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000508) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::LowPower::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::LowPower::Commands::Sleep::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000508, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000508) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::LowPower::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::LowPower::Commands::Sleep::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000508, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -8268,16 +12180,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000509) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::KeypadInput::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::KeypadInput::Commands::SendKey::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000509, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000509) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::KeypadInput::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::KeypadInput::Commands::SendKey::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000509, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -8311,31 +12230,43 @@ class ContentLauncherLaunchContent : public ClusterCommand
 {
 public:
     ContentLauncherLaunchContent(CredentialIssuerCommands * credsIssuerConfig) :
-        ClusterCommand("launch-content", credsIssuerConfig), mComplex_Search(&mRequest.search)
+        ClusterCommand("launch-content", credsIssuerConfig), mComplex_Search(&mRequest.search),
+        mComplex_PlaybackPreferences(&mRequest.playbackPreferences)
     {
         AddArgument("Search", &mComplex_Search);
         AddArgument("AutoPlay", 0, 1, &mRequest.autoPlay);
         AddArgument("Data", &mRequest.data);
+        AddArgument("PlaybackPreferences", &mComplex_PlaybackPreferences, "", Argument::kOptional);
+        AddArgument("UseCurrentContext", 0, 1, &mRequest.useCurrentContext);
         ClusterCommand::AddArguments();
     }
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000050A) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentLauncher::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentLauncher::Commands::LaunchContent::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000050A, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000050A) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentLauncher::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentLauncher::Commands::LaunchContent::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000050A, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
     chip::app::Clusters::ContentLauncher::Commands::LaunchContent::Type mRequest;
     TypedComplexArgument<chip::app::Clusters::ContentLauncher::Structs::ContentSearchStruct::Type> mComplex_Search;
+    TypedComplexArgument<chip::Optional<chip::app::Clusters::ContentLauncher::Structs::PlaybackPreferencesStruct::Type>>
+        mComplex_PlaybackPreferences;
 };
 
 /*
@@ -8349,22 +12280,29 @@ public:
     {
         AddArgument("ContentURL", &mRequest.contentURL);
         AddArgument("DisplayString", &mRequest.displayString);
-        AddArgument("BrandingInformation", &mComplex_BrandingInformation);
+        AddArgument("BrandingInformation", &mComplex_BrandingInformation, "", Argument::kOptional);
         ClusterCommand::AddArguments();
     }
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000050A) command (0x00000001) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentLauncher::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentLauncher::Commands::LaunchURL::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000050A, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000050A) command (0x00000001) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentLauncher::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentLauncher::Commands::LaunchURL::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000050A, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -8407,16 +12345,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000050B) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::AudioOutput::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::AudioOutput::Commands::SelectOutput::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000050B, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000050B) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::AudioOutput::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::AudioOutput::Commands::SelectOutput::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000050B, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -8438,16 +12383,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000050B) command (0x00000001) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::AudioOutput::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::AudioOutput::Commands::RenameOutput::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000050B, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000050B) command (0x00000001) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::AudioOutput::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::AudioOutput::Commands::RenameOutput::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000050B, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -8484,23 +12436,30 @@ public:
     ApplicationLauncherLaunchApp(CredentialIssuerCommands * credsIssuerConfig) :
         ClusterCommand("launch-app", credsIssuerConfig), mComplex_Application(&mRequest.application)
     {
-        AddArgument("Application", &mComplex_Application);
+        AddArgument("Application", &mComplex_Application, "", Argument::kOptional);
         AddArgument("Data", &mRequest.data);
         ClusterCommand::AddArguments();
     }
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000050C) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ApplicationLauncher::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ApplicationLauncher::Commands::LaunchApp::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000050C, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000050C) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ApplicationLauncher::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ApplicationLauncher::Commands::LaunchApp::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000050C, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -8518,22 +12477,29 @@ public:
     ApplicationLauncherStopApp(CredentialIssuerCommands * credsIssuerConfig) :
         ClusterCommand("stop-app", credsIssuerConfig), mComplex_Application(&mRequest.application)
     {
-        AddArgument("Application", &mComplex_Application);
+        AddArgument("Application", &mComplex_Application, "", Argument::kOptional);
         ClusterCommand::AddArguments();
     }
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000050C) command (0x00000001) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ApplicationLauncher::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ApplicationLauncher::Commands::StopApp::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000050C, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000050C) command (0x00000001) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ApplicationLauncher::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ApplicationLauncher::Commands::StopApp::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000050C, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -8551,22 +12517,29 @@ public:
     ApplicationLauncherHideApp(CredentialIssuerCommands * credsIssuerConfig) :
         ClusterCommand("hide-app", credsIssuerConfig), mComplex_Application(&mRequest.application)
     {
-        AddArgument("Application", &mComplex_Application);
+        AddArgument("Application", &mComplex_Application, "", Argument::kOptional);
         ClusterCommand::AddArguments();
     }
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000050C) command (0x00000002) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ApplicationLauncher::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ApplicationLauncher::Commands::HideApp::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000050C, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000050C) command (0x00000002) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ApplicationLauncher::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ApplicationLauncher::Commands::HideApp::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000050C, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -8616,6 +12589,7 @@ private:
 | * ClusterRevision                                                   | 0xFFFD |
 |------------------------------------------------------------------------------|
 | Events:                                                             |        |
+| * LoggedOut                                                         | 0x0000 |
 \*----------------------------------------------------------------------------*/
 
 /*
@@ -8632,16 +12606,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000050E) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::AccountLogin::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::AccountLogin::Commands::GetSetupPIN::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000050E, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000050E) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::AccountLogin::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::AccountLogin::Commands::GetSetupPIN::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000050E, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -8658,21 +12639,29 @@ public:
     {
         AddArgument("TempAccountIdentifier", &mRequest.tempAccountIdentifier);
         AddArgument("SetupPIN", &mRequest.setupPIN);
+        AddArgument("Node", 0, UINT64_MAX, &mRequest.node);
         ClusterCommand::AddArguments();
     }
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000050E) command (0x00000002) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::AccountLogin::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::AccountLogin::Commands::Login::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000050E, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000050E) command (0x00000002) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::AccountLogin::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::AccountLogin::Commands::Login::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000050E, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -8687,25 +12676,496 @@ class AccountLoginLogout : public ClusterCommand
 public:
     AccountLoginLogout(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("logout", credsIssuerConfig)
     {
+        AddArgument("Node", 0, UINT64_MAX, &mRequest.node);
         ClusterCommand::AddArguments();
     }
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000050E) command (0x00000003) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::AccountLogin::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::AccountLogin::Commands::Logout::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x0000050E, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x0000050E) command (0x00000003) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::AccountLogin::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::AccountLogin::Commands::Logout::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x0000050E, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
     chip::app::Clusters::AccountLogin::Commands::Logout::Type mRequest;
+};
+
+/*----------------------------------------------------------------------------*\
+| Cluster ContentControl                                              | 0x050F |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+| * UpdatePIN                                                         |   0x00 |
+| * ResetPIN                                                          |   0x01 |
+| * Enable                                                            |   0x03 |
+| * Disable                                                           |   0x04 |
+| * AddBonusTime                                                      |   0x05 |
+| * SetScreenDailyTime                                                |   0x06 |
+| * BlockUnratedContent                                               |   0x07 |
+| * UnblockUnratedContent                                             |   0x08 |
+| * SetOnDemandRatingThreshold                                        |   0x09 |
+| * SetScheduledContentRatingThreshold                                |   0x0A |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * Enabled                                                           | 0x0000 |
+| * OnDemandRatings                                                   | 0x0001 |
+| * OnDemandRatingThreshold                                           | 0x0002 |
+| * ScheduledContentRatings                                           | 0x0003 |
+| * ScheduledContentRatingThreshold                                   | 0x0004 |
+| * ScreenDailyTime                                                   | 0x0005 |
+| * RemainingScreenTime                                               | 0x0006 |
+| * BlockUnrated                                                      | 0x0007 |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * EventList                                                         | 0xFFFA |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+| * RemainingScreenTimeExpired                                        | 0x0000 |
+\*----------------------------------------------------------------------------*/
+
+/*
+ * Command UpdatePIN
+ */
+class ContentControlUpdatePIN : public ClusterCommand
+{
+public:
+    ContentControlUpdatePIN(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("update-pin", credsIssuerConfig)
+    {
+        AddArgument("OldPIN", &mRequest.oldPIN);
+        AddArgument("NewPIN", &mRequest.newPIN);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::UpdatePIN::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::UpdatePIN::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::ContentControl::Commands::UpdatePIN::Type mRequest;
+};
+
+/*
+ * Command ResetPIN
+ */
+class ContentControlResetPIN : public ClusterCommand
+{
+public:
+    ContentControlResetPIN(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("reset-pin", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::ResetPIN::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::ResetPIN::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::ContentControl::Commands::ResetPIN::Type mRequest;
+};
+
+/*
+ * Command Enable
+ */
+class ContentControlEnable : public ClusterCommand
+{
+public:
+    ContentControlEnable(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("enable", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::Enable::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::Enable::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::ContentControl::Commands::Enable::Type mRequest;
+};
+
+/*
+ * Command Disable
+ */
+class ContentControlDisable : public ClusterCommand
+{
+public:
+    ContentControlDisable(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("disable", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::Disable::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::Disable::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::ContentControl::Commands::Disable::Type mRequest;
+};
+
+/*
+ * Command AddBonusTime
+ */
+class ContentControlAddBonusTime : public ClusterCommand
+{
+public:
+    ContentControlAddBonusTime(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("add-bonus-time", credsIssuerConfig)
+    {
+        AddArgument("PINCode", &mRequest.PINCode);
+        AddArgument("BonusTime", 0, UINT32_MAX, &mRequest.bonusTime);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::AddBonusTime::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::AddBonusTime::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::ContentControl::Commands::AddBonusTime::Type mRequest;
+};
+
+/*
+ * Command SetScreenDailyTime
+ */
+class ContentControlSetScreenDailyTime : public ClusterCommand
+{
+public:
+    ContentControlSetScreenDailyTime(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("set-screen-daily-time", credsIssuerConfig)
+    {
+        AddArgument("ScreenTime", 0, UINT32_MAX, &mRequest.screenTime);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::SetScreenDailyTime::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::SetScreenDailyTime::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::ContentControl::Commands::SetScreenDailyTime::Type mRequest;
+};
+
+/*
+ * Command BlockUnratedContent
+ */
+class ContentControlBlockUnratedContent : public ClusterCommand
+{
+public:
+    ContentControlBlockUnratedContent(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("block-unrated-content", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::BlockUnratedContent::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::BlockUnratedContent::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::ContentControl::Commands::BlockUnratedContent::Type mRequest;
+};
+
+/*
+ * Command UnblockUnratedContent
+ */
+class ContentControlUnblockUnratedContent : public ClusterCommand
+{
+public:
+    ContentControlUnblockUnratedContent(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("unblock-unrated-content", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::UnblockUnratedContent::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::UnblockUnratedContent::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::ContentControl::Commands::UnblockUnratedContent::Type mRequest;
+};
+
+/*
+ * Command SetOnDemandRatingThreshold
+ */
+class ContentControlSetOnDemandRatingThreshold : public ClusterCommand
+{
+public:
+    ContentControlSetOnDemandRatingThreshold(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("set-on-demand-rating-threshold", credsIssuerConfig)
+    {
+        AddArgument("Rating", &mRequest.rating);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::SetOnDemandRatingThreshold::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::SetOnDemandRatingThreshold::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::ContentControl::Commands::SetOnDemandRatingThreshold::Type mRequest;
+};
+
+/*
+ * Command SetScheduledContentRatingThreshold
+ */
+class ContentControlSetScheduledContentRatingThreshold : public ClusterCommand
+{
+public:
+    ContentControlSetScheduledContentRatingThreshold(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("set-scheduled-content-rating-threshold", credsIssuerConfig)
+    {
+        AddArgument("Rating", &mRequest.rating);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::SetScheduledContentRatingThreshold::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::SetScheduledContentRatingThreshold::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::ContentControl::Commands::SetScheduledContentRatingThreshold::Type mRequest;
+};
+
+/*----------------------------------------------------------------------------*\
+| Cluster ContentAppObserver                                          | 0x0510 |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+| * ContentAppMessage                                                 |   0x00 |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * EventList                                                         | 0xFFFA |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+\*----------------------------------------------------------------------------*/
+
+/*
+ * Command ContentAppMessage
+ */
+class ContentAppObserverContentAppMessage : public ClusterCommand
+{
+public:
+    ContentAppObserverContentAppMessage(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("content-app-message", credsIssuerConfig)
+    {
+        AddArgument("Data", &mRequest.data);
+        AddArgument("EncodingHint", &mRequest.encodingHint);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentAppObserver::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentAppObserver::Commands::ContentAppMessage::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentAppObserver::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentAppObserver::Commands::ContentAppMessage::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::ContentAppObserver::Commands::ContentAppMessage::Type mRequest;
 };
 
 /*----------------------------------------------------------------------------*\
@@ -8868,16 +13328,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000B04) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ElectricalMeasurement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ElectricalMeasurement::Commands::GetProfileInfoCommand::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000B04, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000B04) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ElectricalMeasurement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ElectricalMeasurement::Commands::GetProfileInfoCommand::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000B04, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -8901,16 +13368,25 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000B04) command (0x00000001) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ElectricalMeasurement::Id;
+        constexpr chip::CommandId commandId =
+            chip::app::Clusters::ElectricalMeasurement::Commands::GetMeasurementProfileCommand::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000B04, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0x00000B04) command (0x00000001) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ElectricalMeasurement::Id;
+        constexpr chip::CommandId commandId =
+            chip::app::Clusters::ElectricalMeasurement::Commands::GetMeasurementProfileCommand::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000B04, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -8918,7 +13394,7 @@ private:
 };
 
 /*----------------------------------------------------------------------------*\
-| Cluster UnitTesting                                                 | 0xFFF1FC05|
+| Cluster UnitTesting                                                 | 0xFFF1FC05 |
 |------------------------------------------------------------------------------|
 | Commands:                                                           |        |
 | * Test                                                              |   0x00 |
@@ -8943,6 +13419,9 @@ private:
 | * TestSimpleOptionalArgumentRequest                                 |   0x13 |
 | * TestEmitTestEventRequest                                          |   0x14 |
 | * TestEmitTestFabricScopedEventRequest                              |   0x15 |
+| * TestBatchHelperRequest                                            |   0x16 |
+| * TestSecondBatchHelperRequest                                      |   0x17 |
+| * TestDifferentVendorMeiRequest                                     |   0xFFF200AA|
 |------------------------------------------------------------------------------|
 | Attributes:                                                         |        |
 | * Boolean                                                           | 0x0000 |
@@ -9033,10 +13512,12 @@ private:
 | * AttributeList                                                     | 0xFFFB |
 | * FeatureMap                                                        | 0xFFFC |
 | * ClusterRevision                                                   | 0xFFFD |
+| * MeiInt8u                                                          | 0xFFF24F01|
 |------------------------------------------------------------------------------|
 | Events:                                                             |        |
 | * TestEvent                                                         | 0x0001 |
 | * TestFabricScopedEvent                                             | 0x0002 |
+| * TestDifferentVendorMeiEvent                                       | 0xFFF200EE|
 \*----------------------------------------------------------------------------*/
 
 /*
@@ -9052,16 +13533,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::Test::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC05, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::Test::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC05, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -9081,16 +13569,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000001) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestNotHandled::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC05, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000001) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestNotHandled::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC05, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -9110,16 +13605,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000002) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestSpecific::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC05, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000002) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestSpecific::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC05, 0x00000002, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -9140,16 +13642,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000003) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestUnknownCommand::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC05, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000003) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestUnknownCommand::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC05, 0x00000003, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -9172,16 +13681,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000004) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestAddArguments::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC05, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000004) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestAddArguments::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC05, 0x00000004, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -9203,16 +13719,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000005) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestSimpleArgumentRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC05, 0x00000005, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000005) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestSimpleArgumentRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC05, 0x00000005, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -9240,16 +13763,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000006) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestStructArrayArgumentRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC05, 0x00000006, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000006) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestStructArrayArgumentRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC05, 0x00000006, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -9277,16 +13807,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000007) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestStructArgumentRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC05, 0x00000007, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000007) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestStructArgumentRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC05, 0x00000007, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -9309,16 +13846,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000008) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestNestedStructArgumentRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC05, 0x00000008, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000008) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestNestedStructArgumentRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC05, 0x00000008, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -9341,16 +13885,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000009) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestListStructArgumentRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC05, 0x00000009, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000009) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestListStructArgumentRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC05, 0x00000009, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -9374,16 +13925,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x0000000A) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestListInt8UArgumentRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC05, 0x0000000A, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x0000000A) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestListInt8UArgumentRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC05, 0x0000000A, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -9406,16 +13964,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x0000000B) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestNestedStructListArgumentRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC05, 0x0000000B, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x0000000B) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestNestedStructListArgumentRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC05, 0x0000000B, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -9438,16 +14003,25 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x0000000C) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId =
+            chip::app::Clusters::UnitTesting::Commands::TestListNestedStructListArgumentRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC05, 0x0000000C, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x0000000C) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId =
+            chip::app::Clusters::UnitTesting::Commands::TestListNestedStructListArgumentRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC05, 0x0000000C, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -9471,16 +14045,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x0000000D) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestListInt8UReverseRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC05, 0x0000000D, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x0000000D) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestListInt8UReverseRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC05, 0x0000000D, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -9504,16 +14085,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x0000000E) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestEnumsRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC05, 0x0000000E, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x0000000E) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestEnumsRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC05, 0x0000000E, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -9535,16 +14123,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x0000000F) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestNullableOptionalRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC05, 0x0000000F, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x0000000F) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestNullableOptionalRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC05, 0x0000000F, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -9570,26 +14165,33 @@ public:
         AddArgument("OptionalString", &mRequest.optionalString);
         AddArgument("NullableOptionalString", &mRequest.nullableOptionalString);
         AddArgument("NullableStruct", &mComplex_NullableStruct);
-        AddArgument("OptionalStruct", &mComplex_OptionalStruct);
-        AddArgument("NullableOptionalStruct", &mComplex_NullableOptionalStruct);
+        AddArgument("OptionalStruct", &mComplex_OptionalStruct, "", Argument::kOptional);
+        AddArgument("NullableOptionalStruct", &mComplex_NullableOptionalStruct, "", Argument::kOptional);
         AddArgument("NullableList", &mComplex_NullableList);
-        AddArgument("OptionalList", &mComplex_OptionalList);
-        AddArgument("NullableOptionalList", &mComplex_NullableOptionalList);
+        AddArgument("OptionalList", &mComplex_OptionalList, "", Argument::kOptional);
+        AddArgument("NullableOptionalList", &mComplex_NullableOptionalList, "", Argument::kOptional);
         ClusterCommand::AddArguments();
     }
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000010) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestComplexNullableOptionalRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC05, 0x00000010, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000010) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestComplexNullableOptionalRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC05, 0x00000010, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -9625,16 +14227,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000011) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::SimpleStructEchoRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC05, 0x00000011, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000011) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::SimpleStructEchoRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC05, 0x00000011, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -9656,16 +14265,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000012) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TimedInvokeRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC05, 0x00000012, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000012) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TimedInvokeRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC05, 0x00000012, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -9687,16 +14303,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000013) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestSimpleOptionalArgumentRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC05, 0x00000013, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000013) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestSimpleOptionalArgumentRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC05, 0x00000013, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -9720,16 +14343,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000014) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestEmitTestEventRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC05, 0x00000014, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000014) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestEmitTestEventRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC05, 0x00000014, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -9751,24 +14381,149 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000015) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestEmitTestFabricScopedEventRequest::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC05, 0x00000015, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC05) command (0x00000015) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestEmitTestFabricScopedEventRequest::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC05, 0x00000015, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
     chip::app::Clusters::UnitTesting::Commands::TestEmitTestFabricScopedEventRequest::Type mRequest;
 };
 
+/*
+ * Command TestBatchHelperRequest
+ */
+class UnitTestingTestBatchHelperRequest : public ClusterCommand
+{
+public:
+    UnitTestingTestBatchHelperRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("test-batch-helper-request", credsIssuerConfig)
+    {
+        AddArgument("SleepBeforeResponseTimeMs", 0, UINT16_MAX, &mRequest.sleepBeforeResponseTimeMs);
+        AddArgument("SizeOfResponseBuffer", 0, UINT16_MAX, &mRequest.sizeOfResponseBuffer);
+        AddArgument("FillCharacter", 0, UINT8_MAX, &mRequest.fillCharacter);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestBatchHelperRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestBatchHelperRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::UnitTesting::Commands::TestBatchHelperRequest::Type mRequest;
+};
+
+/*
+ * Command TestSecondBatchHelperRequest
+ */
+class UnitTestingTestSecondBatchHelperRequest : public ClusterCommand
+{
+public:
+    UnitTestingTestSecondBatchHelperRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("test-second-batch-helper-request", credsIssuerConfig)
+    {
+        AddArgument("SleepBeforeResponseTimeMs", 0, UINT16_MAX, &mRequest.sleepBeforeResponseTimeMs);
+        AddArgument("SizeOfResponseBuffer", 0, UINT16_MAX, &mRequest.sizeOfResponseBuffer);
+        AddArgument("FillCharacter", 0, UINT8_MAX, &mRequest.fillCharacter);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestSecondBatchHelperRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestSecondBatchHelperRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::UnitTesting::Commands::TestSecondBatchHelperRequest::Type mRequest;
+};
+
+/*
+ * Command TestDifferentVendorMeiRequest
+ */
+class UnitTestingTestDifferentVendorMeiRequest : public ClusterCommand
+{
+public:
+    UnitTestingTestDifferentVendorMeiRequest(CredentialIssuerCommands * credsIssuerConfig) :
+        ClusterCommand("test-different-vendor-mei-request", credsIssuerConfig)
+    {
+        AddArgument("Arg1", 0, UINT8_MAX, &mRequest.arg1);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestDifferentVendorMeiRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestDifferentVendorMeiRequest::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::UnitTesting::Commands::TestDifferentVendorMeiRequest::Type mRequest;
+};
+
 /*----------------------------------------------------------------------------*\
-| Cluster FaultInjection                                              | 0xFFF1FC06|
+| Cluster FaultInjection                                              | 0xFFF1FC06 |
 |------------------------------------------------------------------------------|
 | Commands:                                                           |        |
 | * FailAtFault                                                       |   0x00 |
@@ -9803,16 +14558,23 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC06) command (0x00000000) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::FaultInjection::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::FaultInjection::Commands::FailAtFault::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC06, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC06) command (0x00000000) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::FaultInjection::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::FaultInjection::Commands::FailAtFault::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC06, 0x00000000, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
@@ -9836,20 +14598,121 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC06) command (0x00000001) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::FaultInjection::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::FaultInjection::Commands::FailRandomlyAtFault::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), 0xFFF1FC06, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster (0xFFF1FC06) command (0x00000001) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::FaultInjection::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::FaultInjection::Commands::FailRandomlyAtFault::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0xFFF1FC06, 0x00000001, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:
     chip::app::Clusters::FaultInjection::Commands::FailRandomlyAtFault::Type mRequest;
+};
+
+/*----------------------------------------------------------------------------*\
+| Cluster SampleMei                                                   | 0xFFF1FC20 |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+| * Ping                                                              |   0x00 |
+| * AddArguments                                                      |   0x02 |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * FlipFlop                                                          | 0x0000 |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * EventList                                                         | 0xFFFA |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+| * PingCountEvent                                                    | 0x0000 |
+\*----------------------------------------------------------------------------*/
+
+/*
+ * Command Ping
+ */
+class SampleMeiPing : public ClusterCommand
+{
+public:
+    SampleMeiPing(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("ping", credsIssuerConfig)
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::SampleMei::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::SampleMei::Commands::Ping::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::SampleMei::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::SampleMei::Commands::Ping::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::SampleMei::Commands::Ping::Type mRequest;
+};
+
+/*
+ * Command AddArguments
+ */
+class SampleMeiAddArguments : public ClusterCommand
+{
+public:
+    SampleMeiAddArguments(CredentialIssuerCommands * credsIssuerConfig) : ClusterCommand("add-arguments", credsIssuerConfig)
+    {
+        AddArgument("Arg1", 0, UINT8_MAX, &mRequest.arg1);
+        AddArgument("Arg2", 0, UINT8_MAX, &mRequest.arg2);
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::SampleMei::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::SampleMei::Commands::AddArguments::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId,
+                        commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
+    }
+
+    CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::SampleMei::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::SampleMei::Commands::AddArguments::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId,
+                        groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
+    }
+
+private:
+    chip::app::Clusters::SampleMei::Commands::AddArguments::Type mRequest;
 };
 
 /*----------------------------------------------------------------------------*\
@@ -9977,100 +14840,6 @@ void registerClusterGroups(Commands & commands, CredentialIssuerCommands * creds
 
     commands.RegisterCluster(clusterName, clusterCommands);
 }
-void registerClusterScenes(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
-{
-    using namespace chip::app::Clusters::Scenes;
-
-    const char * clusterName = "Scenes";
-
-    commands_list clusterCommands = {
-        //
-        // Commands
-        //
-        make_unique<ClusterCommand>(Id, credsIssuerConfig),       //
-        make_unique<ScenesAddScene>(credsIssuerConfig),           //
-        make_unique<ScenesViewScene>(credsIssuerConfig),          //
-        make_unique<ScenesRemoveScene>(credsIssuerConfig),        //
-        make_unique<ScenesRemoveAllScenes>(credsIssuerConfig),    //
-        make_unique<ScenesStoreScene>(credsIssuerConfig),         //
-        make_unique<ScenesRecallScene>(credsIssuerConfig),        //
-        make_unique<ScenesGetSceneMembership>(credsIssuerConfig), //
-        make_unique<ScenesEnhancedAddScene>(credsIssuerConfig),   //
-        make_unique<ScenesEnhancedViewScene>(credsIssuerConfig),  //
-        make_unique<ScenesCopyScene>(credsIssuerConfig),          //
-        //
-        // Attributes
-        //
-        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                 //
-        make_unique<ReadAttribute>(Id, "scene-count", Attributes::SceneCount::Id, credsIssuerConfig),                      //
-        make_unique<ReadAttribute>(Id, "current-scene", Attributes::CurrentScene::Id, credsIssuerConfig),                  //
-        make_unique<ReadAttribute>(Id, "current-group", Attributes::CurrentGroup::Id, credsIssuerConfig),                  //
-        make_unique<ReadAttribute>(Id, "scene-valid", Attributes::SceneValid::Id, credsIssuerConfig),                      //
-        make_unique<ReadAttribute>(Id, "name-support", Attributes::NameSupport::Id, credsIssuerConfig),                    //
-        make_unique<ReadAttribute>(Id, "last-configured-by", Attributes::LastConfiguredBy::Id, credsIssuerConfig),         //
-        make_unique<ReadAttribute>(Id, "scene-table-size", Attributes::SceneTableSize::Id, credsIssuerConfig),             //
-        make_unique<ReadAttribute>(Id, "remaining-capacity", Attributes::RemainingCapacity::Id, credsIssuerConfig),        //
-        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
-        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
-        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
-        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
-        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
-        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
-        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
-        make_unique<WriteAttribute<uint8_t>>(Id, "scene-count", 0, UINT8_MAX, Attributes::SceneCount::Id,
-                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<uint8_t>>(Id, "current-scene", 0, UINT8_MAX, Attributes::CurrentScene::Id,
-                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<chip::GroupId>>(Id, "current-group", 0, UINT16_MAX, Attributes::CurrentGroup::Id,
-                                                   WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<bool>>(Id, "scene-valid", 0, 1, Attributes::SceneValid::Id, WriteCommandType::kForceWrite,
-                                          credsIssuerConfig), //
-        make_unique<WriteAttribute<uint8_t>>(Id, "name-support", 0, UINT8_MAX, Attributes::NameSupport::Id,
-                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<chip::app::DataModel::Nullable<chip::NodeId>>>(
-            Id, "last-configured-by", 0, UINT64_MAX, Attributes::LastConfiguredBy::Id, WriteCommandType::kForceWrite,
-            credsIssuerConfig), //
-        make_unique<WriteAttribute<uint16_t>>(Id, "scene-table-size", 0, UINT16_MAX, Attributes::SceneTableSize::Id,
-                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<uint8_t>>(Id, "remaining-capacity", 0, UINT8_MAX, Attributes::RemainingCapacity::Id,
-                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
-            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
-            credsIssuerConfig), //
-        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
-            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
-            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
-            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
-                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
-                                              WriteCommandType::kForceWrite, credsIssuerConfig),                                //
-        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                                 //
-        make_unique<SubscribeAttribute>(Id, "scene-count", Attributes::SceneCount::Id, credsIssuerConfig),                      //
-        make_unique<SubscribeAttribute>(Id, "current-scene", Attributes::CurrentScene::Id, credsIssuerConfig),                  //
-        make_unique<SubscribeAttribute>(Id, "current-group", Attributes::CurrentGroup::Id, credsIssuerConfig),                  //
-        make_unique<SubscribeAttribute>(Id, "scene-valid", Attributes::SceneValid::Id, credsIssuerConfig),                      //
-        make_unique<SubscribeAttribute>(Id, "name-support", Attributes::NameSupport::Id, credsIssuerConfig),                    //
-        make_unique<SubscribeAttribute>(Id, "last-configured-by", Attributes::LastConfiguredBy::Id, credsIssuerConfig),         //
-        make_unique<SubscribeAttribute>(Id, "scene-table-size", Attributes::SceneTableSize::Id, credsIssuerConfig),             //
-        make_unique<SubscribeAttribute>(Id, "remaining-capacity", Attributes::RemainingCapacity::Id, credsIssuerConfig),        //
-        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
-        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
-        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
-        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
-        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
-        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
-        //
-        // Events
-        //
-        make_unique<ReadEvent>(Id, credsIssuerConfig),      //
-        make_unique<SubscribeEvent>(Id, credsIssuerConfig), //
-    };
-
-    commands.RegisterCluster(clusterName, clusterCommands);
-}
 void registerClusterOnOff(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
 {
     using namespace chip::app::Clusters::OnOff;
@@ -10112,7 +14881,7 @@ void registerClusterOnOff(Commands & commands, CredentialIssuerCommands * credsI
                                               credsIssuerConfig), //
         make_unique<WriteAttribute<uint16_t>>(Id, "off-wait-time", 0, UINT16_MAX, Attributes::OffWaitTime::Id,
                                               WriteCommandType::kWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<chip::app::DataModel::Nullable<chip::app::Clusters::OnOff::OnOffStartUpOnOff>>>(
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<chip::app::Clusters::OnOff::StartUpOnOffEnum>>>(
             Id, "start-up-on-off", 0, UINT8_MAX, Attributes::StartUpOnOff::Id, WriteCommandType::kWrite, credsIssuerConfig), //
         make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
             Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
@@ -10266,7 +15035,7 @@ void registerClusterLevelControl(Commands & commands, CredentialIssuerCommands *
                                               WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttribute<uint16_t>>(Id, "max-frequency", 0, UINT16_MAX, Attributes::MaxFrequency::Id,
                                               WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::LevelControl::LevelControlOptions>>>(
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::LevelControl::OptionsBitmap>>>(
             Id, "options", 0, UINT8_MAX, Attributes::Options::Id, WriteCommandType::kWrite, credsIssuerConfig), //
         make_unique<WriteAttribute<uint16_t>>(Id, "on-off-transition-time", 0, UINT16_MAX, Attributes::OnOffTransitionTime::Id,
                                               WriteCommandType::kWrite, credsIssuerConfig), //
@@ -10800,6 +15569,8 @@ void registerClusterBasicInformation(Commands & commands, CredentialIssuerComman
         make_unique<ReadAttribute>(Id, "unique-id", Attributes::UniqueID::Id, credsIssuerConfig),                            //
         make_unique<ReadAttribute>(Id, "capability-minima", Attributes::CapabilityMinima::Id, credsIssuerConfig),            //
         make_unique<ReadAttribute>(Id, "product-appearance", Attributes::ProductAppearance::Id, credsIssuerConfig),          //
+        make_unique<ReadAttribute>(Id, "specification-version", Attributes::SpecificationVersion::Id, credsIssuerConfig),    //
+        make_unique<ReadAttribute>(Id, "max-paths-per-invoke", Attributes::MaxPathsPerInvoke::Id, credsIssuerConfig),        //
         make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig),   //
         make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),     //
         make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                          //
@@ -10849,6 +15620,10 @@ void registerClusterBasicInformation(Commands & commands, CredentialIssuerComman
             Id, "capability-minima", Attributes::CapabilityMinima::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttributeAsComplex<chip::app::Clusters::BasicInformation::Structs::ProductAppearanceStruct::Type>>(
             Id, "product-appearance", Attributes::ProductAppearance::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "specification-version", 0, UINT32_MAX, Attributes::SpecificationVersion::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "max-paths-per-invoke", 0, UINT16_MAX, Attributes::MaxPathsPerInvoke::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
             Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
             credsIssuerConfig), //
@@ -10884,6 +15659,8 @@ void registerClusterBasicInformation(Commands & commands, CredentialIssuerComman
         make_unique<SubscribeAttribute>(Id, "unique-id", Attributes::UniqueID::Id, credsIssuerConfig),                            //
         make_unique<SubscribeAttribute>(Id, "capability-minima", Attributes::CapabilityMinima::Id, credsIssuerConfig),            //
         make_unique<SubscribeAttribute>(Id, "product-appearance", Attributes::ProductAppearance::Id, credsIssuerConfig),          //
+        make_unique<SubscribeAttribute>(Id, "specification-version", Attributes::SpecificationVersion::Id, credsIssuerConfig),    //
+        make_unique<SubscribeAttribute>(Id, "max-paths-per-invoke", Attributes::MaxPathsPerInvoke::Id, credsIssuerConfig),        //
         make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig),   //
         make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),     //
         make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                          //
@@ -10993,7 +15770,7 @@ void registerClusterOtaSoftwareUpdateRequestor(Commands & commands, CredentialIs
             Id, "default-otaproviders", Attributes::DefaultOTAProviders::Id, WriteCommandType::kWrite, credsIssuerConfig), //
         make_unique<WriteAttribute<bool>>(Id, "update-possible", 0, 1, Attributes::UpdatePossible::Id,
                                           WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<chip::app::Clusters::OtaSoftwareUpdateRequestor::OTAUpdateStateEnum>>(
+        make_unique<WriteAttribute<chip::app::Clusters::OtaSoftwareUpdateRequestor::UpdateStateEnum>>(
             Id, "update-state", 0, UINT8_MAX, Attributes::UpdateState::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint8_t>>>(Id, "update-state-progress", 0, UINT8_MAX,
                                                                              Attributes::UpdateStateProgress::Id,
@@ -11241,7 +16018,7 @@ void registerClusterPowerSourceConfiguration(Commands & commands, CredentialIssu
         make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
         make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
         make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
-        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const uint8_t>>>(
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EndpointId>>>(
             Id, "sources", Attributes::Sources::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
             Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
@@ -11579,25 +16356,29 @@ void registerClusterNetworkCommissioning(Commands & commands, CredentialIssuerCo
         make_unique<NetworkCommissioningRemoveNetwork>(credsIssuerConfig),            //
         make_unique<NetworkCommissioningConnectNetwork>(credsIssuerConfig),           //
         make_unique<NetworkCommissioningReorderNetwork>(credsIssuerConfig),           //
+        make_unique<NetworkCommissioningQueryIdentity>(credsIssuerConfig),            //
         //
         // Attributes
         //
-        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                    //
-        make_unique<ReadAttribute>(Id, "max-networks", Attributes::MaxNetworks::Id, credsIssuerConfig),                       //
-        make_unique<ReadAttribute>(Id, "networks", Attributes::Networks::Id, credsIssuerConfig),                              //
-        make_unique<ReadAttribute>(Id, "scan-max-time-seconds", Attributes::ScanMaxTimeSeconds::Id, credsIssuerConfig),       //
-        make_unique<ReadAttribute>(Id, "connect-max-time-seconds", Attributes::ConnectMaxTimeSeconds::Id, credsIssuerConfig), //
-        make_unique<ReadAttribute>(Id, "interface-enabled", Attributes::InterfaceEnabled::Id, credsIssuerConfig),             //
-        make_unique<ReadAttribute>(Id, "last-networking-status", Attributes::LastNetworkingStatus::Id, credsIssuerConfig),    //
-        make_unique<ReadAttribute>(Id, "last-network-id", Attributes::LastNetworkID::Id, credsIssuerConfig),                  //
-        make_unique<ReadAttribute>(Id, "last-connect-error-value", Attributes::LastConnectErrorValue::Id, credsIssuerConfig), //
-        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig),    //
-        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),      //
-        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                           //
-        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                   //
-        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                         //
-        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),               //
-        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                                 //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                       //
+        make_unique<ReadAttribute>(Id, "max-networks", Attributes::MaxNetworks::Id, credsIssuerConfig),                          //
+        make_unique<ReadAttribute>(Id, "networks", Attributes::Networks::Id, credsIssuerConfig),                                 //
+        make_unique<ReadAttribute>(Id, "scan-max-time-seconds", Attributes::ScanMaxTimeSeconds::Id, credsIssuerConfig),          //
+        make_unique<ReadAttribute>(Id, "connect-max-time-seconds", Attributes::ConnectMaxTimeSeconds::Id, credsIssuerConfig),    //
+        make_unique<ReadAttribute>(Id, "interface-enabled", Attributes::InterfaceEnabled::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "last-networking-status", Attributes::LastNetworkingStatus::Id, credsIssuerConfig),       //
+        make_unique<ReadAttribute>(Id, "last-network-id", Attributes::LastNetworkID::Id, credsIssuerConfig),                     //
+        make_unique<ReadAttribute>(Id, "last-connect-error-value", Attributes::LastConnectErrorValue::Id, credsIssuerConfig),    //
+        make_unique<ReadAttribute>(Id, "supported-wi-fi-bands", Attributes::SupportedWiFiBands::Id, credsIssuerConfig),          //
+        make_unique<ReadAttribute>(Id, "supported-thread-features", Attributes::SupportedThreadFeatures::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "thread-version", Attributes::ThreadVersion::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig),       //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),         //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                              //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                            //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),                  //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                                    //
         make_unique<WriteAttribute<uint8_t>>(Id, "max-networks", 0, UINT8_MAX, Attributes::MaxNetworks::Id,
                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttributeAsComplex<
@@ -11618,6 +16399,14 @@ void registerClusterNetworkCommissioning(Commands & commands, CredentialIssuerCo
         make_unique<WriteAttribute<chip::app::DataModel::Nullable<int32_t>>>(Id, "last-connect-error-value", INT32_MIN, INT32_MAX,
                                                                              Attributes::LastConnectErrorValue::Id,
                                                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<
+            WriteAttributeAsComplex<chip::app::DataModel::List<const chip::app::Clusters::NetworkCommissioning::WiFiBandEnum>>>(
+            Id, "supported-wi-fi-bands", Attributes::SupportedWiFiBands::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::NetworkCommissioning::ThreadCapabilitiesBitmap>>>(
+            Id, "supported-thread-features", 0, UINT16_MAX, Attributes::SupportedThreadFeatures::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "thread-version", 0, UINT16_MAX, Attributes::ThreadVersion::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
             Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
             credsIssuerConfig), //
@@ -11641,7 +16430,11 @@ void registerClusterNetworkCommissioning(Commands & commands, CredentialIssuerCo
         make_unique<SubscribeAttribute>(Id, "last-networking-status", Attributes::LastNetworkingStatus::Id, credsIssuerConfig), //
         make_unique<SubscribeAttribute>(Id, "last-network-id", Attributes::LastNetworkID::Id, credsIssuerConfig),               //
         make_unique<SubscribeAttribute>(Id, "last-connect-error-value", Attributes::LastConnectErrorValue::Id,
+                                        credsIssuerConfig),                                                                  //
+        make_unique<SubscribeAttribute>(Id, "supported-wi-fi-bands", Attributes::SupportedWiFiBands::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "supported-thread-features", Attributes::SupportedThreadFeatures::Id,
                                         credsIssuerConfig),                                                                     //
+        make_unique<SubscribeAttribute>(Id, "thread-version", Attributes::ThreadVersion::Id, credsIssuerConfig),                //
         make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
         make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
         make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
@@ -11719,8 +16512,10 @@ void registerClusterGeneralDiagnostics(Commands & commands, CredentialIssuerComm
         //
         // Commands
         //
-        make_unique<ClusterCommand>(Id, credsIssuerConfig),                 //
-        make_unique<GeneralDiagnosticsTestEventTrigger>(credsIssuerConfig), //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig),                   //
+        make_unique<GeneralDiagnosticsTestEventTrigger>(credsIssuerConfig),   //
+        make_unique<GeneralDiagnosticsTimeSnapshot>(credsIssuerConfig),       //
+        make_unique<GeneralDiagnosticsPayloadTestRequest>(credsIssuerConfig), //
         //
         // Attributes
         //
@@ -12002,13 +16797,13 @@ void registerClusterThreadNetworkDiagnostics(Commands & commands, CredentialIssu
             Id, "route-table", Attributes::RouteTable::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint32_t>>>(
             Id, "partition-id", 0, UINT32_MAX, Attributes::PartitionId::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint8_t>>>(
-            Id, "weighting", 0, UINT8_MAX, Attributes::Weighting::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint8_t>>>(
-            Id, "data-version", 0, UINT8_MAX, Attributes::DataVersion::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint8_t>>>(Id, "stable-data-version", 0, UINT8_MAX,
-                                                                             Attributes::StableDataVersion::Id,
-                                                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint16_t>>>(
+            Id, "weighting", 0, UINT16_MAX, Attributes::Weighting::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint16_t>>>(
+            Id, "data-version", 0, UINT16_MAX, Attributes::DataVersion::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint16_t>>>(Id, "stable-data-version", 0, UINT16_MAX,
+                                                                              Attributes::StableDataVersion::Id,
+                                                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint8_t>>>(Id, "leader-router-id", 0, UINT8_MAX,
                                                                              Attributes::LeaderRouterId::Id,
                                                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
@@ -12797,9 +17592,9 @@ void registerClusterAdministratorCommissioning(Commands & commands, CredentialIs
         make_unique<WriteAttribute<chip::app::DataModel::Nullable<chip::FabricIndex>>>(
             Id, "admin-fabric-index", 0, UINT8_MAX, Attributes::AdminFabricIndex::Id, WriteCommandType::kForceWrite,
             credsIssuerConfig), //
-        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint16_t>>>(Id, "admin-vendor-id", 0, UINT16_MAX,
-                                                                              Attributes::AdminVendorId::Id,
-                                                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<chip::VendorId>>>(
+            Id, "admin-vendor-id", 0, UINT16_MAX, Attributes::AdminVendorId::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
         make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
             Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
             credsIssuerConfig), //
@@ -13333,13 +18128,18 @@ void registerClusterIcdManagement(Commands & commands, CredentialIssuerCommands 
         // Attributes
         //
         make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                               //
-        make_unique<ReadAttribute>(Id, "idle-mode-interval", Attributes::IdleModeInterval::Id, credsIssuerConfig),       //
-        make_unique<ReadAttribute>(Id, "active-mode-interval", Attributes::ActiveModeInterval::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "idle-mode-duration", Attributes::IdleModeDuration::Id, credsIssuerConfig),       //
+        make_unique<ReadAttribute>(Id, "active-mode-duration", Attributes::ActiveModeDuration::Id, credsIssuerConfig),   //
         make_unique<ReadAttribute>(Id, "active-mode-threshold", Attributes::ActiveModeThreshold::Id, credsIssuerConfig), //
         make_unique<ReadAttribute>(Id, "registered-clients", Attributes::RegisteredClients::Id, credsIssuerConfig),      //
         make_unique<ReadAttribute>(Id, "icdcounter", Attributes::ICDCounter::Id, credsIssuerConfig),                     //
         make_unique<ReadAttribute>(Id, "clients-supported-per-fabric", Attributes::ClientsSupportedPerFabric::Id,
+                                   credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "user-active-mode-trigger-hint", Attributes::UserActiveModeTriggerHint::Id,
+                                   credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "user-active-mode-trigger-instruction", Attributes::UserActiveModeTriggerInstruction::Id,
                                    credsIssuerConfig),                                                                     //
+        make_unique<ReadAttribute>(Id, "operating-mode", Attributes::OperatingMode::Id, credsIssuerConfig),                //
         make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
         make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
         make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
@@ -13347,9 +18147,9 @@ void registerClusterIcdManagement(Commands & commands, CredentialIssuerCommands 
         make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
         make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
         make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
-        make_unique<WriteAttribute<uint32_t>>(Id, "idle-mode-interval", 0, UINT32_MAX, Attributes::IdleModeInterval::Id,
+        make_unique<WriteAttribute<uint32_t>>(Id, "idle-mode-duration", 0, UINT32_MAX, Attributes::IdleModeDuration::Id,
                                               WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<uint32_t>>(Id, "active-mode-interval", 0, UINT32_MAX, Attributes::ActiveModeInterval::Id,
+        make_unique<WriteAttribute<uint32_t>>(Id, "active-mode-duration", 0, UINT32_MAX, Attributes::ActiveModeDuration::Id,
                                               WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttribute<uint16_t>>(Id, "active-mode-threshold", 0, UINT16_MAX, Attributes::ActiveModeThreshold::Id,
                                               WriteCommandType::kForceWrite, credsIssuerConfig), //
@@ -13361,6 +18161,14 @@ void registerClusterIcdManagement(Commands & commands, CredentialIssuerCommands 
         make_unique<WriteAttribute<uint16_t>>(Id, "clients-supported-per-fabric", 0, UINT16_MAX,
                                               Attributes::ClientsSupportedPerFabric::Id, WriteCommandType::kForceWrite,
                                               credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::IcdManagement::UserActiveModeTriggerBitmap>>>(
+            Id, "user-active-mode-trigger-hint", 0, UINT32_MAX, Attributes::UserActiveModeTriggerHint::Id,
+            WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::CharSpan>>(Id, "user-active-mode-trigger-instruction",
+                                                    Attributes::UserActiveModeTriggerInstruction::Id, WriteCommandType::kForceWrite,
+                                                    credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::Clusters::IcdManagement::OperatingModeEnum>>(
+            Id, "operating-mode", 0, UINT8_MAX, Attributes::OperatingMode::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
             Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
             credsIssuerConfig), //
@@ -13375,13 +18183,304 @@ void registerClusterIcdManagement(Commands & commands, CredentialIssuerCommands 
         make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
                                               WriteCommandType::kForceWrite, credsIssuerConfig),                              //
         make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                               //
-        make_unique<SubscribeAttribute>(Id, "idle-mode-interval", Attributes::IdleModeInterval::Id, credsIssuerConfig),       //
-        make_unique<SubscribeAttribute>(Id, "active-mode-interval", Attributes::ActiveModeInterval::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "idle-mode-duration", Attributes::IdleModeDuration::Id, credsIssuerConfig),       //
+        make_unique<SubscribeAttribute>(Id, "active-mode-duration", Attributes::ActiveModeDuration::Id, credsIssuerConfig),   //
         make_unique<SubscribeAttribute>(Id, "active-mode-threshold", Attributes::ActiveModeThreshold::Id, credsIssuerConfig), //
         make_unique<SubscribeAttribute>(Id, "registered-clients", Attributes::RegisteredClients::Id, credsIssuerConfig),      //
         make_unique<SubscribeAttribute>(Id, "icdcounter", Attributes::ICDCounter::Id, credsIssuerConfig),                     //
         make_unique<SubscribeAttribute>(Id, "clients-supported-per-fabric", Attributes::ClientsSupportedPerFabric::Id,
+                                        credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "user-active-mode-trigger-hint", Attributes::UserActiveModeTriggerHint::Id,
+                                        credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "user-active-mode-trigger-instruction",
+                                        Attributes::UserActiveModeTriggerInstruction::Id, credsIssuerConfig),                   //
+        make_unique<SubscribeAttribute>(Id, "operating-mode", Attributes::OperatingMode::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        //
+        // Events
+        //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),      //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig), //
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+}
+void registerClusterTimer(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
+{
+    using namespace chip::app::Clusters::Timer;
+
+    const char * clusterName = "Timer";
+
+    commands_list clusterCommands = {
+        //
+        // Commands
+        //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig), //
+        make_unique<TimerSetTimer>(credsIssuerConfig),      //
+        make_unique<TimerResetTimer>(credsIssuerConfig),    //
+        make_unique<TimerAddTime>(credsIssuerConfig),       //
+        make_unique<TimerReduceTime>(credsIssuerConfig),    //
+        //
+        // Attributes
+        //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<ReadAttribute>(Id, "set-time", Attributes::SetTime::Id, credsIssuerConfig),                            //
+        make_unique<ReadAttribute>(Id, "time-remaining", Attributes::TimeRemaining::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "timer-state", Attributes::TimerState::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
+        make_unique<WriteAttribute<uint32_t>>(Id, "set-time", 0, UINT32_MAX, Attributes::SetTime::Id, WriteCommandType::kForceWrite,
+                                              credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "time-remaining", 0, UINT32_MAX, Attributes::TimeRemaining::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::Clusters::Timer::TimerStatusEnum>>(
+            Id, "timer-state", 0, UINT8_MAX, Attributes::TimerState::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
+            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
+            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig),                                //
+        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<SubscribeAttribute>(Id, "set-time", Attributes::SetTime::Id, credsIssuerConfig),                            //
+        make_unique<SubscribeAttribute>(Id, "time-remaining", Attributes::TimeRemaining::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "timer-state", Attributes::TimerState::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        //
+        // Events
+        //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),      //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig), //
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+}
+void registerClusterOvenCavityOperationalState(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
+{
+    using namespace chip::app::Clusters::OvenCavityOperationalState;
+
+    const char * clusterName = "OvenCavityOperationalState";
+
+    commands_list clusterCommands = {
+        //
+        // Commands
+        //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig),               //
+        make_unique<OvenCavityOperationalStatePause>(credsIssuerConfig),  //
+        make_unique<OvenCavityOperationalStateStop>(credsIssuerConfig),   //
+        make_unique<OvenCavityOperationalStateStart>(credsIssuerConfig),  //
+        make_unique<OvenCavityOperationalStateResume>(credsIssuerConfig), //
+        //
+        // Attributes
+        //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<ReadAttribute>(Id, "phase-list", Attributes::PhaseList::Id, credsIssuerConfig),                        //
+        make_unique<ReadAttribute>(Id, "current-phase", Attributes::CurrentPhase::Id, credsIssuerConfig),                  //
+        make_unique<ReadAttribute>(Id, "countdown-time", Attributes::CountdownTime::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "operational-state-list", Attributes::OperationalStateList::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "operational-state", Attributes::OperationalState::Id, credsIssuerConfig),          //
+        make_unique<ReadAttribute>(Id, "operational-error", Attributes::OperationalError::Id, credsIssuerConfig),          //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::Nullable<chip::app::DataModel::List<const chip::CharSpan>>>>(
+            Id, "phase-list", Attributes::PhaseList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint8_t>>>(
+            Id, "current-phase", 0, UINT8_MAX, Attributes::CurrentPhase::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint32_t>>>(Id, "countdown-time", 0, UINT32_MAX,
+                                                                              Attributes::CountdownTime::Id,
+                                                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<
+            const chip::app::Clusters::OvenCavityOperationalState::Structs::OperationalStateStruct::Type>>>(
+            Id, "operational-state-list", Attributes::OperationalStateList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::Clusters::OvenCavityOperationalState::OperationalStateEnum>>(
+            Id, "operational-state", 0, UINT8_MAX, Attributes::OperationalState::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::Clusters::OvenCavityOperationalState::Structs::ErrorStateStruct::Type>>(
+            Id, "operational-error", Attributes::OperationalError::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
+            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
+            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig),                                //
+        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<SubscribeAttribute>(Id, "phase-list", Attributes::PhaseList::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "current-phase", Attributes::CurrentPhase::Id, credsIssuerConfig),                  //
+        make_unique<SubscribeAttribute>(Id, "countdown-time", Attributes::CountdownTime::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "operational-state-list", Attributes::OperationalStateList::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "operational-state", Attributes::OperationalState::Id, credsIssuerConfig),          //
+        make_unique<SubscribeAttribute>(Id, "operational-error", Attributes::OperationalError::Id, credsIssuerConfig),          //
+        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        //
+        // Events
+        //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),                                                               //
+        make_unique<ReadEvent>(Id, "operational-error", Events::OperationalError::Id, credsIssuerConfig),            //
+        make_unique<ReadEvent>(Id, "operation-completion", Events::OperationCompletion::Id, credsIssuerConfig),      //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig),                                                          //
+        make_unique<SubscribeEvent>(Id, "operational-error", Events::OperationalError::Id, credsIssuerConfig),       //
+        make_unique<SubscribeEvent>(Id, "operation-completion", Events::OperationCompletion::Id, credsIssuerConfig), //
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+}
+void registerClusterOvenMode(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
+{
+    using namespace chip::app::Clusters::OvenMode;
+
+    const char * clusterName = "OvenMode";
+
+    commands_list clusterCommands = {
+        //
+        // Commands
+        //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig),   //
+        make_unique<OvenModeChangeToMode>(credsIssuerConfig), //
+        //
+        // Attributes
+        //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<ReadAttribute>(Id, "supported-modes", Attributes::SupportedModes::Id, credsIssuerConfig),              //
+        make_unique<ReadAttribute>(Id, "current-mode", Attributes::CurrentMode::Id, credsIssuerConfig),                    //
+        make_unique<ReadAttribute>(Id, "start-up-mode", Attributes::StartUpMode::Id, credsIssuerConfig),                   //
+        make_unique<ReadAttribute>(Id, "on-mode", Attributes::OnMode::Id, credsIssuerConfig),                              //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
+        make_unique<WriteAttributeAsComplex<
+            chip::app::DataModel::List<const chip::app::Clusters::OvenMode::Structs::ModeOptionStruct::Type>>>(
+            Id, "supported-modes", Attributes::SupportedModes::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "current-mode", 0, UINT8_MAX, Attributes::CurrentMode::Id,
+                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint8_t>>>(
+            Id, "start-up-mode", 0, UINT8_MAX, Attributes::StartUpMode::Id, WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint8_t>>>(Id, "on-mode", 0, UINT8_MAX, Attributes::OnMode::Id,
+                                                                             WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
+            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
+            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig),                                //
+        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<SubscribeAttribute>(Id, "supported-modes", Attributes::SupportedModes::Id, credsIssuerConfig),              //
+        make_unique<SubscribeAttribute>(Id, "current-mode", Attributes::CurrentMode::Id, credsIssuerConfig),                    //
+        make_unique<SubscribeAttribute>(Id, "start-up-mode", Attributes::StartUpMode::Id, credsIssuerConfig),                   //
+        make_unique<SubscribeAttribute>(Id, "on-mode", Attributes::OnMode::Id, credsIssuerConfig),                              //
+        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        //
+        // Events
+        //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),      //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig), //
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+}
+void registerClusterLaundryDryerControls(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
+{
+    using namespace chip::app::Clusters::LaundryDryerControls;
+
+    const char * clusterName = "LaundryDryerControls";
+
+    commands_list clusterCommands = {
+        //
+        // Commands
+        //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig), //
+        //
+        // Attributes
+        //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                     //
+        make_unique<ReadAttribute>(Id, "supported-dryness-levels", Attributes::SupportedDrynessLevels::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "selected-dryness-level", Attributes::SelectedDrynessLevel::Id, credsIssuerConfig),     //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig),     //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),       //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                            //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                    //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                          //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),                //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                                  //
+        make_unique<
+            WriteAttributeAsComplex<chip::app::DataModel::List<const chip::app::Clusters::LaundryDryerControls::DrynessLevelEnum>>>(
+            Id, "supported-dryness-levels", Attributes::SupportedDrynessLevels::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<chip::app::Clusters::LaundryDryerControls::DrynessLevelEnum>>>(
+            Id, "selected-dryness-level", 0, UINT8_MAX, Attributes::SelectedDrynessLevel::Id, WriteCommandType::kWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
+            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
+            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                  //
+        make_unique<SubscribeAttribute>(Id, "supported-dryness-levels", Attributes::SupportedDrynessLevels::Id,
                                         credsIssuerConfig),                                                                     //
+        make_unique<SubscribeAttribute>(Id, "selected-dryness-level", Attributes::SelectedDrynessLevel::Id, credsIssuerConfig), //
         make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
         make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
         make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
@@ -13701,8 +18800,6 @@ void registerClusterRvcRunMode(Commands & commands, CredentialIssuerCommands * c
         make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                 //
         make_unique<ReadAttribute>(Id, "supported-modes", Attributes::SupportedModes::Id, credsIssuerConfig),              //
         make_unique<ReadAttribute>(Id, "current-mode", Attributes::CurrentMode::Id, credsIssuerConfig),                    //
-        make_unique<ReadAttribute>(Id, "start-up-mode", Attributes::StartUpMode::Id, credsIssuerConfig),                   //
-        make_unique<ReadAttribute>(Id, "on-mode", Attributes::OnMode::Id, credsIssuerConfig),                              //
         make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
         make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
         make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
@@ -13715,10 +18812,6 @@ void registerClusterRvcRunMode(Commands & commands, CredentialIssuerCommands * c
             Id, "supported-modes", Attributes::SupportedModes::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttribute<uint8_t>>(Id, "current-mode", 0, UINT8_MAX, Attributes::CurrentMode::Id,
                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint8_t>>>(
-            Id, "start-up-mode", 0, UINT8_MAX, Attributes::StartUpMode::Id, WriteCommandType::kWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint8_t>>>(Id, "on-mode", 0, UINT8_MAX, Attributes::OnMode::Id,
-                                                                             WriteCommandType::kWrite, credsIssuerConfig), //
         make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
             Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
             credsIssuerConfig), //
@@ -13735,8 +18828,6 @@ void registerClusterRvcRunMode(Commands & commands, CredentialIssuerCommands * c
         make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                                 //
         make_unique<SubscribeAttribute>(Id, "supported-modes", Attributes::SupportedModes::Id, credsIssuerConfig),              //
         make_unique<SubscribeAttribute>(Id, "current-mode", Attributes::CurrentMode::Id, credsIssuerConfig),                    //
-        make_unique<SubscribeAttribute>(Id, "start-up-mode", Attributes::StartUpMode::Id, credsIssuerConfig),                   //
-        make_unique<SubscribeAttribute>(Id, "on-mode", Attributes::OnMode::Id, credsIssuerConfig),                              //
         make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
         make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
         make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
@@ -13770,8 +18861,6 @@ void registerClusterRvcCleanMode(Commands & commands, CredentialIssuerCommands *
         make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                 //
         make_unique<ReadAttribute>(Id, "supported-modes", Attributes::SupportedModes::Id, credsIssuerConfig),              //
         make_unique<ReadAttribute>(Id, "current-mode", Attributes::CurrentMode::Id, credsIssuerConfig),                    //
-        make_unique<ReadAttribute>(Id, "start-up-mode", Attributes::StartUpMode::Id, credsIssuerConfig),                   //
-        make_unique<ReadAttribute>(Id, "on-mode", Attributes::OnMode::Id, credsIssuerConfig),                              //
         make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
         make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
         make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
@@ -13784,10 +18873,6 @@ void registerClusterRvcCleanMode(Commands & commands, CredentialIssuerCommands *
             Id, "supported-modes", Attributes::SupportedModes::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttribute<uint8_t>>(Id, "current-mode", 0, UINT8_MAX, Attributes::CurrentMode::Id,
                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint8_t>>>(
-            Id, "start-up-mode", 0, UINT8_MAX, Attributes::StartUpMode::Id, WriteCommandType::kWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint8_t>>>(Id, "on-mode", 0, UINT8_MAX, Attributes::OnMode::Id,
-                                                                             WriteCommandType::kWrite, credsIssuerConfig), //
         make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
             Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
             credsIssuerConfig), //
@@ -13804,8 +18889,6 @@ void registerClusterRvcCleanMode(Commands & commands, CredentialIssuerCommands *
         make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                                 //
         make_unique<SubscribeAttribute>(Id, "supported-modes", Attributes::SupportedModes::Id, credsIssuerConfig),              //
         make_unique<SubscribeAttribute>(Id, "current-mode", Attributes::CurrentMode::Id, credsIssuerConfig),                    //
-        make_unique<SubscribeAttribute>(Id, "start-up-mode", Attributes::StartUpMode::Id, credsIssuerConfig),                   //
-        make_unique<SubscribeAttribute>(Id, "on-mode", Attributes::OnMode::Id, credsIssuerConfig),                              //
         make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
         make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
         make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
@@ -13928,11 +19011,11 @@ void registerClusterRefrigeratorAlarm(Commands & commands, CredentialIssuerComma
         make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
         make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
         make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
-        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::RefrigeratorAlarm::AlarmMap>>>(
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::RefrigeratorAlarm::AlarmBitmap>>>(
             Id, "mask", 0, UINT32_MAX, Attributes::Mask::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::RefrigeratorAlarm::AlarmMap>>>(
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::RefrigeratorAlarm::AlarmBitmap>>>(
             Id, "state", 0, UINT32_MAX, Attributes::State::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::RefrigeratorAlarm::AlarmMap>>>(
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::RefrigeratorAlarm::AlarmBitmap>>>(
             Id, "supported", 0, UINT32_MAX, Attributes::Supported::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
             Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
@@ -14253,13 +19336,13 @@ void registerClusterDishwasherAlarm(Commands & commands, CredentialIssuerCommand
         make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
         make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
         make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
-        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::DishwasherAlarm::AlarmMap>>>(
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::DishwasherAlarm::AlarmBitmap>>>(
             Id, "mask", 0, UINT32_MAX, Attributes::Mask::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::DishwasherAlarm::AlarmMap>>>(
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::DishwasherAlarm::AlarmBitmap>>>(
             Id, "latch", 0, UINT32_MAX, Attributes::Latch::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::DishwasherAlarm::AlarmMap>>>(
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::DishwasherAlarm::AlarmBitmap>>>(
             Id, "state", 0, UINT32_MAX, Attributes::State::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::DishwasherAlarm::AlarmMap>>>(
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::DishwasherAlarm::AlarmBitmap>>>(
             Id, "supported", 0, UINT32_MAX, Attributes::Supported::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
             Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
@@ -14292,6 +19375,155 @@ void registerClusterDishwasherAlarm(Commands & commands, CredentialIssuerCommand
         make_unique<ReadEvent>(Id, "notify", Events::Notify::Id, credsIssuerConfig),      //
         make_unique<SubscribeEvent>(Id, credsIssuerConfig),                               //
         make_unique<SubscribeEvent>(Id, "notify", Events::Notify::Id, credsIssuerConfig), //
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+}
+void registerClusterMicrowaveOvenMode(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
+{
+    using namespace chip::app::Clusters::MicrowaveOvenMode;
+
+    const char * clusterName = "MicrowaveOvenMode";
+
+    commands_list clusterCommands = {
+        //
+        // Commands
+        //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig), //
+        //
+        // Attributes
+        //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<ReadAttribute>(Id, "supported-modes", Attributes::SupportedModes::Id, credsIssuerConfig),              //
+        make_unique<ReadAttribute>(Id, "current-mode", Attributes::CurrentMode::Id, credsIssuerConfig),                    //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
+        make_unique<WriteAttributeAsComplex<
+            chip::app::DataModel::List<const chip::app::Clusters::MicrowaveOvenMode::Structs::ModeOptionStruct::Type>>>(
+            Id, "supported-modes", Attributes::SupportedModes::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "current-mode", 0, UINT8_MAX, Attributes::CurrentMode::Id,
+                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
+            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
+            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig),                                //
+        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<SubscribeAttribute>(Id, "supported-modes", Attributes::SupportedModes::Id, credsIssuerConfig),              //
+        make_unique<SubscribeAttribute>(Id, "current-mode", Attributes::CurrentMode::Id, credsIssuerConfig),                    //
+        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        //
+        // Events
+        //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),      //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig), //
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+}
+void registerClusterMicrowaveOvenControl(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
+{
+    using namespace chip::app::Clusters::MicrowaveOvenControl;
+
+    const char * clusterName = "MicrowaveOvenControl";
+
+    commands_list clusterCommands = {
+        //
+        // Commands
+        //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig),                       //
+        make_unique<MicrowaveOvenControlSetCookingParameters>(credsIssuerConfig), //
+        make_unique<MicrowaveOvenControlAddMoreTime>(credsIssuerConfig),          //
+        //
+        // Attributes
+        //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<ReadAttribute>(Id, "cook-time", Attributes::CookTime::Id, credsIssuerConfig),                          //
+        make_unique<ReadAttribute>(Id, "max-cook-time", Attributes::MaxCookTime::Id, credsIssuerConfig),                   //
+        make_unique<ReadAttribute>(Id, "power-setting", Attributes::PowerSetting::Id, credsIssuerConfig),                  //
+        make_unique<ReadAttribute>(Id, "min-power", Attributes::MinPower::Id, credsIssuerConfig),                          //
+        make_unique<ReadAttribute>(Id, "max-power", Attributes::MaxPower::Id, credsIssuerConfig),                          //
+        make_unique<ReadAttribute>(Id, "power-step", Attributes::PowerStep::Id, credsIssuerConfig),                        //
+        make_unique<ReadAttribute>(Id, "supported-watts", Attributes::SupportedWatts::Id, credsIssuerConfig),              //
+        make_unique<ReadAttribute>(Id, "selected-watt-index", Attributes::SelectedWattIndex::Id, credsIssuerConfig),       //
+        make_unique<ReadAttribute>(Id, "watt-rating", Attributes::WattRating::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
+        make_unique<WriteAttribute<uint32_t>>(Id, "cook-time", 0, UINT32_MAX, Attributes::CookTime::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "max-cook-time", 0, UINT32_MAX, Attributes::MaxCookTime::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "power-setting", 0, UINT8_MAX, Attributes::PowerSetting::Id,
+                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "min-power", 0, UINT8_MAX, Attributes::MinPower::Id, WriteCommandType::kForceWrite,
+                                             credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "max-power", 0, UINT8_MAX, Attributes::MaxPower::Id, WriteCommandType::kForceWrite,
+                                             credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "power-step", 0, UINT8_MAX, Attributes::PowerStep::Id,
+                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const uint16_t>>>(
+            Id, "supported-watts", Attributes::SupportedWatts::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "selected-watt-index", 0, UINT8_MAX, Attributes::SelectedWattIndex::Id,
+                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "watt-rating", 0, UINT16_MAX, Attributes::WattRating::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
+            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
+            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig),                                //
+        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<SubscribeAttribute>(Id, "cook-time", Attributes::CookTime::Id, credsIssuerConfig),                          //
+        make_unique<SubscribeAttribute>(Id, "max-cook-time", Attributes::MaxCookTime::Id, credsIssuerConfig),                   //
+        make_unique<SubscribeAttribute>(Id, "power-setting", Attributes::PowerSetting::Id, credsIssuerConfig),                  //
+        make_unique<SubscribeAttribute>(Id, "min-power", Attributes::MinPower::Id, credsIssuerConfig),                          //
+        make_unique<SubscribeAttribute>(Id, "max-power", Attributes::MaxPower::Id, credsIssuerConfig),                          //
+        make_unique<SubscribeAttribute>(Id, "power-step", Attributes::PowerStep::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "supported-watts", Attributes::SupportedWatts::Id, credsIssuerConfig),              //
+        make_unique<SubscribeAttribute>(Id, "selected-watt-index", Attributes::SelectedWattIndex::Id, credsIssuerConfig),       //
+        make_unique<SubscribeAttribute>(Id, "watt-rating", Attributes::WattRating::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        //
+        // Events
+        //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),      //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig), //
     };
 
     commands.RegisterCluster(clusterName, clusterCommands);
@@ -14395,9 +19627,8 @@ void registerClusterRvcOperationalState(Commands & commands, CredentialIssuerCom
         //
         make_unique<ClusterCommand>(Id, credsIssuerConfig),        //
         make_unique<RvcOperationalStatePause>(credsIssuerConfig),  //
-        make_unique<RvcOperationalStateStop>(credsIssuerConfig),   //
-        make_unique<RvcOperationalStateStart>(credsIssuerConfig),  //
         make_unique<RvcOperationalStateResume>(credsIssuerConfig), //
+        make_unique<RvcOperationalStateGoHome>(credsIssuerConfig), //
         //
         // Attributes
         //
@@ -14465,6 +19696,79 @@ void registerClusterRvcOperationalState(Commands & commands, CredentialIssuerCom
         make_unique<SubscribeEvent>(Id, credsIssuerConfig),                                                          //
         make_unique<SubscribeEvent>(Id, "operational-error", Events::OperationalError::Id, credsIssuerConfig),       //
         make_unique<SubscribeEvent>(Id, "operation-completion", Events::OperationCompletion::Id, credsIssuerConfig), //
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+}
+void registerClusterScenesManagement(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
+{
+    using namespace chip::app::Clusters::ScenesManagement;
+
+    const char * clusterName = "ScenesManagement";
+
+    commands_list clusterCommands = {
+        //
+        // Commands
+        //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig),                 //
+        make_unique<ScenesManagementAddScene>(credsIssuerConfig),           //
+        make_unique<ScenesManagementViewScene>(credsIssuerConfig),          //
+        make_unique<ScenesManagementRemoveScene>(credsIssuerConfig),        //
+        make_unique<ScenesManagementRemoveAllScenes>(credsIssuerConfig),    //
+        make_unique<ScenesManagementStoreScene>(credsIssuerConfig),         //
+        make_unique<ScenesManagementRecallScene>(credsIssuerConfig),        //
+        make_unique<ScenesManagementGetSceneMembership>(credsIssuerConfig), //
+        make_unique<ScenesManagementCopyScene>(credsIssuerConfig),          //
+        //
+        // Attributes
+        //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<ReadAttribute>(Id, "last-configured-by", Attributes::LastConfiguredBy::Id, credsIssuerConfig),         //
+        make_unique<ReadAttribute>(Id, "scene-table-size", Attributes::SceneTableSize::Id, credsIssuerConfig),             //
+        make_unique<ReadAttribute>(Id, "fabric-scene-info", Attributes::FabricSceneInfo::Id, credsIssuerConfig),           //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<chip::NodeId>>>(
+            Id, "last-configured-by", 0, UINT64_MAX, Attributes::LastConfiguredBy::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "scene-table-size", 0, UINT16_MAX, Attributes::SceneTableSize::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<
+            chip::app::DataModel::List<const chip::app::Clusters::ScenesManagement::Structs::SceneInfoStruct::Type>>>(
+            Id, "fabric-scene-info", Attributes::FabricSceneInfo::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
+            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
+            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig),                                //
+        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<SubscribeAttribute>(Id, "last-configured-by", Attributes::LastConfiguredBy::Id, credsIssuerConfig),         //
+        make_unique<SubscribeAttribute>(Id, "scene-table-size", Attributes::SceneTableSize::Id, credsIssuerConfig),             //
+        make_unique<SubscribeAttribute>(Id, "fabric-scene-info", Attributes::FabricSceneInfo::Id, credsIssuerConfig),           //
+        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        //
+        // Events
+        //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),      //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig), //
     };
 
     commands.RegisterCluster(clusterName, clusterCommands);
@@ -14633,6 +19937,1189 @@ void registerClusterActivatedCarbonFilterMonitoring(Commands & commands, Credent
 
     commands.RegisterCluster(clusterName, clusterCommands);
 }
+void registerClusterBooleanStateConfiguration(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
+{
+    using namespace chip::app::Clusters::BooleanStateConfiguration;
+
+    const char * clusterName = "BooleanStateConfiguration";
+
+    commands_list clusterCommands = {
+        //
+        // Commands
+        //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig),                          //
+        make_unique<BooleanStateConfigurationSuppressAlarm>(credsIssuerConfig),      //
+        make_unique<BooleanStateConfigurationEnableDisableAlarm>(credsIssuerConfig), //
+        //
+        // Attributes
+        //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                       //
+        make_unique<ReadAttribute>(Id, "current-sensitivity-level", Attributes::CurrentSensitivityLevel::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "supported-sensitivity-levels", Attributes::SupportedSensitivityLevels::Id,
+                                   credsIssuerConfig),                                                                           //
+        make_unique<ReadAttribute>(Id, "default-sensitivity-level", Attributes::DefaultSensitivityLevel::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "alarms-active", Attributes::AlarmsActive::Id, credsIssuerConfig),                        //
+        make_unique<ReadAttribute>(Id, "alarms-suppressed", Attributes::AlarmsSuppressed::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "alarms-enabled", Attributes::AlarmsEnabled::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "alarms-supported", Attributes::AlarmsSupported::Id, credsIssuerConfig),                  //
+        make_unique<ReadAttribute>(Id, "sensor-fault", Attributes::SensorFault::Id, credsIssuerConfig),                          //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig),       //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),         //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                              //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                            //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),                  //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                                    //
+        make_unique<WriteAttribute<uint8_t>>(Id, "current-sensitivity-level", 0, UINT8_MAX, Attributes::CurrentSensitivityLevel::Id,
+                                             WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "supported-sensitivity-levels", 0, UINT8_MAX,
+                                             Attributes::SupportedSensitivityLevels::Id, WriteCommandType::kForceWrite,
+                                             credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "default-sensitivity-level", 0, UINT8_MAX, Attributes::DefaultSensitivityLevel::Id,
+                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::BooleanStateConfiguration::AlarmModeBitmap>>>(
+            Id, "alarms-active", 0, UINT8_MAX, Attributes::AlarmsActive::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::BooleanStateConfiguration::AlarmModeBitmap>>>(
+            Id, "alarms-suppressed", 0, UINT8_MAX, Attributes::AlarmsSuppressed::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::BooleanStateConfiguration::AlarmModeBitmap>>>(
+            Id, "alarms-enabled", 0, UINT8_MAX, Attributes::AlarmsEnabled::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::BooleanStateConfiguration::AlarmModeBitmap>>>(
+            Id, "alarms-supported", 0, UINT8_MAX, Attributes::AlarmsSupported::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::BooleanStateConfiguration::SensorFaultBitmap>>>(
+            Id, "sensor-fault", 0, UINT16_MAX, Attributes::SensorFault::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
+            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
+            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                  //
+        make_unique<SubscribeAttribute>(Id, "current-sensitivity-level", Attributes::CurrentSensitivityLevel::Id,
+                                        credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "supported-sensitivity-levels", Attributes::SupportedSensitivityLevels::Id,
+                                        credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "default-sensitivity-level", Attributes::DefaultSensitivityLevel::Id,
+                                        credsIssuerConfig),                                                                     //
+        make_unique<SubscribeAttribute>(Id, "alarms-active", Attributes::AlarmsActive::Id, credsIssuerConfig),                  //
+        make_unique<SubscribeAttribute>(Id, "alarms-suppressed", Attributes::AlarmsSuppressed::Id, credsIssuerConfig),          //
+        make_unique<SubscribeAttribute>(Id, "alarms-enabled", Attributes::AlarmsEnabled::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "alarms-supported", Attributes::AlarmsSupported::Id, credsIssuerConfig),            //
+        make_unique<SubscribeAttribute>(Id, "sensor-fault", Attributes::SensorFault::Id, credsIssuerConfig),                    //
+        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        //
+        // Events
+        //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),                                                              //
+        make_unique<ReadEvent>(Id, "alarms-state-changed", Events::AlarmsStateChanged::Id, credsIssuerConfig),      //
+        make_unique<ReadEvent>(Id, "sensor-fault", Events::SensorFault::Id, credsIssuerConfig),                     //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig),                                                         //
+        make_unique<SubscribeEvent>(Id, "alarms-state-changed", Events::AlarmsStateChanged::Id, credsIssuerConfig), //
+        make_unique<SubscribeEvent>(Id, "sensor-fault", Events::SensorFault::Id, credsIssuerConfig),                //
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+}
+void registerClusterValveConfigurationAndControl(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
+{
+    using namespace chip::app::Clusters::ValveConfigurationAndControl;
+
+    const char * clusterName = "ValveConfigurationAndControl";
+
+    commands_list clusterCommands = {
+        //
+        // Commands
+        //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig),                //
+        make_unique<ValveConfigurationAndControlOpen>(credsIssuerConfig),  //
+        make_unique<ValveConfigurationAndControlClose>(credsIssuerConfig), //
+        //
+        // Attributes
+        //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<ReadAttribute>(Id, "open-duration", Attributes::OpenDuration::Id, credsIssuerConfig),                  //
+        make_unique<ReadAttribute>(Id, "default-open-duration", Attributes::DefaultOpenDuration::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "auto-close-time", Attributes::AutoCloseTime::Id, credsIssuerConfig),               //
+        make_unique<ReadAttribute>(Id, "remaining-duration", Attributes::RemainingDuration::Id, credsIssuerConfig),        //
+        make_unique<ReadAttribute>(Id, "current-state", Attributes::CurrentState::Id, credsIssuerConfig),                  //
+        make_unique<ReadAttribute>(Id, "target-state", Attributes::TargetState::Id, credsIssuerConfig),                    //
+        make_unique<ReadAttribute>(Id, "current-level", Attributes::CurrentLevel::Id, credsIssuerConfig),                  //
+        make_unique<ReadAttribute>(Id, "target-level", Attributes::TargetLevel::Id, credsIssuerConfig),                    //
+        make_unique<ReadAttribute>(Id, "default-open-level", Attributes::DefaultOpenLevel::Id, credsIssuerConfig),         //
+        make_unique<ReadAttribute>(Id, "valve-fault", Attributes::ValveFault::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "level-step", Attributes::LevelStep::Id, credsIssuerConfig),                        //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint32_t>>>(
+            Id, "open-duration", 0, UINT32_MAX, Attributes::OpenDuration::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint32_t>>>(Id, "default-open-duration", 0, UINT32_MAX,
+                                                                              Attributes::DefaultOpenDuration::Id,
+                                                                              WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint64_t>>>(Id, "auto-close-time", 0, UINT64_MAX,
+                                                                              Attributes::AutoCloseTime::Id,
+                                                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint32_t>>>(Id, "remaining-duration", 0, UINT32_MAX,
+                                                                              Attributes::RemainingDuration::Id,
+                                                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<
+            WriteAttribute<chip::app::DataModel::Nullable<chip::app::Clusters::ValveConfigurationAndControl::ValveStateEnum>>>(
+            Id, "current-state", 0, UINT8_MAX, Attributes::CurrentState::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<
+            WriteAttribute<chip::app::DataModel::Nullable<chip::app::Clusters::ValveConfigurationAndControl::ValveStateEnum>>>(
+            Id, "target-state", 0, UINT8_MAX, Attributes::TargetState::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<chip::Percent>>>(
+            Id, "current-level", 0, UINT8_MAX, Attributes::CurrentLevel::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<chip::Percent>>>(
+            Id, "target-level", 0, UINT8_MAX, Attributes::TargetLevel::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::Percent>>(Id, "default-open-level", 0, UINT8_MAX, Attributes::DefaultOpenLevel::Id,
+                                                   WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::ValveConfigurationAndControl::ValveFaultBitmap>>>(
+            Id, "valve-fault", 0, UINT16_MAX, Attributes::ValveFault::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "level-step", 0, UINT8_MAX, Attributes::LevelStep::Id,
+                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
+            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
+            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig),                                //
+        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<SubscribeAttribute>(Id, "open-duration", Attributes::OpenDuration::Id, credsIssuerConfig),                  //
+        make_unique<SubscribeAttribute>(Id, "default-open-duration", Attributes::DefaultOpenDuration::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "auto-close-time", Attributes::AutoCloseTime::Id, credsIssuerConfig),               //
+        make_unique<SubscribeAttribute>(Id, "remaining-duration", Attributes::RemainingDuration::Id, credsIssuerConfig),        //
+        make_unique<SubscribeAttribute>(Id, "current-state", Attributes::CurrentState::Id, credsIssuerConfig),                  //
+        make_unique<SubscribeAttribute>(Id, "target-state", Attributes::TargetState::Id, credsIssuerConfig),                    //
+        make_unique<SubscribeAttribute>(Id, "current-level", Attributes::CurrentLevel::Id, credsIssuerConfig),                  //
+        make_unique<SubscribeAttribute>(Id, "target-level", Attributes::TargetLevel::Id, credsIssuerConfig),                    //
+        make_unique<SubscribeAttribute>(Id, "default-open-level", Attributes::DefaultOpenLevel::Id, credsIssuerConfig),         //
+        make_unique<SubscribeAttribute>(Id, "valve-fault", Attributes::ValveFault::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "level-step", Attributes::LevelStep::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        //
+        // Events
+        //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),                                                            //
+        make_unique<ReadEvent>(Id, "valve-state-changed", Events::ValveStateChanged::Id, credsIssuerConfig),      //
+        make_unique<ReadEvent>(Id, "valve-fault", Events::ValveFault::Id, credsIssuerConfig),                     //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig),                                                       //
+        make_unique<SubscribeEvent>(Id, "valve-state-changed", Events::ValveStateChanged::Id, credsIssuerConfig), //
+        make_unique<SubscribeEvent>(Id, "valve-fault", Events::ValveFault::Id, credsIssuerConfig),                //
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+}
+void registerClusterElectricalPowerMeasurement(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
+{
+    using namespace chip::app::Clusters::ElectricalPowerMeasurement;
+
+    const char * clusterName = "ElectricalPowerMeasurement";
+
+    commands_list clusterCommands = {
+        //
+        // Commands
+        //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig), //
+        //
+        // Attributes
+        //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                          //
+        make_unique<ReadAttribute>(Id, "power-mode", Attributes::PowerMode::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "number-of-measurement-types", Attributes::NumberOfMeasurementTypes::Id,
+                                   credsIssuerConfig),                                                                     //
+        make_unique<ReadAttribute>(Id, "accuracy", Attributes::Accuracy::Id, credsIssuerConfig),                           //
+        make_unique<ReadAttribute>(Id, "ranges", Attributes::Ranges::Id, credsIssuerConfig),                               //
+        make_unique<ReadAttribute>(Id, "voltage", Attributes::Voltage::Id, credsIssuerConfig),                             //
+        make_unique<ReadAttribute>(Id, "active-current", Attributes::ActiveCurrent::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "reactive-current", Attributes::ReactiveCurrent::Id, credsIssuerConfig),            //
+        make_unique<ReadAttribute>(Id, "apparent-current", Attributes::ApparentCurrent::Id, credsIssuerConfig),            //
+        make_unique<ReadAttribute>(Id, "active-power", Attributes::ActivePower::Id, credsIssuerConfig),                    //
+        make_unique<ReadAttribute>(Id, "reactive-power", Attributes::ReactivePower::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "apparent-power", Attributes::ApparentPower::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "rmsvoltage", Attributes::RMSVoltage::Id, credsIssuerConfig),                       //
+        make_unique<ReadAttribute>(Id, "rmscurrent", Attributes::RMSCurrent::Id, credsIssuerConfig),                       //
+        make_unique<ReadAttribute>(Id, "rmspower", Attributes::RMSPower::Id, credsIssuerConfig),                           //
+        make_unique<ReadAttribute>(Id, "frequency", Attributes::Frequency::Id, credsIssuerConfig),                         //
+        make_unique<ReadAttribute>(Id, "harmonic-currents", Attributes::HarmonicCurrents::Id, credsIssuerConfig),          //
+        make_unique<ReadAttribute>(Id, "harmonic-phases", Attributes::HarmonicPhases::Id, credsIssuerConfig),              //
+        make_unique<ReadAttribute>(Id, "power-factor", Attributes::PowerFactor::Id, credsIssuerConfig),                    //
+        make_unique<ReadAttribute>(Id, "neutral-current", Attributes::NeutralCurrent::Id, credsIssuerConfig),              //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
+        make_unique<WriteAttribute<chip::app::Clusters::ElectricalPowerMeasurement::PowerModeEnum>>(
+            Id, "power-mode", 0, UINT8_MAX, Attributes::PowerMode::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "number-of-measurement-types", 0, UINT8_MAX,
+                                             Attributes::NumberOfMeasurementTypes::Id, WriteCommandType::kForceWrite,
+                                             credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<
+            const chip::app::Clusters::ElectricalPowerMeasurement::Structs::MeasurementAccuracyStruct::Type>>>(
+            Id, "accuracy", Attributes::Accuracy::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<
+            const chip::app::Clusters::ElectricalPowerMeasurement::Structs::MeasurementRangeStruct::Type>>>(
+            Id, "ranges", Attributes::Ranges::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<int64_t>>>(
+            Id, "voltage", INT64_MIN, INT64_MAX, Attributes::Voltage::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<int64_t>>>(Id, "active-current", INT64_MIN, INT64_MAX,
+                                                                             Attributes::ActiveCurrent::Id,
+                                                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<int64_t>>>(Id, "reactive-current", INT64_MIN, INT64_MAX,
+                                                                             Attributes::ReactiveCurrent::Id,
+                                                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<int64_t>>>(Id, "apparent-current", INT64_MIN, INT64_MAX,
+                                                                             Attributes::ApparentCurrent::Id,
+                                                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<int64_t>>>(Id, "active-power", INT64_MIN, INT64_MAX,
+                                                                             Attributes::ActivePower::Id,
+                                                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<int64_t>>>(Id, "reactive-power", INT64_MIN, INT64_MAX,
+                                                                             Attributes::ReactivePower::Id,
+                                                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<int64_t>>>(Id, "apparent-power", INT64_MIN, INT64_MAX,
+                                                                             Attributes::ApparentPower::Id,
+                                                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<int64_t>>>(Id, "rmsvoltage", INT64_MIN, INT64_MAX,
+                                                                             Attributes::RMSVoltage::Id,
+                                                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<int64_t>>>(Id, "rmscurrent", INT64_MIN, INT64_MAX,
+                                                                             Attributes::RMSCurrent::Id,
+                                                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<int64_t>>>(
+            Id, "rmspower", INT64_MIN, INT64_MAX, Attributes::RMSPower::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<int64_t>>>(
+            Id, "frequency", INT64_MIN, INT64_MAX, Attributes::Frequency::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::Nullable<chip::app::DataModel::List<
+            const chip::app::Clusters::ElectricalPowerMeasurement::Structs::HarmonicMeasurementStruct::Type>>>>(
+            Id, "harmonic-currents", Attributes::HarmonicCurrents::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::Nullable<chip::app::DataModel::List<
+            const chip::app::Clusters::ElectricalPowerMeasurement::Structs::HarmonicMeasurementStruct::Type>>>>(
+            Id, "harmonic-phases", Attributes::HarmonicPhases::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<int64_t>>>(Id, "power-factor", INT64_MIN, INT64_MAX,
+                                                                             Attributes::PowerFactor::Id,
+                                                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<int64_t>>>(Id, "neutral-current", INT64_MIN, INT64_MAX,
+                                                                             Attributes::NeutralCurrent::Id,
+                                                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
+            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
+            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig),         //
+        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                          //
+        make_unique<SubscribeAttribute>(Id, "power-mode", Attributes::PowerMode::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "number-of-measurement-types", Attributes::NumberOfMeasurementTypes::Id,
+                                        credsIssuerConfig),                                                                     //
+        make_unique<SubscribeAttribute>(Id, "accuracy", Attributes::Accuracy::Id, credsIssuerConfig),                           //
+        make_unique<SubscribeAttribute>(Id, "ranges", Attributes::Ranges::Id, credsIssuerConfig),                               //
+        make_unique<SubscribeAttribute>(Id, "voltage", Attributes::Voltage::Id, credsIssuerConfig),                             //
+        make_unique<SubscribeAttribute>(Id, "active-current", Attributes::ActiveCurrent::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "reactive-current", Attributes::ReactiveCurrent::Id, credsIssuerConfig),            //
+        make_unique<SubscribeAttribute>(Id, "apparent-current", Attributes::ApparentCurrent::Id, credsIssuerConfig),            //
+        make_unique<SubscribeAttribute>(Id, "active-power", Attributes::ActivePower::Id, credsIssuerConfig),                    //
+        make_unique<SubscribeAttribute>(Id, "reactive-power", Attributes::ReactivePower::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "apparent-power", Attributes::ApparentPower::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "rmsvoltage", Attributes::RMSVoltage::Id, credsIssuerConfig),                       //
+        make_unique<SubscribeAttribute>(Id, "rmscurrent", Attributes::RMSCurrent::Id, credsIssuerConfig),                       //
+        make_unique<SubscribeAttribute>(Id, "rmspower", Attributes::RMSPower::Id, credsIssuerConfig),                           //
+        make_unique<SubscribeAttribute>(Id, "frequency", Attributes::Frequency::Id, credsIssuerConfig),                         //
+        make_unique<SubscribeAttribute>(Id, "harmonic-currents", Attributes::HarmonicCurrents::Id, credsIssuerConfig),          //
+        make_unique<SubscribeAttribute>(Id, "harmonic-phases", Attributes::HarmonicPhases::Id, credsIssuerConfig),              //
+        make_unique<SubscribeAttribute>(Id, "power-factor", Attributes::PowerFactor::Id, credsIssuerConfig),                    //
+        make_unique<SubscribeAttribute>(Id, "neutral-current", Attributes::NeutralCurrent::Id, credsIssuerConfig),              //
+        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        //
+        // Events
+        //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),                                                                        //
+        make_unique<ReadEvent>(Id, "measurement-period-ranges", Events::MeasurementPeriodRanges::Id, credsIssuerConfig),      //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig),                                                                   //
+        make_unique<SubscribeEvent>(Id, "measurement-period-ranges", Events::MeasurementPeriodRanges::Id, credsIssuerConfig), //
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+}
+void registerClusterElectricalEnergyMeasurement(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
+{
+    using namespace chip::app::Clusters::ElectricalEnergyMeasurement;
+
+    const char * clusterName = "ElectricalEnergyMeasurement";
+
+    commands_list clusterCommands = {
+        //
+        // Commands
+        //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig), //
+        //
+        // Attributes
+        //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                       //
+        make_unique<ReadAttribute>(Id, "accuracy", Attributes::Accuracy::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "cumulative-energy-imported", Attributes::CumulativeEnergyImported::Id,
+                                   credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "cumulative-energy-exported", Attributes::CumulativeEnergyExported::Id,
+                                   credsIssuerConfig),                                                                         //
+        make_unique<ReadAttribute>(Id, "periodic-energy-imported", Attributes::PeriodicEnergyImported::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "periodic-energy-exported", Attributes::PeriodicEnergyExported::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "cumulative-energy-reset", Attributes::CumulativeEnergyReset::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig),     //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),       //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                            //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                    //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                          //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),                //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                                  //
+        make_unique<
+            WriteAttributeAsComplex<chip::app::Clusters::ElectricalEnergyMeasurement::Structs::MeasurementAccuracyStruct::Type>>(
+            Id, "accuracy", Attributes::Accuracy::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::Nullable<
+            chip::app::Clusters::ElectricalEnergyMeasurement::Structs::EnergyMeasurementStruct::Type>>>(
+            Id, "cumulative-energy-imported", Attributes::CumulativeEnergyImported::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::Nullable<
+            chip::app::Clusters::ElectricalEnergyMeasurement::Structs::EnergyMeasurementStruct::Type>>>(
+            Id, "cumulative-energy-exported", Attributes::CumulativeEnergyExported::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::Nullable<
+            chip::app::Clusters::ElectricalEnergyMeasurement::Structs::EnergyMeasurementStruct::Type>>>(
+            Id, "periodic-energy-imported", Attributes::PeriodicEnergyImported::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::Nullable<
+            chip::app::Clusters::ElectricalEnergyMeasurement::Structs::EnergyMeasurementStruct::Type>>>(
+            Id, "periodic-energy-exported", Attributes::PeriodicEnergyExported::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::Nullable<
+            chip::app::Clusters::ElectricalEnergyMeasurement::Structs::CumulativeEnergyResetStruct::Type>>>(
+            Id, "cumulative-energy-reset", Attributes::CumulativeEnergyReset::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
+            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
+            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig),      //
+        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                       //
+        make_unique<SubscribeAttribute>(Id, "accuracy", Attributes::Accuracy::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "cumulative-energy-imported", Attributes::CumulativeEnergyImported::Id,
+                                        credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "cumulative-energy-exported", Attributes::CumulativeEnergyExported::Id,
+                                        credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "periodic-energy-imported", Attributes::PeriodicEnergyImported::Id,
+                                        credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "periodic-energy-exported", Attributes::PeriodicEnergyExported::Id,
+                                        credsIssuerConfig),                                                                       //
+        make_unique<SubscribeAttribute>(Id, "cumulative-energy-reset", Attributes::CumulativeEnergyReset::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),     //
+        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                          //
+        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                  //
+        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),              //
+        //
+        // Events
+        //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),                                                                          //
+        make_unique<ReadEvent>(Id, "cumulative-energy-measured", Events::CumulativeEnergyMeasured::Id, credsIssuerConfig),      //
+        make_unique<ReadEvent>(Id, "periodic-energy-measured", Events::PeriodicEnergyMeasured::Id, credsIssuerConfig),          //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig),                                                                     //
+        make_unique<SubscribeEvent>(Id, "cumulative-energy-measured", Events::CumulativeEnergyMeasured::Id, credsIssuerConfig), //
+        make_unique<SubscribeEvent>(Id, "periodic-energy-measured", Events::PeriodicEnergyMeasured::Id, credsIssuerConfig),     //
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+}
+void registerClusterDemandResponseLoadControl(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
+{
+    using namespace chip::app::Clusters::DemandResponseLoadControl;
+
+    const char * clusterName = "DemandResponseLoadControl";
+
+    commands_list clusterCommands = {
+        //
+        // Commands
+        //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig),                                           //
+        make_unique<DemandResponseLoadControlRegisterLoadControlProgramRequest>(credsIssuerConfig),   //
+        make_unique<DemandResponseLoadControlUnregisterLoadControlProgramRequest>(credsIssuerConfig), //
+        make_unique<DemandResponseLoadControlAddLoadControlEventRequest>(credsIssuerConfig),          //
+        make_unique<DemandResponseLoadControlRemoveLoadControlEventRequest>(credsIssuerConfig),       //
+        make_unique<DemandResponseLoadControlClearLoadControlEventsRequest>(credsIssuerConfig),       //
+        //
+        // Attributes
+        //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                               //
+        make_unique<ReadAttribute>(Id, "load-control-programs", Attributes::LoadControlPrograms::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "number-of-load-control-programs", Attributes::NumberOfLoadControlPrograms::Id,
+                                   credsIssuerConfig),                                                    //
+        make_unique<ReadAttribute>(Id, "events", Attributes::Events::Id, credsIssuerConfig),              //
+        make_unique<ReadAttribute>(Id, "active-events", Attributes::ActiveEvents::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "number-of-events-per-program", Attributes::NumberOfEventsPerProgram::Id,
+                                   credsIssuerConfig),                                                                       //
+        make_unique<ReadAttribute>(Id, "number-of-transitions", Attributes::NumberOfTransitions::Id, credsIssuerConfig),     //
+        make_unique<ReadAttribute>(Id, "default-random-start", Attributes::DefaultRandomStart::Id, credsIssuerConfig),       //
+        make_unique<ReadAttribute>(Id, "default-random-duration", Attributes::DefaultRandomDuration::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),     //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                          //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                  //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                        //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),              //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                                //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<
+            const chip::app::Clusters::DemandResponseLoadControl::Structs::LoadControlProgramStruct::Type>>>(
+            Id, "load-control-programs", Attributes::LoadControlPrograms::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "number-of-load-control-programs", 0, UINT8_MAX,
+                                             Attributes::NumberOfLoadControlPrograms::Id, WriteCommandType::kForceWrite,
+                                             credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<
+            const chip::app::Clusters::DemandResponseLoadControl::Structs::LoadControlEventStruct::Type>>>(
+            Id, "events", Attributes::Events::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<
+            const chip::app::Clusters::DemandResponseLoadControl::Structs::LoadControlEventStruct::Type>>>(
+            Id, "active-events", Attributes::ActiveEvents::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "number-of-events-per-program", 0, UINT8_MAX,
+                                             Attributes::NumberOfEventsPerProgram::Id, WriteCommandType::kForceWrite,
+                                             credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "number-of-transitions", 0, UINT8_MAX, Attributes::NumberOfTransitions::Id,
+                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "default-random-start", 0, UINT8_MAX, Attributes::DefaultRandomStart::Id,
+                                             WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "default-random-duration", 0, UINT8_MAX, Attributes::DefaultRandomDuration::Id,
+                                             WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
+            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
+            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig),                              //
+        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                               //
+        make_unique<SubscribeAttribute>(Id, "load-control-programs", Attributes::LoadControlPrograms::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "number-of-load-control-programs", Attributes::NumberOfLoadControlPrograms::Id,
+                                        credsIssuerConfig),                                                    //
+        make_unique<SubscribeAttribute>(Id, "events", Attributes::Events::Id, credsIssuerConfig),              //
+        make_unique<SubscribeAttribute>(Id, "active-events", Attributes::ActiveEvents::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "number-of-events-per-program", Attributes::NumberOfEventsPerProgram::Id,
+                                        credsIssuerConfig),                                                                       //
+        make_unique<SubscribeAttribute>(Id, "number-of-transitions", Attributes::NumberOfTransitions::Id, credsIssuerConfig),     //
+        make_unique<SubscribeAttribute>(Id, "default-random-start", Attributes::DefaultRandomStart::Id, credsIssuerConfig),       //
+        make_unique<SubscribeAttribute>(Id, "default-random-duration", Attributes::DefaultRandomDuration::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),     //
+        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                          //
+        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                  //
+        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),              //
+        //
+        // Events
+        //
+        make_unique<ReadEvent>(Id, credsIssuerConfig), //
+        make_unique<ReadEvent>(Id, "load-control-event-status-change", Events::LoadControlEventStatusChange::Id,
+                               credsIssuerConfig),          //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig), //
+        make_unique<SubscribeEvent>(Id, "load-control-event-status-change", Events::LoadControlEventStatusChange::Id,
+                                    credsIssuerConfig), //
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+}
+void registerClusterMessages(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
+{
+    using namespace chip::app::Clusters::Messages;
+
+    const char * clusterName = "Messages";
+
+    commands_list clusterCommands = {
+        //
+        // Commands
+        //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig),             //
+        make_unique<MessagesPresentMessagesRequest>(credsIssuerConfig), //
+        make_unique<MessagesCancelMessagesRequest>(credsIssuerConfig),  //
+        //
+        // Attributes
+        //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<ReadAttribute>(Id, "messages", Attributes::Messages::Id, credsIssuerConfig),                           //
+        make_unique<ReadAttribute>(Id, "active-message-ids", Attributes::ActiveMessageIDs::Id, credsIssuerConfig),         //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
+        make_unique<
+            WriteAttributeAsComplex<chip::app::DataModel::List<const chip::app::Clusters::Messages::Structs::MessageStruct::Type>>>(
+            Id, "messages", Attributes::Messages::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::ByteSpan>>>(
+            Id, "active-message-ids", Attributes::ActiveMessageIDs::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
+            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
+            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig),                                //
+        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<SubscribeAttribute>(Id, "messages", Attributes::Messages::Id, credsIssuerConfig),                           //
+        make_unique<SubscribeAttribute>(Id, "active-message-ids", Attributes::ActiveMessageIDs::Id, credsIssuerConfig),         //
+        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        //
+        // Events
+        //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),                                                         //
+        make_unique<ReadEvent>(Id, "message-queued", Events::MessageQueued::Id, credsIssuerConfig),            //
+        make_unique<ReadEvent>(Id, "message-presented", Events::MessagePresented::Id, credsIssuerConfig),      //
+        make_unique<ReadEvent>(Id, "message-complete", Events::MessageComplete::Id, credsIssuerConfig),        //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig),                                                    //
+        make_unique<SubscribeEvent>(Id, "message-queued", Events::MessageQueued::Id, credsIssuerConfig),       //
+        make_unique<SubscribeEvent>(Id, "message-presented", Events::MessagePresented::Id, credsIssuerConfig), //
+        make_unique<SubscribeEvent>(Id, "message-complete", Events::MessageComplete::Id, credsIssuerConfig),   //
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+}
+void registerClusterDeviceEnergyManagement(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
+{
+    using namespace chip::app::Clusters::DeviceEnergyManagement;
+
+    const char * clusterName = "DeviceEnergyManagement";
+
+    commands_list clusterCommands = {
+        //
+        // Commands
+        //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig),                                   //
+        make_unique<DeviceEnergyManagementPowerAdjustRequest>(credsIssuerConfig),             //
+        make_unique<DeviceEnergyManagementCancelPowerAdjustRequest>(credsIssuerConfig),       //
+        make_unique<DeviceEnergyManagementStartTimeAdjustRequest>(credsIssuerConfig),         //
+        make_unique<DeviceEnergyManagementPauseRequest>(credsIssuerConfig),                   //
+        make_unique<DeviceEnergyManagementResumeRequest>(credsIssuerConfig),                  //
+        make_unique<DeviceEnergyManagementModifyForecastRequest>(credsIssuerConfig),          //
+        make_unique<DeviceEnergyManagementRequestConstraintBasedForecast>(credsIssuerConfig), //
+        make_unique<DeviceEnergyManagementCancelRequest>(credsIssuerConfig),                  //
+        //
+        // Attributes
+        //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                    //
+        make_unique<ReadAttribute>(Id, "esatype", Attributes::ESAType::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "esacan-generate", Attributes::ESACanGenerate::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "esastate", Attributes::ESAState::Id, credsIssuerConfig),              //
+        make_unique<ReadAttribute>(Id, "abs-min-power", Attributes::AbsMinPower::Id, credsIssuerConfig),      //
+        make_unique<ReadAttribute>(Id, "abs-max-power", Attributes::AbsMaxPower::Id, credsIssuerConfig),      //
+        make_unique<ReadAttribute>(Id, "power-adjustment-capability", Attributes::PowerAdjustmentCapability::Id,
+                                   credsIssuerConfig),                                                                     //
+        make_unique<ReadAttribute>(Id, "forecast", Attributes::Forecast::Id, credsIssuerConfig),                           //
+        make_unique<ReadAttribute>(Id, "opt-out-state", Attributes::OptOutState::Id, credsIssuerConfig),                   //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
+        make_unique<WriteAttribute<chip::app::Clusters::DeviceEnergyManagement::ESATypeEnum>>(
+            Id, "esatype", 0, UINT8_MAX, Attributes::ESAType::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<bool>>(Id, "esacan-generate", 0, 1, Attributes::ESACanGenerate::Id,
+                                          WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::Clusters::DeviceEnergyManagement::ESAStateEnum>>(
+            Id, "esastate", 0, UINT8_MAX, Attributes::ESAState::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<int64_t>>(Id, "abs-min-power", INT64_MIN, INT64_MAX, Attributes::AbsMinPower::Id,
+                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<int64_t>>(Id, "abs-max-power", INT64_MIN, INT64_MAX, Attributes::AbsMaxPower::Id,
+                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::Nullable<
+            chip::app::DataModel::List<const chip::app::Clusters::DeviceEnergyManagement::Structs::PowerAdjustStruct::Type>>>>(
+            Id, "power-adjustment-capability", Attributes::PowerAdjustmentCapability::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<
+            chip::app::DataModel::Nullable<chip::app::Clusters::DeviceEnergyManagement::Structs::ForecastStruct::Type>>>(
+            Id, "forecast", Attributes::Forecast::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::Clusters::DeviceEnergyManagement::OptOutStateEnum>>(
+            Id, "opt-out-state", 0, UINT8_MAX, Attributes::OptOutState::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
+            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
+            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig),                   //
+        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                    //
+        make_unique<SubscribeAttribute>(Id, "esatype", Attributes::ESAType::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "esacan-generate", Attributes::ESACanGenerate::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "esastate", Attributes::ESAState::Id, credsIssuerConfig),              //
+        make_unique<SubscribeAttribute>(Id, "abs-min-power", Attributes::AbsMinPower::Id, credsIssuerConfig),      //
+        make_unique<SubscribeAttribute>(Id, "abs-max-power", Attributes::AbsMaxPower::Id, credsIssuerConfig),      //
+        make_unique<SubscribeAttribute>(Id, "power-adjustment-capability", Attributes::PowerAdjustmentCapability::Id,
+                                        credsIssuerConfig),                                                                     //
+        make_unique<SubscribeAttribute>(Id, "forecast", Attributes::Forecast::Id, credsIssuerConfig),                           //
+        make_unique<SubscribeAttribute>(Id, "opt-out-state", Attributes::OptOutState::Id, credsIssuerConfig),                   //
+        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        //
+        // Events
+        //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),                                                          //
+        make_unique<ReadEvent>(Id, "power-adjust-start", Events::PowerAdjustStart::Id, credsIssuerConfig),      //
+        make_unique<ReadEvent>(Id, "power-adjust-end", Events::PowerAdjustEnd::Id, credsIssuerConfig),          //
+        make_unique<ReadEvent>(Id, "paused", Events::Paused::Id, credsIssuerConfig),                            //
+        make_unique<ReadEvent>(Id, "resumed", Events::Resumed::Id, credsIssuerConfig),                          //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig),                                                     //
+        make_unique<SubscribeEvent>(Id, "power-adjust-start", Events::PowerAdjustStart::Id, credsIssuerConfig), //
+        make_unique<SubscribeEvent>(Id, "power-adjust-end", Events::PowerAdjustEnd::Id, credsIssuerConfig),     //
+        make_unique<SubscribeEvent>(Id, "paused", Events::Paused::Id, credsIssuerConfig),                       //
+        make_unique<SubscribeEvent>(Id, "resumed", Events::Resumed::Id, credsIssuerConfig),                     //
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+}
+void registerClusterEnergyEvse(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
+{
+    using namespace chip::app::Clusters::EnergyEvse;
+
+    const char * clusterName = "EnergyEvse";
+
+    commands_list clusterCommands = {
+        //
+        // Commands
+        //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig),          //
+        make_unique<EnergyEvseDisable>(credsIssuerConfig),           //
+        make_unique<EnergyEvseEnableCharging>(credsIssuerConfig),    //
+        make_unique<EnergyEvseEnableDischarging>(credsIssuerConfig), //
+        make_unique<EnergyEvseStartDiagnostics>(credsIssuerConfig),  //
+        make_unique<EnergyEvseSetTargets>(credsIssuerConfig),        //
+        make_unique<EnergyEvseGetTargets>(credsIssuerConfig),        //
+        make_unique<EnergyEvseClearTargets>(credsIssuerConfig),      //
+        //
+        // Attributes
+        //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                       //
+        make_unique<ReadAttribute>(Id, "state", Attributes::State::Id, credsIssuerConfig),                                       //
+        make_unique<ReadAttribute>(Id, "supply-state", Attributes::SupplyState::Id, credsIssuerConfig),                          //
+        make_unique<ReadAttribute>(Id, "fault-state", Attributes::FaultState::Id, credsIssuerConfig),                            //
+        make_unique<ReadAttribute>(Id, "charging-enabled-until", Attributes::ChargingEnabledUntil::Id, credsIssuerConfig),       //
+        make_unique<ReadAttribute>(Id, "discharging-enabled-until", Attributes::DischargingEnabledUntil::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "circuit-capacity", Attributes::CircuitCapacity::Id, credsIssuerConfig),                  //
+        make_unique<ReadAttribute>(Id, "minimum-charge-current", Attributes::MinimumChargeCurrent::Id, credsIssuerConfig),       //
+        make_unique<ReadAttribute>(Id, "maximum-charge-current", Attributes::MaximumChargeCurrent::Id, credsIssuerConfig),       //
+        make_unique<ReadAttribute>(Id, "maximum-discharge-current", Attributes::MaximumDischargeCurrent::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "user-maximum-charge-current", Attributes::UserMaximumChargeCurrent::Id,
+                                   credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "randomization-delay-window", Attributes::RandomizationDelayWindow::Id,
+                                   credsIssuerConfig),                                                                      //
+        make_unique<ReadAttribute>(Id, "next-charge-start-time", Attributes::NextChargeStartTime::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "next-charge-target-time", Attributes::NextChargeTargetTime::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "next-charge-required-energy", Attributes::NextChargeRequiredEnergy::Id,
+                                   credsIssuerConfig),                                                                           //
+        make_unique<ReadAttribute>(Id, "next-charge-target-so-c", Attributes::NextChargeTargetSoC::Id, credsIssuerConfig),       //
+        make_unique<ReadAttribute>(Id, "approximate-evefficiency", Attributes::ApproximateEVEfficiency::Id, credsIssuerConfig),  //
+        make_unique<ReadAttribute>(Id, "state-of-charge", Attributes::StateOfCharge::Id, credsIssuerConfig),                     //
+        make_unique<ReadAttribute>(Id, "battery-capacity", Attributes::BatteryCapacity::Id, credsIssuerConfig),                  //
+        make_unique<ReadAttribute>(Id, "vehicle-id", Attributes::VehicleID::Id, credsIssuerConfig),                              //
+        make_unique<ReadAttribute>(Id, "session-id", Attributes::SessionID::Id, credsIssuerConfig),                              //
+        make_unique<ReadAttribute>(Id, "session-duration", Attributes::SessionDuration::Id, credsIssuerConfig),                  //
+        make_unique<ReadAttribute>(Id, "session-energy-charged", Attributes::SessionEnergyCharged::Id, credsIssuerConfig),       //
+        make_unique<ReadAttribute>(Id, "session-energy-discharged", Attributes::SessionEnergyDischarged::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig),       //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),         //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                              //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                            //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),                  //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                                    //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<chip::app::Clusters::EnergyEvse::StateEnum>>>(
+            Id, "state", 0, UINT8_MAX, Attributes::State::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::Clusters::EnergyEvse::SupplyStateEnum>>(
+            Id, "supply-state", 0, UINT8_MAX, Attributes::SupplyState::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::Clusters::EnergyEvse::FaultStateEnum>>(
+            Id, "fault-state", 0, UINT8_MAX, Attributes::FaultState::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint32_t>>>(Id, "charging-enabled-until", 0, UINT32_MAX,
+                                                                              Attributes::ChargingEnabledUntil::Id,
+                                                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint32_t>>>(Id, "discharging-enabled-until", 0, UINT32_MAX,
+                                                                              Attributes::DischargingEnabledUntil::Id,
+                                                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<int64_t>>(Id, "circuit-capacity", INT64_MIN, INT64_MAX, Attributes::CircuitCapacity::Id,
+                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<int64_t>>(Id, "minimum-charge-current", INT64_MIN, INT64_MAX,
+                                             Attributes::MinimumChargeCurrent::Id, WriteCommandType::kForceWrite,
+                                             credsIssuerConfig), //
+        make_unique<WriteAttribute<int64_t>>(Id, "maximum-charge-current", INT64_MIN, INT64_MAX,
+                                             Attributes::MaximumChargeCurrent::Id, WriteCommandType::kForceWrite,
+                                             credsIssuerConfig), //
+        make_unique<WriteAttribute<int64_t>>(Id, "maximum-discharge-current", INT64_MIN, INT64_MAX,
+                                             Attributes::MaximumDischargeCurrent::Id, WriteCommandType::kForceWrite,
+                                             credsIssuerConfig), //
+        make_unique<WriteAttribute<int64_t>>(Id, "user-maximum-charge-current", INT64_MIN, INT64_MAX,
+                                             Attributes::UserMaximumChargeCurrent::Id, WriteCommandType::kWrite,
+                                             credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "randomization-delay-window", 0, UINT32_MAX,
+                                              Attributes::RandomizationDelayWindow::Id, WriteCommandType::kWrite,
+                                              credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint32_t>>>(Id, "next-charge-start-time", 0, UINT32_MAX,
+                                                                              Attributes::NextChargeStartTime::Id,
+                                                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint32_t>>>(Id, "next-charge-target-time", 0, UINT32_MAX,
+                                                                              Attributes::NextChargeTargetTime::Id,
+                                                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<int64_t>>>(Id, "next-charge-required-energy", INT64_MIN,
+                                                                             INT64_MAX, Attributes::NextChargeRequiredEnergy::Id,
+                                                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<chip::Percent>>>(
+            Id, "next-charge-target-so-c", 0, UINT8_MAX, Attributes::NextChargeTargetSoC::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint16_t>>>(Id, "approximate-evefficiency", 0, UINT16_MAX,
+                                                                              Attributes::ApproximateEVEfficiency::Id,
+                                                                              WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<chip::Percent>>>(
+            Id, "state-of-charge", 0, UINT8_MAX, Attributes::StateOfCharge::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<int64_t>>>(Id, "battery-capacity", INT64_MIN, INT64_MAX,
+                                                                             Attributes::BatteryCapacity::Id,
+                                                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<chip::CharSpan>>>(
+            Id, "vehicle-id", Attributes::VehicleID::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint32_t>>>(
+            Id, "session-id", 0, UINT32_MAX, Attributes::SessionID::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint32_t>>>(Id, "session-duration", 0, UINT32_MAX,
+                                                                              Attributes::SessionDuration::Id,
+                                                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<int64_t>>>(Id, "session-energy-charged", INT64_MIN, INT64_MAX,
+                                                                             Attributes::SessionEnergyCharged::Id,
+                                                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<int64_t>>>(Id, "session-energy-discharged", INT64_MIN, INT64_MAX,
+                                                                             Attributes::SessionEnergyDischarged::Id,
+                                                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
+            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
+            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig),                                //
+        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<SubscribeAttribute>(Id, "state", Attributes::State::Id, credsIssuerConfig),                                 //
+        make_unique<SubscribeAttribute>(Id, "supply-state", Attributes::SupplyState::Id, credsIssuerConfig),                    //
+        make_unique<SubscribeAttribute>(Id, "fault-state", Attributes::FaultState::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "charging-enabled-until", Attributes::ChargingEnabledUntil::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "discharging-enabled-until", Attributes::DischargingEnabledUntil::Id,
+                                        credsIssuerConfig),                                                                     //
+        make_unique<SubscribeAttribute>(Id, "circuit-capacity", Attributes::CircuitCapacity::Id, credsIssuerConfig),            //
+        make_unique<SubscribeAttribute>(Id, "minimum-charge-current", Attributes::MinimumChargeCurrent::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "maximum-charge-current", Attributes::MaximumChargeCurrent::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "maximum-discharge-current", Attributes::MaximumDischargeCurrent::Id,
+                                        credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "user-maximum-charge-current", Attributes::UserMaximumChargeCurrent::Id,
+                                        credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "randomization-delay-window", Attributes::RandomizationDelayWindow::Id,
+                                        credsIssuerConfig),                                                                      //
+        make_unique<SubscribeAttribute>(Id, "next-charge-start-time", Attributes::NextChargeStartTime::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "next-charge-target-time", Attributes::NextChargeTargetTime::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "next-charge-required-energy", Attributes::NextChargeRequiredEnergy::Id,
+                                        credsIssuerConfig),                                                                     //
+        make_unique<SubscribeAttribute>(Id, "next-charge-target-so-c", Attributes::NextChargeTargetSoC::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "approximate-evefficiency", Attributes::ApproximateEVEfficiency::Id,
+                                        credsIssuerConfig),                                                                     //
+        make_unique<SubscribeAttribute>(Id, "state-of-charge", Attributes::StateOfCharge::Id, credsIssuerConfig),               //
+        make_unique<SubscribeAttribute>(Id, "battery-capacity", Attributes::BatteryCapacity::Id, credsIssuerConfig),            //
+        make_unique<SubscribeAttribute>(Id, "vehicle-id", Attributes::VehicleID::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "session-id", Attributes::SessionID::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "session-duration", Attributes::SessionDuration::Id, credsIssuerConfig),            //
+        make_unique<SubscribeAttribute>(Id, "session-energy-charged", Attributes::SessionEnergyCharged::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "session-energy-discharged", Attributes::SessionEnergyDischarged::Id,
+                                        credsIssuerConfig),                                                                     //
+        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        //
+        // Events
+        //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),                                                                    //
+        make_unique<ReadEvent>(Id, "evconnected", Events::EVConnected::Id, credsIssuerConfig),                            //
+        make_unique<ReadEvent>(Id, "evnot-detected", Events::EVNotDetected::Id, credsIssuerConfig),                       //
+        make_unique<ReadEvent>(Id, "energy-transfer-started", Events::EnergyTransferStarted::Id, credsIssuerConfig),      //
+        make_unique<ReadEvent>(Id, "energy-transfer-stopped", Events::EnergyTransferStopped::Id, credsIssuerConfig),      //
+        make_unique<ReadEvent>(Id, "fault", Events::Fault::Id, credsIssuerConfig),                                        //
+        make_unique<ReadEvent>(Id, "rfid", Events::Rfid::Id, credsIssuerConfig),                                          //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig),                                                               //
+        make_unique<SubscribeEvent>(Id, "evconnected", Events::EVConnected::Id, credsIssuerConfig),                       //
+        make_unique<SubscribeEvent>(Id, "evnot-detected", Events::EVNotDetected::Id, credsIssuerConfig),                  //
+        make_unique<SubscribeEvent>(Id, "energy-transfer-started", Events::EnergyTransferStarted::Id, credsIssuerConfig), //
+        make_unique<SubscribeEvent>(Id, "energy-transfer-stopped", Events::EnergyTransferStopped::Id, credsIssuerConfig), //
+        make_unique<SubscribeEvent>(Id, "fault", Events::Fault::Id, credsIssuerConfig),                                   //
+        make_unique<SubscribeEvent>(Id, "rfid", Events::Rfid::Id, credsIssuerConfig),                                     //
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+}
+void registerClusterEnergyPreference(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
+{
+    using namespace chip::app::Clusters::EnergyPreference;
+
+    const char * clusterName = "EnergyPreference";
+
+    commands_list clusterCommands = {
+        //
+        // Commands
+        //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig), //
+        //
+        // Attributes
+        //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<ReadAttribute>(Id, "energy-balances", Attributes::EnergyBalances::Id, credsIssuerConfig),              //
+        make_unique<ReadAttribute>(Id, "current-energy-balance", Attributes::CurrentEnergyBalance::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "energy-priorities", Attributes::EnergyPriorities::Id, credsIssuerConfig),          //
+        make_unique<ReadAttribute>(Id, "low-power-mode-sensitivities", Attributes::LowPowerModeSensitivities::Id,
+                                   credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "current-low-power-mode-sensitivity", Attributes::CurrentLowPowerModeSensitivity::Id,
+                                   credsIssuerConfig),                                                                     //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
+        make_unique<WriteAttributeAsComplex<
+            chip::app::DataModel::List<const chip::app::Clusters::EnergyPreference::Structs::BalanceStruct::Type>>>(
+            Id, "energy-balances", Attributes::EnergyBalances::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "current-energy-balance", 0, UINT8_MAX, Attributes::CurrentEnergyBalance::Id,
+                                             WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<
+            WriteAttributeAsComplex<chip::app::DataModel::List<const chip::app::Clusters::EnergyPreference::EnergyPriorityEnum>>>(
+            Id, "energy-priorities", Attributes::EnergyPriorities::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<
+            chip::app::DataModel::List<const chip::app::Clusters::EnergyPreference::Structs::BalanceStruct::Type>>>(
+            Id, "low-power-mode-sensitivities", Attributes::LowPowerModeSensitivities::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "current-low-power-mode-sensitivity", 0, UINT8_MAX,
+                                             Attributes::CurrentLowPowerModeSensitivity::Id, WriteCommandType::kWrite,
+                                             credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
+            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
+            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig),                                //
+        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<SubscribeAttribute>(Id, "energy-balances", Attributes::EnergyBalances::Id, credsIssuerConfig),              //
+        make_unique<SubscribeAttribute>(Id, "current-energy-balance", Attributes::CurrentEnergyBalance::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "energy-priorities", Attributes::EnergyPriorities::Id, credsIssuerConfig),          //
+        make_unique<SubscribeAttribute>(Id, "low-power-mode-sensitivities", Attributes::LowPowerModeSensitivities::Id,
+                                        credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "current-low-power-mode-sensitivity", Attributes::CurrentLowPowerModeSensitivity::Id,
+                                        credsIssuerConfig),                                                                     //
+        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        //
+        // Events
+        //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),      //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig), //
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+}
+void registerClusterPowerTopology(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
+{
+    using namespace chip::app::Clusters::PowerTopology;
+
+    const char * clusterName = "PowerTopology";
+
+    commands_list clusterCommands = {
+        //
+        // Commands
+        //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig), //
+        //
+        // Attributes
+        //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<ReadAttribute>(Id, "available-endpoints", Attributes::AvailableEndpoints::Id, credsIssuerConfig),      //
+        make_unique<ReadAttribute>(Id, "active-endpoints", Attributes::ActiveEndpoints::Id, credsIssuerConfig),            //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EndpointId>>>(
+            Id, "available-endpoints", Attributes::AvailableEndpoints::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EndpointId>>>(
+            Id, "active-endpoints", Attributes::ActiveEndpoints::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
+            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
+            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig),                                //
+        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<SubscribeAttribute>(Id, "available-endpoints", Attributes::AvailableEndpoints::Id, credsIssuerConfig),      //
+        make_unique<SubscribeAttribute>(Id, "active-endpoints", Attributes::ActiveEndpoints::Id, credsIssuerConfig),            //
+        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        //
+        // Events
+        //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),      //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig), //
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+}
+void registerClusterEnergyEvseMode(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
+{
+    using namespace chip::app::Clusters::EnergyEvseMode;
+
+    const char * clusterName = "EnergyEvseMode";
+
+    commands_list clusterCommands = {
+        //
+        // Commands
+        //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig),         //
+        make_unique<EnergyEvseModeChangeToMode>(credsIssuerConfig), //
+        //
+        // Attributes
+        //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<ReadAttribute>(Id, "supported-modes", Attributes::SupportedModes::Id, credsIssuerConfig),              //
+        make_unique<ReadAttribute>(Id, "current-mode", Attributes::CurrentMode::Id, credsIssuerConfig),                    //
+        make_unique<ReadAttribute>(Id, "start-up-mode", Attributes::StartUpMode::Id, credsIssuerConfig),                   //
+        make_unique<ReadAttribute>(Id, "on-mode", Attributes::OnMode::Id, credsIssuerConfig),                              //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
+        make_unique<WriteAttributeAsComplex<
+            chip::app::DataModel::List<const chip::app::Clusters::EnergyEvseMode::Structs::ModeOptionStruct::Type>>>(
+            Id, "supported-modes", Attributes::SupportedModes::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "current-mode", 0, UINT8_MAX, Attributes::CurrentMode::Id,
+                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint8_t>>>(
+            Id, "start-up-mode", 0, UINT8_MAX, Attributes::StartUpMode::Id, WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint8_t>>>(Id, "on-mode", 0, UINT8_MAX, Attributes::OnMode::Id,
+                                                                             WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
+            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
+            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig),                                //
+        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<SubscribeAttribute>(Id, "supported-modes", Attributes::SupportedModes::Id, credsIssuerConfig),              //
+        make_unique<SubscribeAttribute>(Id, "current-mode", Attributes::CurrentMode::Id, credsIssuerConfig),                    //
+        make_unique<SubscribeAttribute>(Id, "start-up-mode", Attributes::StartUpMode::Id, credsIssuerConfig),                   //
+        make_unique<SubscribeAttribute>(Id, "on-mode", Attributes::OnMode::Id, credsIssuerConfig),                              //
+        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        //
+        // Events
+        //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),      //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig), //
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+}
+void registerClusterDeviceEnergyManagementMode(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
+{
+    using namespace chip::app::Clusters::DeviceEnergyManagementMode;
+
+    const char * clusterName = "DeviceEnergyManagementMode";
+
+    commands_list clusterCommands = {
+        //
+        // Commands
+        //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig),                     //
+        make_unique<DeviceEnergyManagementModeChangeToMode>(credsIssuerConfig), //
+        //
+        // Attributes
+        //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<ReadAttribute>(Id, "supported-modes", Attributes::SupportedModes::Id, credsIssuerConfig),              //
+        make_unique<ReadAttribute>(Id, "current-mode", Attributes::CurrentMode::Id, credsIssuerConfig),                    //
+        make_unique<ReadAttribute>(Id, "start-up-mode", Attributes::StartUpMode::Id, credsIssuerConfig),                   //
+        make_unique<ReadAttribute>(Id, "on-mode", Attributes::OnMode::Id, credsIssuerConfig),                              //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
+        make_unique<WriteAttributeAsComplex<
+            chip::app::DataModel::List<const chip::app::Clusters::DeviceEnergyManagementMode::Structs::ModeOptionStruct::Type>>>(
+            Id, "supported-modes", Attributes::SupportedModes::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "current-mode", 0, UINT8_MAX, Attributes::CurrentMode::Id,
+                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint8_t>>>(
+            Id, "start-up-mode", 0, UINT8_MAX, Attributes::StartUpMode::Id, WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint8_t>>>(Id, "on-mode", 0, UINT8_MAX, Attributes::OnMode::Id,
+                                                                             WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
+            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
+            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig),                                //
+        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<SubscribeAttribute>(Id, "supported-modes", Attributes::SupportedModes::Id, credsIssuerConfig),              //
+        make_unique<SubscribeAttribute>(Id, "current-mode", Attributes::CurrentMode::Id, credsIssuerConfig),                    //
+        make_unique<SubscribeAttribute>(Id, "start-up-mode", Attributes::StartUpMode::Id, credsIssuerConfig),                   //
+        make_unique<SubscribeAttribute>(Id, "on-mode", Attributes::OnMode::Id, credsIssuerConfig),                              //
+        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        //
+        // Events
+        //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),      //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig), //
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+}
 void registerClusterDoorLock(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
 {
     using namespace chip::app::Clusters::DoorLock;
@@ -14643,26 +21130,28 @@ void registerClusterDoorLock(Commands & commands, CredentialIssuerCommands * cre
         //
         // Commands
         //
-        make_unique<ClusterCommand>(Id, credsIssuerConfig),           //
-        make_unique<DoorLockLockDoor>(credsIssuerConfig),             //
-        make_unique<DoorLockUnlockDoor>(credsIssuerConfig),           //
-        make_unique<DoorLockUnlockWithTimeout>(credsIssuerConfig),    //
-        make_unique<DoorLockSetWeekDaySchedule>(credsIssuerConfig),   //
-        make_unique<DoorLockGetWeekDaySchedule>(credsIssuerConfig),   //
-        make_unique<DoorLockClearWeekDaySchedule>(credsIssuerConfig), //
-        make_unique<DoorLockSetYearDaySchedule>(credsIssuerConfig),   //
-        make_unique<DoorLockGetYearDaySchedule>(credsIssuerConfig),   //
-        make_unique<DoorLockClearYearDaySchedule>(credsIssuerConfig), //
-        make_unique<DoorLockSetHolidaySchedule>(credsIssuerConfig),   //
-        make_unique<DoorLockGetHolidaySchedule>(credsIssuerConfig),   //
-        make_unique<DoorLockClearHolidaySchedule>(credsIssuerConfig), //
-        make_unique<DoorLockSetUser>(credsIssuerConfig),              //
-        make_unique<DoorLockGetUser>(credsIssuerConfig),              //
-        make_unique<DoorLockClearUser>(credsIssuerConfig),            //
-        make_unique<DoorLockSetCredential>(credsIssuerConfig),        //
-        make_unique<DoorLockGetCredentialStatus>(credsIssuerConfig),  //
-        make_unique<DoorLockClearCredential>(credsIssuerConfig),      //
-        make_unique<DoorLockUnboltDoor>(credsIssuerConfig),           //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig),             //
+        make_unique<DoorLockLockDoor>(credsIssuerConfig),               //
+        make_unique<DoorLockUnlockDoor>(credsIssuerConfig),             //
+        make_unique<DoorLockUnlockWithTimeout>(credsIssuerConfig),      //
+        make_unique<DoorLockSetWeekDaySchedule>(credsIssuerConfig),     //
+        make_unique<DoorLockGetWeekDaySchedule>(credsIssuerConfig),     //
+        make_unique<DoorLockClearWeekDaySchedule>(credsIssuerConfig),   //
+        make_unique<DoorLockSetYearDaySchedule>(credsIssuerConfig),     //
+        make_unique<DoorLockGetYearDaySchedule>(credsIssuerConfig),     //
+        make_unique<DoorLockClearYearDaySchedule>(credsIssuerConfig),   //
+        make_unique<DoorLockSetHolidaySchedule>(credsIssuerConfig),     //
+        make_unique<DoorLockGetHolidaySchedule>(credsIssuerConfig),     //
+        make_unique<DoorLockClearHolidaySchedule>(credsIssuerConfig),   //
+        make_unique<DoorLockSetUser>(credsIssuerConfig),                //
+        make_unique<DoorLockGetUser>(credsIssuerConfig),                //
+        make_unique<DoorLockClearUser>(credsIssuerConfig),              //
+        make_unique<DoorLockSetCredential>(credsIssuerConfig),          //
+        make_unique<DoorLockGetCredentialStatus>(credsIssuerConfig),    //
+        make_unique<DoorLockClearCredential>(credsIssuerConfig),        //
+        make_unique<DoorLockUnboltDoor>(credsIssuerConfig),             //
+        make_unique<DoorLockSetAliroReaderConfig>(credsIssuerConfig),   //
+        make_unique<DoorLockClearAliroReaderConfig>(credsIssuerConfig), //
         //
         // Attributes
         //
@@ -14712,8 +21201,25 @@ void registerClusterDoorLock(Commands & commands, CredentialIssuerCommands * cre
                                    credsIssuerConfig),                                                                //
         make_unique<ReadAttribute>(Id, "send-pinover-the-air", Attributes::SendPINOverTheAir::Id, credsIssuerConfig), //
         make_unique<ReadAttribute>(Id, "require-pinfor-remote-operation", Attributes::RequirePINforRemoteOperation::Id,
-                                   credsIssuerConfig),                                                                     //
-        make_unique<ReadAttribute>(Id, "expiring-user-timeout", Attributes::ExpiringUserTimeout::Id, credsIssuerConfig),   //
+                                   credsIssuerConfig),                                                                   //
+        make_unique<ReadAttribute>(Id, "expiring-user-timeout", Attributes::ExpiringUserTimeout::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "aliro-reader-verification-key", Attributes::AliroReaderVerificationKey::Id,
+                                   credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "aliro-reader-group-identifier", Attributes::AliroReaderGroupIdentifier::Id,
+                                   credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "aliro-reader-group-sub-identifier", Attributes::AliroReaderGroupSubIdentifier::Id,
+                                   credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "aliro-expedited-transaction-supported-protocol-versions",
+                                   Attributes::AliroExpeditedTransactionSupportedProtocolVersions::Id, credsIssuerConfig),      //
+        make_unique<ReadAttribute>(Id, "aliro-group-resolving-key", Attributes::AliroGroupResolvingKey::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "aliro-supported-bleuwbprotocol-versions",
+                                   Attributes::AliroSupportedBLEUWBProtocolVersions::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "aliro-bleadvertising-version", Attributes::AliroBLEAdvertisingVersion::Id,
+                                   credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "number-of-aliro-credential-issuer-keys-supported",
+                                   Attributes::NumberOfAliroCredentialIssuerKeysSupported::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "number-of-aliro-endpoint-keys-supported",
+                                   Attributes::NumberOfAliroEndpointKeysSupported::Id, credsIssuerConfig),                 //
         make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
         make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
         make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
@@ -14805,6 +21311,34 @@ void registerClusterDoorLock(Commands & commands, CredentialIssuerCommands * cre
                                           WriteCommandType::kWrite, credsIssuerConfig), //
         make_unique<WriteAttribute<uint16_t>>(Id, "expiring-user-timeout", 0, UINT16_MAX, Attributes::ExpiringUserTimeout::Id,
                                               WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<chip::ByteSpan>>>(
+            Id, "aliro-reader-verification-key", Attributes::AliroReaderVerificationKey::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<chip::ByteSpan>>>(
+            Id, "aliro-reader-group-identifier", Attributes::AliroReaderGroupIdentifier::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::ByteSpan>>(Id, "aliro-reader-group-sub-identifier",
+                                                    Attributes::AliroReaderGroupSubIdentifier::Id, WriteCommandType::kForceWrite,
+                                                    credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::ByteSpan>>>(
+            Id, "aliro-expedited-transaction-supported-protocol-versions",
+            Attributes::AliroExpeditedTransactionSupportedProtocolVersions::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<chip::ByteSpan>>>(
+            Id, "aliro-group-resolving-key", Attributes::AliroGroupResolvingKey::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::ByteSpan>>>(
+            Id, "aliro-supported-bleuwbprotocol-versions", Attributes::AliroSupportedBLEUWBProtocolVersions::Id,
+            WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "aliro-bleadvertising-version", 0, UINT8_MAX,
+                                             Attributes::AliroBLEAdvertisingVersion::Id, WriteCommandType::kForceWrite,
+                                             credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "number-of-aliro-credential-issuer-keys-supported", 0, UINT16_MAX,
+                                              Attributes::NumberOfAliroCredentialIssuerKeysSupported::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "number-of-aliro-endpoint-keys-supported", 0, UINT16_MAX,
+                                              Attributes::NumberOfAliroEndpointKeysSupported::Id, WriteCommandType::kForceWrite,
+                                              credsIssuerConfig), //
         make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
             Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
             credsIssuerConfig), //
@@ -14870,8 +21404,26 @@ void registerClusterDoorLock(Commands & commands, CredentialIssuerCommands * cre
                                         credsIssuerConfig),                                                                //
         make_unique<SubscribeAttribute>(Id, "send-pinover-the-air", Attributes::SendPINOverTheAir::Id, credsIssuerConfig), //
         make_unique<SubscribeAttribute>(Id, "require-pinfor-remote-operation", Attributes::RequirePINforRemoteOperation::Id,
-                                        credsIssuerConfig),                                                                     //
-        make_unique<SubscribeAttribute>(Id, "expiring-user-timeout", Attributes::ExpiringUserTimeout::Id, credsIssuerConfig),   //
+                                        credsIssuerConfig),                                                                   //
+        make_unique<SubscribeAttribute>(Id, "expiring-user-timeout", Attributes::ExpiringUserTimeout::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "aliro-reader-verification-key", Attributes::AliroReaderVerificationKey::Id,
+                                        credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "aliro-reader-group-identifier", Attributes::AliroReaderGroupIdentifier::Id,
+                                        credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "aliro-reader-group-sub-identifier", Attributes::AliroReaderGroupSubIdentifier::Id,
+                                        credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "aliro-expedited-transaction-supported-protocol-versions",
+                                        Attributes::AliroExpeditedTransactionSupportedProtocolVersions::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "aliro-group-resolving-key", Attributes::AliroGroupResolvingKey::Id,
+                                        credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "aliro-supported-bleuwbprotocol-versions",
+                                        Attributes::AliroSupportedBLEUWBProtocolVersions::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "aliro-bleadvertising-version", Attributes::AliroBLEAdvertisingVersion::Id,
+                                        credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "number-of-aliro-credential-issuer-keys-supported",
+                                        Attributes::NumberOfAliroCredentialIssuerKeysSupported::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "number-of-aliro-endpoint-keys-supported",
+                                        Attributes::NumberOfAliroEndpointKeysSupported::Id, credsIssuerConfig),                 //
         make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
         make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
         make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
@@ -15385,11 +21937,18 @@ void registerClusterThermostat(Commands & commands, CredentialIssuerCommands * c
         //
         // Commands
         //
-        make_unique<ClusterCommand>(Id, credsIssuerConfig),            //
-        make_unique<ThermostatSetpointRaiseLower>(credsIssuerConfig),  //
-        make_unique<ThermostatSetWeeklySchedule>(credsIssuerConfig),   //
-        make_unique<ThermostatGetWeeklySchedule>(credsIssuerConfig),   //
-        make_unique<ThermostatClearWeeklySchedule>(credsIssuerConfig), //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig),                          //
+        make_unique<ThermostatSetpointRaiseLower>(credsIssuerConfig),                //
+        make_unique<ThermostatSetWeeklySchedule>(credsIssuerConfig),                 //
+        make_unique<ThermostatGetWeeklySchedule>(credsIssuerConfig),                 //
+        make_unique<ThermostatClearWeeklySchedule>(credsIssuerConfig),               //
+        make_unique<ThermostatSetActiveScheduleRequest>(credsIssuerConfig),          //
+        make_unique<ThermostatSetActivePresetRequest>(credsIssuerConfig),            //
+        make_unique<ThermostatStartPresetsSchedulesEditRequest>(credsIssuerConfig),  //
+        make_unique<ThermostatCancelPresetsSchedulesEditRequest>(credsIssuerConfig), //
+        make_unique<ThermostatCommitPresetsSchedulesRequest>(credsIssuerConfig),     //
+        make_unique<ThermostatCancelSetActivePresetRequest>(credsIssuerConfig),      //
+        make_unique<ThermostatSetTemperatureSetpointHoldPolicy>(credsIssuerConfig),  //
         //
         // Attributes
         //
@@ -15457,6 +22016,25 @@ void registerClusterThermostat(Commands & commands, CredentialIssuerCommands * c
         make_unique<ReadAttribute>(Id, "aclouver-position", Attributes::ACLouverPosition::Id, credsIssuerConfig),          //
         make_unique<ReadAttribute>(Id, "accoil-temperature", Attributes::ACCoilTemperature::Id, credsIssuerConfig),        //
         make_unique<ReadAttribute>(Id, "accapacityformat", Attributes::ACCapacityformat::Id, credsIssuerConfig),           //
+        make_unique<ReadAttribute>(Id, "preset-types", Attributes::PresetTypes::Id, credsIssuerConfig),                    //
+        make_unique<ReadAttribute>(Id, "schedule-types", Attributes::ScheduleTypes::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "number-of-presets", Attributes::NumberOfPresets::Id, credsIssuerConfig),           //
+        make_unique<ReadAttribute>(Id, "number-of-schedules", Attributes::NumberOfSchedules::Id, credsIssuerConfig),       //
+        make_unique<ReadAttribute>(Id, "number-of-schedule-transitions", Attributes::NumberOfScheduleTransitions::Id,
+                                   credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "number-of-schedule-transition-per-day", Attributes::NumberOfScheduleTransitionPerDay::Id,
+                                   credsIssuerConfig),                                                                     //
+        make_unique<ReadAttribute>(Id, "active-preset-handle", Attributes::ActivePresetHandle::Id, credsIssuerConfig),     //
+        make_unique<ReadAttribute>(Id, "active-schedule-handle", Attributes::ActiveScheduleHandle::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "presets", Attributes::Presets::Id, credsIssuerConfig),                             //
+        make_unique<ReadAttribute>(Id, "schedules", Attributes::Schedules::Id, credsIssuerConfig),                         //
+        make_unique<ReadAttribute>(Id, "presets-schedules-editable", Attributes::PresetsSchedulesEditable::Id,
+                                   credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "temperature-setpoint-hold-policy", Attributes::TemperatureSetpointHoldPolicy::Id,
+                                   credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "setpoint-hold-expiry-timestamp", Attributes::SetpointHoldExpiryTimestamp::Id,
+                                   credsIssuerConfig),                                                                     //
+        make_unique<ReadAttribute>(Id, "queued-preset", Attributes::QueuedPreset::Id, credsIssuerConfig),                  //
         make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
         make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
         make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
@@ -15516,35 +22094,39 @@ void registerClusterThermostat(Commands & commands, CredentialIssuerCommands * c
                                              Attributes::MaxCoolSetpointLimit::Id, WriteCommandType::kWrite, credsIssuerConfig), //
         make_unique<WriteAttribute<int8_t>>(Id, "min-setpoint-dead-band", INT8_MIN, INT8_MAX, Attributes::MinSetpointDeadBand::Id,
                                             WriteCommandType::kWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<uint8_t>>(Id, "remote-sensing", 0, UINT8_MAX, Attributes::RemoteSensing::Id,
-                                             WriteCommandType::kWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<chip::app::Clusters::Thermostat::ThermostatControlSequence>>(
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::Thermostat::RemoteSensingBitmap>>>(
+            Id, "remote-sensing", 0, UINT8_MAX, Attributes::RemoteSensing::Id, WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::Clusters::Thermostat::ControlSequenceOfOperationEnum>>(
             Id, "control-sequence-of-operation", 0, UINT8_MAX, Attributes::ControlSequenceOfOperation::Id, WriteCommandType::kWrite,
             credsIssuerConfig), //
-        make_unique<WriteAttribute<uint8_t>>(Id, "system-mode", 0, UINT8_MAX, Attributes::SystemMode::Id, WriteCommandType::kWrite,
-                                             credsIssuerConfig), //
-        make_unique<WriteAttribute<uint8_t>>(Id, "thermostat-running-mode", 0, UINT8_MAX, Attributes::ThermostatRunningMode::Id,
-                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<uint8_t>>(Id, "start-of-week", 0, UINT8_MAX, Attributes::StartOfWeek::Id,
-                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::Clusters::Thermostat::SystemModeEnum>>(
+            Id, "system-mode", 0, UINT8_MAX, Attributes::SystemMode::Id, WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::Clusters::Thermostat::ThermostatRunningModeEnum>>(
+            Id, "thermostat-running-mode", 0, UINT8_MAX, Attributes::ThermostatRunningMode::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::Clusters::Thermostat::StartOfWeekEnum>>(
+            Id, "start-of-week", 0, UINT8_MAX, Attributes::StartOfWeek::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttribute<uint8_t>>(Id, "number-of-weekly-transitions", 0, UINT8_MAX,
                                              Attributes::NumberOfWeeklyTransitions::Id, WriteCommandType::kForceWrite,
                                              credsIssuerConfig), //
         make_unique<WriteAttribute<uint8_t>>(Id, "number-of-daily-transitions", 0, UINT8_MAX,
                                              Attributes::NumberOfDailyTransitions::Id, WriteCommandType::kForceWrite,
                                              credsIssuerConfig), //
-        make_unique<WriteAttribute<uint8_t>>(Id, "temperature-setpoint-hold", 0, UINT8_MAX, Attributes::TemperatureSetpointHold::Id,
-                                             WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::Clusters::Thermostat::TemperatureSetpointHoldEnum>>(
+            Id, "temperature-setpoint-hold", 0, UINT8_MAX, Attributes::TemperatureSetpointHold::Id, WriteCommandType::kWrite,
+            credsIssuerConfig), //
         make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint16_t>>>(
             Id, "temperature-setpoint-hold-duration", 0, UINT16_MAX, Attributes::TemperatureSetpointHoldDuration::Id,
             WriteCommandType::kWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<uint8_t>>(Id, "thermostat-programming-operation-mode", 0, UINT8_MAX,
-                                             Attributes::ThermostatProgrammingOperationMode::Id, WriteCommandType::kWrite,
-                                             credsIssuerConfig), //
-        make_unique<WriteAttribute<uint16_t>>(Id, "thermostat-running-state", 0, UINT16_MAX, Attributes::ThermostatRunningState::Id,
-                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<uint8_t>>(Id, "setpoint-change-source", 0, UINT8_MAX, Attributes::SetpointChangeSource::Id,
-                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::Thermostat::ProgrammingOperationModeBitmap>>>(
+            Id, "thermostat-programming-operation-mode", 0, UINT8_MAX, Attributes::ThermostatProgrammingOperationMode::Id,
+            WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::Thermostat::RelayStateBitmap>>>(
+            Id, "thermostat-running-state", 0, UINT16_MAX, Attributes::ThermostatRunningState::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::Clusters::Thermostat::SetpointChangeSourceEnum>>(
+            Id, "setpoint-change-source", 0, UINT8_MAX, Attributes::SetpointChangeSource::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
         make_unique<WriteAttribute<chip::app::DataModel::Nullable<int16_t>>>(Id, "setpoint-change-amount", INT16_MIN, INT16_MAX,
                                                                              Attributes::SetpointChangeAmount::Id,
                                                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
@@ -15570,23 +22152,64 @@ void registerClusterThermostat(Commands & commands, CredentialIssuerCommands * c
                                                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttribute<uint8_t>>(Id, "emergency-heat-delta", 0, UINT8_MAX, Attributes::EmergencyHeatDelta::Id,
                                              WriteCommandType::kWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<uint8_t>>(Id, "actype", 0, UINT8_MAX, Attributes::ACType::Id, WriteCommandType::kWrite,
-                                             credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::Clusters::Thermostat::ACTypeEnum>>(Id, "actype", 0, UINT8_MAX, Attributes::ACType::Id,
+                                                                                 WriteCommandType::kWrite, credsIssuerConfig), //
         make_unique<WriteAttribute<uint16_t>>(Id, "accapacity", 0, UINT16_MAX, Attributes::ACCapacity::Id, WriteCommandType::kWrite,
                                               credsIssuerConfig), //
-        make_unique<WriteAttribute<uint8_t>>(Id, "acrefrigerant-type", 0, UINT8_MAX, Attributes::ACRefrigerantType::Id,
-                                             WriteCommandType::kWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<uint8_t>>(Id, "accompressor-type", 0, UINT8_MAX, Attributes::ACCompressorType::Id,
-                                             WriteCommandType::kWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<uint32_t>>(Id, "acerror-code", 0, UINT32_MAX, Attributes::ACErrorCode::Id,
-                                              WriteCommandType::kWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<uint8_t>>(Id, "aclouver-position", 0, UINT8_MAX, Attributes::ACLouverPosition::Id,
-                                             WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::Clusters::Thermostat::ACRefrigerantTypeEnum>>(
+            Id, "acrefrigerant-type", 0, UINT8_MAX, Attributes::ACRefrigerantType::Id, WriteCommandType::kWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::Clusters::Thermostat::ACCompressorTypeEnum>>(
+            Id, "accompressor-type", 0, UINT8_MAX, Attributes::ACCompressorType::Id, WriteCommandType::kWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::Thermostat::ACErrorCodeBitmap>>>(
+            Id, "acerror-code", 0, UINT32_MAX, Attributes::ACErrorCode::Id, WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::Clusters::Thermostat::ACLouverPositionEnum>>(
+            Id, "aclouver-position", 0, UINT8_MAX, Attributes::ACLouverPosition::Id, WriteCommandType::kWrite,
+            credsIssuerConfig), //
         make_unique<WriteAttribute<chip::app::DataModel::Nullable<int16_t>>>(Id, "accoil-temperature", INT16_MIN, INT16_MAX,
                                                                              Attributes::ACCoilTemperature::Id,
                                                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<uint8_t>>(Id, "accapacityformat", 0, UINT8_MAX, Attributes::ACCapacityformat::Id,
-                                             WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::Clusters::Thermostat::ACCapacityFormatEnum>>(
+            Id, "accapacityformat", 0, UINT8_MAX, Attributes::ACCapacityformat::Id, WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<
+            chip::app::DataModel::List<const chip::app::Clusters::Thermostat::Structs::PresetTypeStruct::Type>>>(
+            Id, "preset-types", Attributes::PresetTypes::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<
+            chip::app::DataModel::List<const chip::app::Clusters::Thermostat::Structs::ScheduleTypeStruct::Type>>>(
+            Id, "schedule-types", Attributes::ScheduleTypes::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "number-of-presets", 0, UINT8_MAX, Attributes::NumberOfPresets::Id,
+                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "number-of-schedules", 0, UINT8_MAX, Attributes::NumberOfSchedules::Id,
+                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "number-of-schedule-transitions", 0, UINT8_MAX,
+                                             Attributes::NumberOfScheduleTransitions::Id, WriteCommandType::kForceWrite,
+                                             credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint8_t>>>(
+            Id, "number-of-schedule-transition-per-day", 0, UINT8_MAX, Attributes::NumberOfScheduleTransitionPerDay::Id,
+            WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<chip::ByteSpan>>>(
+            Id, "active-preset-handle", Attributes::ActivePresetHandle::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<chip::ByteSpan>>>(
+            Id, "active-schedule-handle", Attributes::ActiveScheduleHandle::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<
+            chip::app::DataModel::List<const chip::app::Clusters::Thermostat::Structs::PresetStruct::Type>>>(
+            Id, "presets", Attributes::Presets::Id, WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<
+            chip::app::DataModel::List<const chip::app::Clusters::Thermostat::Structs::ScheduleStruct::Type>>>(
+            Id, "schedules", Attributes::Schedules::Id, WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<bool>>(Id, "presets-schedules-editable", 0, 1, Attributes::PresetsSchedulesEditable::Id,
+                                          WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::Thermostat::TemperatureSetpointHoldPolicyBitmap>>>(
+            Id, "temperature-setpoint-hold-policy", 0, UINT8_MAX, Attributes::TemperatureSetpointHoldPolicy::Id,
+            WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint32_t>>>(Id, "setpoint-hold-expiry-timestamp", 0, UINT32_MAX,
+                                                                              Attributes::SetpointHoldExpiryTimestamp::Id,
+                                                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<
+            chip::app::DataModel::Nullable<chip::app::Clusters::Thermostat::Structs::QueuedPresetStruct::Type>>>(
+            Id, "queued-preset", Attributes::QueuedPreset::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
             Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
             credsIssuerConfig), //
@@ -15668,6 +22291,25 @@ void registerClusterThermostat(Commands & commands, CredentialIssuerCommands * c
         make_unique<SubscribeAttribute>(Id, "aclouver-position", Attributes::ACLouverPosition::Id, credsIssuerConfig),          //
         make_unique<SubscribeAttribute>(Id, "accoil-temperature", Attributes::ACCoilTemperature::Id, credsIssuerConfig),        //
         make_unique<SubscribeAttribute>(Id, "accapacityformat", Attributes::ACCapacityformat::Id, credsIssuerConfig),           //
+        make_unique<SubscribeAttribute>(Id, "preset-types", Attributes::PresetTypes::Id, credsIssuerConfig),                    //
+        make_unique<SubscribeAttribute>(Id, "schedule-types", Attributes::ScheduleTypes::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "number-of-presets", Attributes::NumberOfPresets::Id, credsIssuerConfig),           //
+        make_unique<SubscribeAttribute>(Id, "number-of-schedules", Attributes::NumberOfSchedules::Id, credsIssuerConfig),       //
+        make_unique<SubscribeAttribute>(Id, "number-of-schedule-transitions", Attributes::NumberOfScheduleTransitions::Id,
+                                        credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "number-of-schedule-transition-per-day",
+                                        Attributes::NumberOfScheduleTransitionPerDay::Id, credsIssuerConfig),                   //
+        make_unique<SubscribeAttribute>(Id, "active-preset-handle", Attributes::ActivePresetHandle::Id, credsIssuerConfig),     //
+        make_unique<SubscribeAttribute>(Id, "active-schedule-handle", Attributes::ActiveScheduleHandle::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "presets", Attributes::Presets::Id, credsIssuerConfig),                             //
+        make_unique<SubscribeAttribute>(Id, "schedules", Attributes::Schedules::Id, credsIssuerConfig),                         //
+        make_unique<SubscribeAttribute>(Id, "presets-schedules-editable", Attributes::PresetsSchedulesEditable::Id,
+                                        credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "temperature-setpoint-hold-policy", Attributes::TemperatureSetpointHoldPolicy::Id,
+                                        credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "setpoint-hold-expiry-timestamp", Attributes::SetpointHoldExpiryTimestamp::Id,
+                                        credsIssuerConfig),                                                                     //
+        make_unique<SubscribeAttribute>(Id, "queued-preset", Attributes::QueuedPreset::Id, credsIssuerConfig),                  //
         make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
         make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
         make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
@@ -15721,7 +22363,8 @@ void registerClusterFanControl(Commands & commands, CredentialIssuerCommands * c
         make_unique<WriteAttribute<chip::app::Clusters::FanControl::FanModeEnum>>(
             Id, "fan-mode", 0, UINT8_MAX, Attributes::FanMode::Id, WriteCommandType::kWrite, credsIssuerConfig), //
         make_unique<WriteAttribute<chip::app::Clusters::FanControl::FanModeSequenceEnum>>(
-            Id, "fan-mode-sequence", 0, UINT8_MAX, Attributes::FanModeSequence::Id, WriteCommandType::kWrite, credsIssuerConfig), //
+            Id, "fan-mode-sequence", 0, UINT8_MAX, Attributes::FanModeSequence::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
         make_unique<WriteAttribute<chip::app::DataModel::Nullable<chip::Percent>>>(
             Id, "percent-setting", 0, UINT8_MAX, Attributes::PercentSetting::Id, WriteCommandType::kWrite, credsIssuerConfig), //
         make_unique<WriteAttribute<chip::Percent>>(Id, "percent-current", 0, UINT8_MAX, Attributes::PercentCurrent::Id,
@@ -15810,13 +22453,14 @@ void registerClusterThermostatUserInterfaceConfiguration(Commands & commands, Cr
         make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
         make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
         make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
-        make_unique<WriteAttribute<uint8_t>>(Id, "temperature-display-mode", 0, UINT8_MAX, Attributes::TemperatureDisplayMode::Id,
-                                             WriteCommandType::kWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<uint8_t>>(Id, "keypad-lockout", 0, UINT8_MAX, Attributes::KeypadLockout::Id,
-                                             WriteCommandType::kWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<uint8_t>>(Id, "schedule-programming-visibility", 0, UINT8_MAX,
-                                             Attributes::ScheduleProgrammingVisibility::Id, WriteCommandType::kWrite,
-                                             credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::Clusters::ThermostatUserInterfaceConfiguration::TemperatureDisplayModeEnum>>(
+            Id, "temperature-display-mode", 0, UINT8_MAX, Attributes::TemperatureDisplayMode::Id, WriteCommandType::kWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::Clusters::ThermostatUserInterfaceConfiguration::KeypadLockoutEnum>>(
+            Id, "keypad-lockout", 0, UINT8_MAX, Attributes::KeypadLockout::Id, WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::app::Clusters::ThermostatUserInterfaceConfiguration::ScheduleProgrammingVisibilityEnum>>(
+            Id, "schedule-programming-visibility", 0, UINT8_MAX, Attributes::ScheduleProgrammingVisibility::Id,
+            WriteCommandType::kWrite, credsIssuerConfig), //
         make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
             Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
             credsIssuerConfig), //
@@ -16198,8 +22842,8 @@ void registerClusterBallastConfiguration(Commands & commands, CredentialIssuerCo
                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttribute<uint8_t>>(Id, "physical-max-level", 0, UINT8_MAX, Attributes::PhysicalMaxLevel::Id,
                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<uint8_t>>(Id, "ballast-status", 0, UINT8_MAX, Attributes::BallastStatus::Id,
-                                             WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::BallastConfiguration::BallastStatusBitmap>>>(
+            Id, "ballast-status", 0, UINT8_MAX, Attributes::BallastStatus::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttribute<uint8_t>>(Id, "min-level", 0, UINT8_MAX, Attributes::MinLevel::Id, WriteCommandType::kWrite,
                                              credsIssuerConfig), //
         make_unique<WriteAttribute<uint8_t>>(Id, "max-level", 0, UINT8_MAX, Attributes::MaxLevel::Id, WriteCommandType::kWrite,
@@ -16220,8 +22864,8 @@ void registerClusterBallastConfiguration(Commands & commands, CredentialIssuerCo
             Id, "lamp-rated-hours", 0, UINT32_MAX, Attributes::LampRatedHours::Id, WriteCommandType::kWrite, credsIssuerConfig), //
         make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint32_t>>>(
             Id, "lamp-burn-hours", 0, UINT32_MAX, Attributes::LampBurnHours::Id, WriteCommandType::kWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<uint8_t>>(Id, "lamp-alarm-mode", 0, UINT8_MAX, Attributes::LampAlarmMode::Id,
-                                             WriteCommandType::kWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::BallastConfiguration::LampAlarmModeBitmap>>>(
+            Id, "lamp-alarm-mode", 0, UINT8_MAX, Attributes::LampAlarmMode::Id, WriteCommandType::kWrite, credsIssuerConfig), //
         make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint32_t>>>(Id, "lamp-burn-hours-trip-point", 0, UINT32_MAX,
                                                                               Attributes::LampBurnHoursTripPoint::Id,
                                                                               WriteCommandType::kWrite, credsIssuerConfig), //
@@ -17879,6 +24523,7 @@ void registerClusterWakeOnLan(Commands & commands, CredentialIssuerCommands * cr
         //
         make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                 //
         make_unique<ReadAttribute>(Id, "macaddress", Attributes::MACAddress::Id, credsIssuerConfig),                       //
+        make_unique<ReadAttribute>(Id, "link-local-address", Attributes::LinkLocalAddress::Id, credsIssuerConfig),         //
         make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
         make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
         make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
@@ -17888,6 +24533,8 @@ void registerClusterWakeOnLan(Commands & commands, CredentialIssuerCommands * cr
         make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
         make_unique<WriteAttribute<chip::CharSpan>>(Id, "macaddress", Attributes::MACAddress::Id, WriteCommandType::kForceWrite,
                                                     credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::ByteSpan>>(Id, "link-local-address", Attributes::LinkLocalAddress::Id,
+                                                    WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
             Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
             credsIssuerConfig), //
@@ -17903,6 +24550,7 @@ void registerClusterWakeOnLan(Commands & commands, CredentialIssuerCommands * cr
                                               WriteCommandType::kForceWrite, credsIssuerConfig),                                //
         make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                                 //
         make_unique<SubscribeAttribute>(Id, "macaddress", Attributes::MACAddress::Id, credsIssuerConfig),                       //
+        make_unique<SubscribeAttribute>(Id, "link-local-address", Attributes::LinkLocalAddress::Id, credsIssuerConfig),         //
         make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
         make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
         make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
@@ -17932,6 +24580,9 @@ void registerClusterChannel(Commands & commands, CredentialIssuerCommands * cred
         make_unique<ChannelChangeChannel>(credsIssuerConfig),         //
         make_unique<ChannelChangeChannelByNumber>(credsIssuerConfig), //
         make_unique<ChannelSkipChannel>(credsIssuerConfig),           //
+        make_unique<ChannelGetProgramGuide>(credsIssuerConfig),       //
+        make_unique<ChannelRecordProgram>(credsIssuerConfig),         //
+        make_unique<ChannelCancelRecordProgram>(credsIssuerConfig),   //
         //
         // Attributes
         //
@@ -18042,8 +24693,10 @@ void registerClusterTargetNavigator(Commands & commands, CredentialIssuerCommand
         //
         // Events
         //
-        make_unique<ReadEvent>(Id, credsIssuerConfig),      //
-        make_unique<SubscribeEvent>(Id, credsIssuerConfig), //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),                                                   //
+        make_unique<ReadEvent>(Id, "target-updated", Events::TargetUpdated::Id, credsIssuerConfig),      //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig),                                              //
+        make_unique<SubscribeEvent>(Id, "target-updated", Events::TargetUpdated::Id, credsIssuerConfig), //
     };
 
     commands.RegisterCluster(clusterName, clusterCommands);
@@ -18058,18 +24711,21 @@ void registerClusterMediaPlayback(Commands & commands, CredentialIssuerCommands 
         //
         // Commands
         //
-        make_unique<ClusterCommand>(Id, credsIssuerConfig),        //
-        make_unique<MediaPlaybackPlay>(credsIssuerConfig),         //
-        make_unique<MediaPlaybackPause>(credsIssuerConfig),        //
-        make_unique<MediaPlaybackStop>(credsIssuerConfig),         //
-        make_unique<MediaPlaybackStartOver>(credsIssuerConfig),    //
-        make_unique<MediaPlaybackPrevious>(credsIssuerConfig),     //
-        make_unique<MediaPlaybackNext>(credsIssuerConfig),         //
-        make_unique<MediaPlaybackRewind>(credsIssuerConfig),       //
-        make_unique<MediaPlaybackFastForward>(credsIssuerConfig),  //
-        make_unique<MediaPlaybackSkipForward>(credsIssuerConfig),  //
-        make_unique<MediaPlaybackSkipBackward>(credsIssuerConfig), //
-        make_unique<MediaPlaybackSeek>(credsIssuerConfig),         //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig),               //
+        make_unique<MediaPlaybackPlay>(credsIssuerConfig),                //
+        make_unique<MediaPlaybackPause>(credsIssuerConfig),               //
+        make_unique<MediaPlaybackStop>(credsIssuerConfig),                //
+        make_unique<MediaPlaybackStartOver>(credsIssuerConfig),           //
+        make_unique<MediaPlaybackPrevious>(credsIssuerConfig),            //
+        make_unique<MediaPlaybackNext>(credsIssuerConfig),                //
+        make_unique<MediaPlaybackRewind>(credsIssuerConfig),              //
+        make_unique<MediaPlaybackFastForward>(credsIssuerConfig),         //
+        make_unique<MediaPlaybackSkipForward>(credsIssuerConfig),         //
+        make_unique<MediaPlaybackSkipBackward>(credsIssuerConfig),        //
+        make_unique<MediaPlaybackSeek>(credsIssuerConfig),                //
+        make_unique<MediaPlaybackActivateAudioTrack>(credsIssuerConfig),  //
+        make_unique<MediaPlaybackActivateTextTrack>(credsIssuerConfig),   //
+        make_unique<MediaPlaybackDeactivateTextTrack>(credsIssuerConfig), //
         //
         // Attributes
         //
@@ -18081,6 +24737,10 @@ void registerClusterMediaPlayback(Commands & commands, CredentialIssuerCommands 
         make_unique<ReadAttribute>(Id, "playback-speed", Attributes::PlaybackSpeed::Id, credsIssuerConfig),                //
         make_unique<ReadAttribute>(Id, "seek-range-end", Attributes::SeekRangeEnd::Id, credsIssuerConfig),                 //
         make_unique<ReadAttribute>(Id, "seek-range-start", Attributes::SeekRangeStart::Id, credsIssuerConfig),             //
+        make_unique<ReadAttribute>(Id, "active-audio-track", Attributes::ActiveAudioTrack::Id, credsIssuerConfig),         //
+        make_unique<ReadAttribute>(Id, "available-audio-tracks", Attributes::AvailableAudioTracks::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "active-text-track", Attributes::ActiveTextTrack::Id, credsIssuerConfig),           //
+        make_unique<ReadAttribute>(Id, "available-text-tracks", Attributes::AvailableTextTracks::Id, credsIssuerConfig),   //
         make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
         make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
         make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
@@ -18105,6 +24765,19 @@ void registerClusterMediaPlayback(Commands & commands, CredentialIssuerCommands 
         make_unique<WriteAttribute<chip::app::DataModel::Nullable<uint64_t>>>(Id, "seek-range-start", 0, UINT64_MAX,
                                                                               Attributes::SeekRangeStart::Id,
                                                                               WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<
+            chip::app::DataModel::Nullable<chip::app::Clusters::MediaPlayback::Structs::TrackStruct::Type>>>(
+            Id, "active-audio-track", Attributes::ActiveAudioTrack::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::Nullable<
+            chip::app::DataModel::List<const chip::app::Clusters::MediaPlayback::Structs::TrackStruct::Type>>>>(
+            Id, "available-audio-tracks", Attributes::AvailableAudioTracks::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<
+            chip::app::DataModel::Nullable<chip::app::Clusters::MediaPlayback::Structs::TrackStruct::Type>>>(
+            Id, "active-text-track", Attributes::ActiveTextTrack::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::Nullable<
+            chip::app::DataModel::List<const chip::app::Clusters::MediaPlayback::Structs::TrackStruct::Type>>>>(
+            Id, "available-text-tracks", Attributes::AvailableTextTracks::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
             Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
             credsIssuerConfig), //
@@ -18126,6 +24799,10 @@ void registerClusterMediaPlayback(Commands & commands, CredentialIssuerCommands 
         make_unique<SubscribeAttribute>(Id, "playback-speed", Attributes::PlaybackSpeed::Id, credsIssuerConfig),                //
         make_unique<SubscribeAttribute>(Id, "seek-range-end", Attributes::SeekRangeEnd::Id, credsIssuerConfig),                 //
         make_unique<SubscribeAttribute>(Id, "seek-range-start", Attributes::SeekRangeStart::Id, credsIssuerConfig),             //
+        make_unique<SubscribeAttribute>(Id, "active-audio-track", Attributes::ActiveAudioTrack::Id, credsIssuerConfig),         //
+        make_unique<SubscribeAttribute>(Id, "available-audio-tracks", Attributes::AvailableAudioTracks::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "active-text-track", Attributes::ActiveTextTrack::Id, credsIssuerConfig),           //
+        make_unique<SubscribeAttribute>(Id, "available-text-tracks", Attributes::AvailableTextTracks::Id, credsIssuerConfig),   //
         make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
         make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
         make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
@@ -18135,8 +24812,10 @@ void registerClusterMediaPlayback(Commands & commands, CredentialIssuerCommands 
         //
         // Events
         //
-        make_unique<ReadEvent>(Id, credsIssuerConfig),      //
-        make_unique<SubscribeEvent>(Id, credsIssuerConfig), //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),                                                 //
+        make_unique<ReadEvent>(Id, "state-changed", Events::StateChanged::Id, credsIssuerConfig),      //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig),                                            //
+        make_unique<SubscribeEvent>(Id, "state-changed", Events::StateChanged::Id, credsIssuerConfig), //
     };
 
     commands.RegisterCluster(clusterName, clusterCommands);
@@ -18338,9 +25017,9 @@ void registerClusterContentLauncher(Commands & commands, CredentialIssuerCommand
         make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
         make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CharSpan>>>(
             Id, "accept-header", Attributes::AcceptHeader::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
-        make_unique<WriteAttribute<uint32_t>>(Id, "supported-streaming-protocols", 0, UINT32_MAX,
-                                              Attributes::SupportedStreamingProtocols::Id, WriteCommandType::kWrite,
-                                              credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::BitMask<chip::app::Clusters::ContentLauncher::SupportedProtocolsBitmap>>>(
+            Id, "supported-streaming-protocols", 0, UINT32_MAX, Attributes::SupportedStreamingProtocols::Id,
+            WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
             Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
             credsIssuerConfig), //
@@ -18466,7 +25145,7 @@ void registerClusterApplicationLauncher(Commands & commands, CredentialIssuerCom
             Id, "catalog-list", Attributes::CatalogList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttributeAsComplex<
             chip::app::DataModel::Nullable<chip::app::Clusters::ApplicationLauncher::Structs::ApplicationEPStruct::Type>>>(
-            Id, "current-app", Attributes::CurrentApp::Id, WriteCommandType::kWrite, credsIssuerConfig), //
+            Id, "current-app", Attributes::CurrentApp::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
             Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
             credsIssuerConfig), //
@@ -18595,6 +25274,164 @@ void registerClusterAccountLogin(Commands & commands, CredentialIssuerCommands *
         make_unique<AccountLoginGetSetupPIN>(credsIssuerConfig), //
         make_unique<AccountLoginLogin>(credsIssuerConfig),       //
         make_unique<AccountLoginLogout>(credsIssuerConfig),      //
+        //
+        // Attributes
+        //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
+            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
+            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig),                                //
+        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        //
+        // Events
+        //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),                                           //
+        make_unique<ReadEvent>(Id, "logged-out", Events::LoggedOut::Id, credsIssuerConfig),      //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig),                                      //
+        make_unique<SubscribeEvent>(Id, "logged-out", Events::LoggedOut::Id, credsIssuerConfig), //
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+}
+void registerClusterContentControl(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
+{
+    using namespace chip::app::Clusters::ContentControl;
+
+    const char * clusterName = "ContentControl";
+
+    commands_list clusterCommands = {
+        //
+        // Commands
+        //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig),                               //
+        make_unique<ContentControlUpdatePIN>(credsIssuerConfig),                          //
+        make_unique<ContentControlResetPIN>(credsIssuerConfig),                           //
+        make_unique<ContentControlEnable>(credsIssuerConfig),                             //
+        make_unique<ContentControlDisable>(credsIssuerConfig),                            //
+        make_unique<ContentControlAddBonusTime>(credsIssuerConfig),                       //
+        make_unique<ContentControlSetScreenDailyTime>(credsIssuerConfig),                 //
+        make_unique<ContentControlBlockUnratedContent>(credsIssuerConfig),                //
+        make_unique<ContentControlUnblockUnratedContent>(credsIssuerConfig),              //
+        make_unique<ContentControlSetOnDemandRatingThreshold>(credsIssuerConfig),         //
+        make_unique<ContentControlSetScheduledContentRatingThreshold>(credsIssuerConfig), //
+        //
+        // Attributes
+        //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                        //
+        make_unique<ReadAttribute>(Id, "enabled", Attributes::Enabled::Id, credsIssuerConfig),                                    //
+        make_unique<ReadAttribute>(Id, "on-demand-ratings", Attributes::OnDemandRatings::Id, credsIssuerConfig),                  //
+        make_unique<ReadAttribute>(Id, "on-demand-rating-threshold", Attributes::OnDemandRatingThreshold::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "scheduled-content-ratings", Attributes::ScheduledContentRatings::Id, credsIssuerConfig),  //
+        make_unique<ReadAttribute>(Id, "scheduled-content-rating-threshold", Attributes::ScheduledContentRatingThreshold::Id,
+                                   credsIssuerConfig),                                                                     //
+        make_unique<ReadAttribute>(Id, "screen-daily-time", Attributes::ScreenDailyTime::Id, credsIssuerConfig),           //
+        make_unique<ReadAttribute>(Id, "remaining-screen-time", Attributes::RemainingScreenTime::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "block-unrated", Attributes::BlockUnrated::Id, credsIssuerConfig),                  //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
+        make_unique<WriteAttribute<bool>>(Id, "enabled", 0, 1, Attributes::Enabled::Id, WriteCommandType::kForceWrite,
+                                          credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<
+            chip::app::DataModel::List<const chip::app::Clusters::ContentControl::Structs::RatingNameStruct::Type>>>(
+            Id, "on-demand-ratings", Attributes::OnDemandRatings::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::CharSpan>>(Id, "on-demand-rating-threshold", Attributes::OnDemandRatingThreshold::Id,
+                                                    WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<
+            chip::app::DataModel::List<const chip::app::Clusters::ContentControl::Structs::RatingNameStruct::Type>>>(
+            Id, "scheduled-content-ratings", Attributes::ScheduledContentRatings::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttribute<chip::CharSpan>>(Id, "scheduled-content-rating-threshold",
+                                                    Attributes::ScheduledContentRatingThreshold::Id, WriteCommandType::kForceWrite,
+                                                    credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "screen-daily-time", 0, UINT32_MAX, Attributes::ScreenDailyTime::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "remaining-screen-time", 0, UINT32_MAX, Attributes::RemainingScreenTime::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<bool>>(Id, "block-unrated", 0, 1, Attributes::BlockUnrated::Id, WriteCommandType::kForceWrite,
+                                          credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
+            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
+            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                       //
+        make_unique<SubscribeAttribute>(Id, "enabled", Attributes::Enabled::Id, credsIssuerConfig),                   //
+        make_unique<SubscribeAttribute>(Id, "on-demand-ratings", Attributes::OnDemandRatings::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "on-demand-rating-threshold", Attributes::OnDemandRatingThreshold::Id,
+                                        credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "scheduled-content-ratings", Attributes::ScheduledContentRatings::Id,
+                                        credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "scheduled-content-rating-threshold", Attributes::ScheduledContentRatingThreshold::Id,
+                                        credsIssuerConfig),                                                                     //
+        make_unique<SubscribeAttribute>(Id, "screen-daily-time", Attributes::ScreenDailyTime::Id, credsIssuerConfig),           //
+        make_unique<SubscribeAttribute>(Id, "remaining-screen-time", Attributes::RemainingScreenTime::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "block-unrated", Attributes::BlockUnrated::Id, credsIssuerConfig),                  //
+        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        //
+        // Events
+        //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),                                                                          //
+        make_unique<ReadEvent>(Id, "remaining-screen-time-expired", Events::RemainingScreenTimeExpired::Id, credsIssuerConfig), //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig),                                                                     //
+        make_unique<SubscribeEvent>(Id, "remaining-screen-time-expired", Events::RemainingScreenTimeExpired::Id,
+                                    credsIssuerConfig), //
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+}
+void registerClusterContentAppObserver(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
+{
+    using namespace chip::app::Clusters::ContentAppObserver;
+
+    const char * clusterName = "ContentAppObserver";
+
+    commands_list clusterCommands = {
+        //
+        // Commands
+        //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig),                  //
+        make_unique<ContentAppObserverContentAppMessage>(credsIssuerConfig), //
         //
         // Attributes
         //
@@ -19364,6 +26201,9 @@ void registerClusterUnitTesting(Commands & commands, CredentialIssuerCommands * 
         make_unique<UnitTestingTestSimpleOptionalArgumentRequest>(credsIssuerConfig),       //
         make_unique<UnitTestingTestEmitTestEventRequest>(credsIssuerConfig),                //
         make_unique<UnitTestingTestEmitTestFabricScopedEventRequest>(credsIssuerConfig),    //
+        make_unique<UnitTestingTestBatchHelperRequest>(credsIssuerConfig),                  //
+        make_unique<UnitTestingTestSecondBatchHelperRequest>(credsIssuerConfig),            //
+        make_unique<UnitTestingTestDifferentVendorMeiRequest>(credsIssuerConfig),           //
         //
         // Attributes
         //
@@ -19461,6 +26301,7 @@ void registerClusterUnitTesting(Commands & commands, CredentialIssuerCommands * 
         make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
         make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
         make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        make_unique<ReadAttribute>(Id, "mei-int8u", Attributes::MeiInt8u::Id, credsIssuerConfig),                          //
         make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
         make_unique<WriteAttribute<bool>>(Id, "boolean", 0, 1, Attributes::Boolean::Id, WriteCommandType::kWrite,
                                           credsIssuerConfig), //
@@ -19667,7 +26508,9 @@ void registerClusterUnitTesting(Commands & commands, CredentialIssuerCommands * 
         make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
                                               WriteCommandType::kForceWrite, credsIssuerConfig), //
         make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
-                                              WriteCommandType::kForceWrite, credsIssuerConfig),                      //
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint8_t>>(Id, "mei-int8u", 0, UINT8_MAX, Attributes::MeiInt8u::Id, WriteCommandType::kWrite,
+                                             credsIssuerConfig),                                                      //
         make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                       //
         make_unique<SubscribeAttribute>(Id, "boolean", Attributes::Boolean::Id, credsIssuerConfig),                   //
         make_unique<SubscribeAttribute>(Id, "bitmap8", Attributes::Bitmap8::Id, credsIssuerConfig),                   //
@@ -19763,15 +26606,20 @@ void registerClusterUnitTesting(Commands & commands, CredentialIssuerCommands * 
         make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
         make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
         make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        make_unique<SubscribeAttribute>(Id, "mei-int8u", Attributes::MeiInt8u::Id, credsIssuerConfig),                          //
         //
         // Events
         //
-        make_unique<ReadEvent>(Id, credsIssuerConfig),                                                                     //
-        make_unique<ReadEvent>(Id, "test-event", Events::TestEvent::Id, credsIssuerConfig),                                //
-        make_unique<ReadEvent>(Id, "test-fabric-scoped-event", Events::TestFabricScopedEvent::Id, credsIssuerConfig),      //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),                                                                //
+        make_unique<ReadEvent>(Id, "test-event", Events::TestEvent::Id, credsIssuerConfig),                           //
+        make_unique<ReadEvent>(Id, "test-fabric-scoped-event", Events::TestFabricScopedEvent::Id, credsIssuerConfig), //
+        make_unique<ReadEvent>(Id, "test-different-vendor-mei-event", Events::TestDifferentVendorMeiEvent::Id,
+                               credsIssuerConfig),                                                                         //
         make_unique<SubscribeEvent>(Id, credsIssuerConfig),                                                                //
         make_unique<SubscribeEvent>(Id, "test-event", Events::TestEvent::Id, credsIssuerConfig),                           //
         make_unique<SubscribeEvent>(Id, "test-fabric-scoped-event", Events::TestFabricScopedEvent::Id, credsIssuerConfig), //
+        make_unique<SubscribeEvent>(Id, "test-different-vendor-mei-event", Events::TestDifferentVendorMeiEvent::Id,
+                                    credsIssuerConfig), //
     };
 
     commands.RegisterCluster(clusterName, clusterCommands);
@@ -19829,6 +26677,65 @@ void registerClusterFaultInjection(Commands & commands, CredentialIssuerCommands
 
     commands.RegisterCluster(clusterName, clusterCommands);
 }
+void registerClusterSampleMei(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
+{
+    using namespace chip::app::Clusters::SampleMei;
+
+    const char * clusterName = "SampleMei";
+
+    commands_list clusterCommands = {
+        //
+        // Commands
+        //
+        make_unique<ClusterCommand>(Id, credsIssuerConfig),    //
+        make_unique<SampleMeiPing>(credsIssuerConfig),         //
+        make_unique<SampleMeiAddArguments>(credsIssuerConfig), //
+        //
+        // Attributes
+        //
+        make_unique<ReadAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<ReadAttribute>(Id, "flip-flop", Attributes::FlipFlop::Id, credsIssuerConfig),                          //
+        make_unique<ReadAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<ReadAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<ReadAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<ReadAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<ReadAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<ReadAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        make_unique<WriteAttribute<>>(Id, credsIssuerConfig),                                                              //
+        make_unique<WriteAttribute<bool>>(Id, "flip-flop", 0, 1, Attributes::FlipFlop::Id, WriteCommandType::kWrite,
+                                          credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "generated-command-list", Attributes::GeneratedCommandList::Id, WriteCommandType::kForceWrite,
+            credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::CommandId>>>(
+            Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::EventId>>>(
+            Id, "event-list", Attributes::EventList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttributeAsComplex<chip::app::DataModel::List<const chip::AttributeId>>>(
+            Id, "attribute-list", Attributes::AttributeList::Id, WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint32_t>>(Id, "feature-map", 0, UINT32_MAX, Attributes::FeatureMap::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig), //
+        make_unique<WriteAttribute<uint16_t>>(Id, "cluster-revision", 0, UINT16_MAX, Attributes::ClusterRevision::Id,
+                                              WriteCommandType::kForceWrite, credsIssuerConfig),                                //
+        make_unique<SubscribeAttribute>(Id, credsIssuerConfig),                                                                 //
+        make_unique<SubscribeAttribute>(Id, "flip-flop", Attributes::FlipFlop::Id, credsIssuerConfig),                          //
+        make_unique<SubscribeAttribute>(Id, "generated-command-list", Attributes::GeneratedCommandList::Id, credsIssuerConfig), //
+        make_unique<SubscribeAttribute>(Id, "accepted-command-list", Attributes::AcceptedCommandList::Id, credsIssuerConfig),   //
+        make_unique<SubscribeAttribute>(Id, "event-list", Attributes::EventList::Id, credsIssuerConfig),                        //
+        make_unique<SubscribeAttribute>(Id, "attribute-list", Attributes::AttributeList::Id, credsIssuerConfig),                //
+        make_unique<SubscribeAttribute>(Id, "feature-map", Attributes::FeatureMap::Id, credsIssuerConfig),                      //
+        make_unique<SubscribeAttribute>(Id, "cluster-revision", Attributes::ClusterRevision::Id, credsIssuerConfig),            //
+        //
+        // Events
+        //
+        make_unique<ReadEvent>(Id, credsIssuerConfig),                                                      //
+        make_unique<ReadEvent>(Id, "ping-count-event", Events::PingCountEvent::Id, credsIssuerConfig),      //
+        make_unique<SubscribeEvent>(Id, credsIssuerConfig),                                                 //
+        make_unique<SubscribeEvent>(Id, "ping-count-event", Events::PingCountEvent::Id, credsIssuerConfig), //
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+}
 
 void registerClusterAny(Commands & commands, CredentialIssuerCommands * credsIssuerConfig)
 {
@@ -19856,7 +26763,6 @@ void registerClusters(Commands & commands, CredentialIssuerCommands * credsIssue
     registerClusterAny(commands, credsIssuerConfig);
     registerClusterIdentify(commands, credsIssuerConfig);
     registerClusterGroups(commands, credsIssuerConfig);
-    registerClusterScenes(commands, credsIssuerConfig);
     registerClusterOnOff(commands, credsIssuerConfig);
     registerClusterOnOffSwitchConfiguration(commands, credsIssuerConfig);
     registerClusterLevelControl(commands, credsIssuerConfig);
@@ -19895,6 +26801,10 @@ void registerClusters(Commands & commands, CredentialIssuerCommands * credsIssue
     registerClusterProxyValid(commands, credsIssuerConfig);
     registerClusterBooleanState(commands, credsIssuerConfig);
     registerClusterIcdManagement(commands, credsIssuerConfig);
+    registerClusterTimer(commands, credsIssuerConfig);
+    registerClusterOvenCavityOperationalState(commands, credsIssuerConfig);
+    registerClusterOvenMode(commands, credsIssuerConfig);
+    registerClusterLaundryDryerControls(commands, credsIssuerConfig);
     registerClusterModeSelect(commands, credsIssuerConfig);
     registerClusterLaundryWasherMode(commands, credsIssuerConfig);
     registerClusterRefrigeratorAndTemperatureControlledCabinetMode(commands, credsIssuerConfig);
@@ -19907,10 +26817,25 @@ void registerClusters(Commands & commands, CredentialIssuerCommands * credsIssue
     registerClusterAirQuality(commands, credsIssuerConfig);
     registerClusterSmokeCoAlarm(commands, credsIssuerConfig);
     registerClusterDishwasherAlarm(commands, credsIssuerConfig);
+    registerClusterMicrowaveOvenMode(commands, credsIssuerConfig);
+    registerClusterMicrowaveOvenControl(commands, credsIssuerConfig);
     registerClusterOperationalState(commands, credsIssuerConfig);
     registerClusterRvcOperationalState(commands, credsIssuerConfig);
+    registerClusterScenesManagement(commands, credsIssuerConfig);
     registerClusterHepaFilterMonitoring(commands, credsIssuerConfig);
     registerClusterActivatedCarbonFilterMonitoring(commands, credsIssuerConfig);
+    registerClusterBooleanStateConfiguration(commands, credsIssuerConfig);
+    registerClusterValveConfigurationAndControl(commands, credsIssuerConfig);
+    registerClusterElectricalPowerMeasurement(commands, credsIssuerConfig);
+    registerClusterElectricalEnergyMeasurement(commands, credsIssuerConfig);
+    registerClusterDemandResponseLoadControl(commands, credsIssuerConfig);
+    registerClusterMessages(commands, credsIssuerConfig);
+    registerClusterDeviceEnergyManagement(commands, credsIssuerConfig);
+    registerClusterEnergyEvse(commands, credsIssuerConfig);
+    registerClusterEnergyPreference(commands, credsIssuerConfig);
+    registerClusterPowerTopology(commands, credsIssuerConfig);
+    registerClusterEnergyEvseMode(commands, credsIssuerConfig);
+    registerClusterDeviceEnergyManagementMode(commands, credsIssuerConfig);
     registerClusterDoorLock(commands, credsIssuerConfig);
     registerClusterWindowCovering(commands, credsIssuerConfig);
     registerClusterBarrierControl(commands, credsIssuerConfig);
@@ -19948,7 +26873,10 @@ void registerClusters(Commands & commands, CredentialIssuerCommands * credsIssue
     registerClusterApplicationLauncher(commands, credsIssuerConfig);
     registerClusterApplicationBasic(commands, credsIssuerConfig);
     registerClusterAccountLogin(commands, credsIssuerConfig);
+    registerClusterContentControl(commands, credsIssuerConfig);
+    registerClusterContentAppObserver(commands, credsIssuerConfig);
     registerClusterElectricalMeasurement(commands, credsIssuerConfig);
     registerClusterUnitTesting(commands, credsIssuerConfig);
     registerClusterFaultInjection(commands, credsIssuerConfig);
+    registerClusterSampleMei(commands, credsIssuerConfig);
 }

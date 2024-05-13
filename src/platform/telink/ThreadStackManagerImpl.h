@@ -29,9 +29,9 @@
 #include <zephyr/net/openthread.h>
 
 #include <openthread/thread.h>
-#if !CONFIG_SOC_SERIES_RISCV_TELINK_B91
+#if !CONFIG_SOC_SERIES_RISCV_TELINK_B9X
 #include <platform/Zephyr/BLEManagerImpl.h>
-#endif // !CONFIG_SOC_SERIES_RISCV_TELINK_B91
+#endif // !CONFIG_SOC_SERIES_RISCV_TELINK_B9X
 
 #include <lib/support/logging/CHIPLogging.h>
 
@@ -74,6 +74,10 @@ protected:
     bool _TryLockThreadStack();
     void _UnlockThreadStack();
 
+#if CHIP_DEVICE_CONFIG_ENABLE_THREAD_SRP_CLIENT
+    void _WaitOnSrpClearAllComplete();
+    void _NotifySrpClearAllComplete();
+#endif // CHIP_DEVICE_CONFIG_ENABLE_THREAD_SRP_CLIENT
     // ===== Methods that override the GenericThreadStackManagerImpl_OpenThread abstract interface.
 
     void _ProcessThreadActivity() {}
@@ -94,6 +98,10 @@ private:
     // ===== Private members for use by this class only.
     bool mRadioBlocked;
     bool mReadyToAttach;
+
+#if CHIP_DEVICE_CONFIG_ENABLE_THREAD_SRP_CLIENT
+    k_sem mSrpClearAllSemaphore;
+#endif // CHIP_DEVICE_CONFIG_ENABLE_THREAD_SRP_CLIENT
 
     NetworkCommissioning::ThreadDriver::ScanCallback * mpScanCallback;
 };

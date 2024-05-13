@@ -35,9 +35,8 @@
 #if CONFIG_BT_BLUEDROID_ENABLED
 
 #if CONFIG_ENABLE_ESP32_BLE_CONTROLLER
-#include <ble/BleLayer.h>
+#include <ble/Ble.h>
 #endif
-#include <ble/CHIPBleServiceData.h>
 #include <lib/support/CodeUtils.h>
 #include <lib/support/logging/CHIPLogging.h>
 #include <platform/CommissionableDataProvider.h>
@@ -91,12 +90,12 @@ const uint8_t UUID_PrimaryService[]       = { 0x00, 0x28 };
 const uint8_t UUID_CharDecl[]             = { 0x03, 0x28 };
 const uint8_t UUID_ClientCharConfigDesc[] = { 0x02, 0x29 };
 const uint8_t UUID_CHIPoBLEService[]      = { 0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x00, 0x00, 0x80,
-                                         0x00, 0x10, 0x00, 0x00, 0xF6, 0xFF, 0x00, 0x00 };
+                                              0x00, 0x10, 0x00, 0x00, 0xF6, 0xFF, 0x00, 0x00 };
 const uint8_t ShortUUID_CHIPoBLEService[] = { 0xF6, 0xFF };
 const uint8_t UUID_CHIPoBLEChar_RX[]      = { 0x11, 0x9D, 0x9F, 0x42, 0x9C, 0x4F, 0x9F, 0x95,
-                                         0x59, 0x45, 0x3D, 0x26, 0xF5, 0x2E, 0xEE, 0x18 };
+                                              0x59, 0x45, 0x3D, 0x26, 0xF5, 0x2E, 0xEE, 0x18 };
 const uint8_t UUID_CHIPoBLEChar_TX[]      = { 0x12, 0x9D, 0x9F, 0x42, 0x9C, 0x4F, 0x9F, 0x95,
-                                         0x59, 0x45, 0x3D, 0x26, 0xF5, 0x2E, 0xEE, 0x18 };
+                                              0x59, 0x45, 0x3D, 0x26, 0xF5, 0x2E, 0xEE, 0x18 };
 #if CONFIG_ENABLE_ESP32_BLE_CONTROLLER
 const uint8_t ShortUUID_CHIPoBLE_CharTx_Desc[] = { 0x02, 0x29 };
 #endif
@@ -221,8 +220,6 @@ CHIP_ERROR BLEManagerImpl::_Init()
 #if CONFIG_ENABLE_ESP32_BLE_CONTROLLER
     mFlags.ClearAll().Set(Flags::kAdvertisingEnabled, CHIP_DEVICE_CONFIG_CHIPOBLE_ENABLE_ADVERTISING_AUTOSTART && !mIsCentral);
     mFlags.Set(Flags::kFastAdvertisingEnabled, !mIsCentral);
-    OnChipBleConnectReceived = HandleIncomingBleConnection;
-
 #else
     mFlags.ClearAll().Set(Flags::kAdvertisingEnabled, CHIP_DEVICE_CONFIG_CHIPOBLE_ENABLE_ADVERTISING_AUTOSTART);
     mFlags.Set(Flags::kFastAdvertisingEnabled, true);
@@ -742,11 +739,6 @@ void BLEManagerImpl::ConnectDevice(esp_bd_addr_t & addr, esp_ble_addr_type_t add
         ChipLogError(Ble, "Failed to connect to rc=%d", rc);
     }
 }
-
-void HandleIncomingBleConnection(BLEEndPoint * bleEP)
-{
-    ChipLogProgress(DeviceLayer, "CHIPoBLE connection received");
-}
 #endif
 
 bool BLEManagerImpl::SubscribeCharacteristic(BLE_CONNECTION_OBJECT conId, const ChipBleUUID * svcId, const ChipBleUUID * charId)
@@ -852,7 +844,9 @@ bool BLEManagerImpl::SendIndication(BLE_CONNECTION_OBJECT conId, const ChipBleUU
     ChipLogDetail(Ble, "Sending indication for CHIPoBLE TX characteristic (con %u, len %u)", conId, data->DataLength());
 #endif
 
-    err = MapBLEError(esp_ble_gatts_send_indicate(mAppIf, conId, mTXCharAttrHandle, data->DataLength(), data->Start(), false));
+    // Set param need_confirm as false will send notification, otherwise indication.
+    err = MapBLEError(
+        esp_ble_gatts_send_indicate(mAppIf, conId, mTXCharAttrHandle, data->DataLength(), data->Start(), true /* need_confirm */));
     if (err != CHIP_NO_ERROR)
     {
         ChipLogError(DeviceLayer, "esp_ble_gatts_send_indicate() failed: %s", ErrorStr(err));

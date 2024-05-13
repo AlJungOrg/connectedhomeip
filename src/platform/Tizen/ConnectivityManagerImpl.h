@@ -21,13 +21,14 @@
 
 #include <cstdint>
 
-#include <inet/InetBuildConfig.h>
+#include <inet/InetConfig.h>
 #include <lib/core/CHIPError.h>
-#include <platform/CHIPDeviceBuildConfig.h>
 #include <platform/CHIPDeviceConfig.h>
 #include <platform/CHIPDeviceEvent.h>
 #include <system/SystemClock.h>
 #include <system/SystemLayer.h>
+
+#include <app-common/zap-generated/cluster-enums.h>
 
 #include "platform/internal/GenericConnectivityManagerImpl.h"
 #include "platform/internal/GenericConnectivityManagerImpl_UDP.h"

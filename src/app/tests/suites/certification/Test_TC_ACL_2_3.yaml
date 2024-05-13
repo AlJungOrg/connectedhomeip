@@ -17,6 +17,7 @@ name: 133.2.3. [TC-ACL-2.3] Extension attribute
 
 PICS:
     - ACL.S
+    - ACL.S.A0001
 
 config:
     nodeId: 0x12344321
@@ -54,7 +55,7 @@ config:
         defaultValue: ""
 
 tests:
-    - label: "Step 1: Wait for the commissioned device to be retrieved"
+    - label: "Step 1: TH1 commissions DUT using admin node ID N1"
       cluster: "DelayCommands"
       command: "WaitForCommissionee"
       arguments:
@@ -69,7 +70,7 @@ tests:
       command: "readAttribute"
       attribute: "CurrentFabricIndex"
       response:
-          saveAs: CurrentFabricIndex
+          saveAs: CurrentFabricIndexValue
 
     - label:
           "Step 3: TH1 reads DUT Endpoint 0 AccessControl cluster Extension
@@ -88,7 +89,7 @@ tests:
       command: "writeAttribute"
       attribute: "Extension"
       arguments:
-          value: [{ Data: D_OK_EMPTY, FabricIndex: CurrentFabricIndex }]
+          value: [{ Data: D_OK_EMPTY, FabricIndex: CurrentFabricIndexValue }]
 
     - label:
           "Step 5: TH1 reads DUT Endpoint 0 AccessControl cluster Extension
@@ -97,7 +98,7 @@ tests:
       command: "readAttribute"
       attribute: "Extension"
       response:
-          value: [{ Data: D_OK_EMPTY, FabricIndex: CurrentFabricIndex }]
+          value: [{ Data: D_OK_EMPTY, FabricIndex: CurrentFabricIndexValue }]
 
     - label:
           "Step 6: TH1 writes DUT Endpoint 0 AccessControl cluster Extension
@@ -108,7 +109,7 @@ tests:
       command: "writeAttribute"
       attribute: "Extension"
       arguments:
-          value: [{ Data: D_OK_SINGLE, FabricIndex: CurrentFabricIndex }]
+          value: [{ Data: D_OK_SINGLE, FabricIndex: CurrentFabricIndexValue }]
 
     - label:
           "Step 7: TH1 reads DUT Endpoint 0 AccessControl cluster Extension
@@ -117,7 +118,7 @@ tests:
       command: "readAttribute"
       attribute: "Extension"
       response:
-          value: [{ Data: D_OK_SINGLE, FabricIndex: CurrentFabricIndex }]
+          value: [{ Data: D_OK_SINGLE, FabricIndex: CurrentFabricIndexValue }]
 
     - label:
           "Step 8: TH1 writes DUT Endpoint 0 AccessControl cluster Extension
@@ -128,7 +129,7 @@ tests:
       command: "writeAttribute"
       attribute: "Extension"
       arguments:
-          value: [{ Data: D_OK_FULL, FabricIndex: CurrentFabricIndex }]
+          value: [{ Data: D_OK_FULL, FabricIndex: CurrentFabricIndexValue }]
 
     - label:
           "Step 9: TH1 reads DUT Endpoint 0 AccessControl cluster Extension
@@ -137,7 +138,7 @@ tests:
       command: "readAttribute"
       attribute: "Extension"
       response:
-          value: [{ Data: D_OK_FULL, FabricIndex: CurrentFabricIndex }]
+          value: [{ Data: D_OK_FULL, FabricIndex: CurrentFabricIndexValue }]
 
     - label:
           "Step 10: TH1 writes DUT Endpoint 0 AccessControl cluster Extension
@@ -148,7 +149,7 @@ tests:
       command: "writeAttribute"
       attribute: "Extension"
       arguments:
-          value: [{ Data: D_BAD_LENGTH, FabricIndex: CurrentFabricIndex }]
+          value: [{ Data: D_BAD_LENGTH, FabricIndex: CurrentFabricIndexValue }]
       response:
           error: CONSTRAINT_ERROR
 
@@ -160,7 +161,7 @@ tests:
       command: "writeAttribute"
       attribute: "Extension"
       arguments:
-          value: [{ Data: D_BAD_STRUCT, FabricIndex: CurrentFabricIndex }]
+          value: [{ Data: D_BAD_STRUCT, FabricIndex: CurrentFabricIndexValue }]
       response:
           error: CONSTRAINT_ERROR
 
@@ -173,7 +174,7 @@ tests:
       command: "writeAttribute"
       attribute: "Extension"
       arguments:
-          value: [{ Data: D_BAD_LIST, FabricIndex: CurrentFabricIndex }]
+          value: [{ Data: D_BAD_LIST, FabricIndex: CurrentFabricIndexValue }]
       response:
           error: CONSTRAINT_ERROR
 
@@ -186,7 +187,7 @@ tests:
       command: "writeAttribute"
       attribute: "Extension"
       arguments:
-          value: [{ Data: D_BAD_ELEM, FabricIndex: CurrentFabricIndex }]
+          value: [{ Data: D_BAD_ELEM, FabricIndex: CurrentFabricIndexValue }]
       response:
           error: CONSTRAINT_ERROR
 
@@ -199,7 +200,8 @@ tests:
       command: "writeAttribute"
       attribute: "Extension"
       arguments:
-          value: [{ Data: D_BAD_OVERFLOW, FabricIndex: CurrentFabricIndex }]
+          value:
+              [{ Data: D_BAD_OVERFLOW, FabricIndex: CurrentFabricIndexValue }]
       response:
           error: CONSTRAINT_ERROR
 
@@ -212,7 +214,8 @@ tests:
       command: "writeAttribute"
       attribute: "Extension"
       arguments:
-          value: [{ Data: D_BAD_UNDERFLOW, FabricIndex: CurrentFabricIndex }]
+          value:
+              [{ Data: D_BAD_UNDERFLOW, FabricIndex: CurrentFabricIndexValue }]
       response:
           error: CONSTRAINT_ERROR
 
@@ -224,7 +227,7 @@ tests:
       command: "writeAttribute"
       attribute: "Extension"
       arguments:
-          value: [{ Data: D_BAD_NONE, FabricIndex: CurrentFabricIndex }]
+          value: [{ Data: D_BAD_NONE, FabricIndex: CurrentFabricIndexValue }]
       response:
           error: CONSTRAINT_ERROR
 
@@ -241,8 +244,8 @@ tests:
       arguments:
           value:
               [
-                  { Data: D_OK_EMPTY, FabricIndex: CurrentFabricIndex },
-                  { Data: D_OK_SINGLE, FabricIndex: CurrentFabricIndex },
+                  { Data: D_OK_EMPTY, FabricIndex: CurrentFabricIndexValue },
+                  { Data: D_OK_SINGLE, FabricIndex: CurrentFabricIndexValue },
               ]
       response:
           error: CONSTRAINT_ERROR
@@ -254,7 +257,7 @@ tests:
       command: "readAttribute"
       attribute: "Extension"
       response:
-          value: [{ Data: D_OK_EMPTY, FabricIndex: CurrentFabricIndex }]
+          value: [{ Data: D_OK_EMPTY, FabricIndex: CurrentFabricIndexValue }]
 
     - label:
           "Step 19: TH1 writes DUT Endpoint 0 AccessControl cluster Extension

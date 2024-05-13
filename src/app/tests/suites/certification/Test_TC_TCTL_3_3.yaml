@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# Auto-generated scripts for harness use only, please review before automation. The endpoints and cluster names are currently set to default
 
 name:
     178.2.5. [TC-TCTL-3.3] Optional temperature level functionality with DUT as
@@ -23,27 +22,117 @@ PICS:
 
 config:
     nodeId: 0x12344321
-    cluster: "Basic Information"
-    endpoint: 0
+    cluster: "Temperature Control"
+    endpoint: 1
+    Step_4_setLevel:
+        type: int8u
+        defaultValue: 1
+    Step_7_setLevel:
+        type: int8u
+        defaultValue: 3
 
 tests:
-    - label: "Step 1: Commission DUT to TH"
-      verification: |
-
-      disabled: true
+    - label:
+          "Step 1: Commission DUT to TH (can be skipped if done in a preceding
+          test)"
+      cluster: "DelayCommands"
+      command: "WaitForCommissionee"
+      arguments:
+          values:
+              - name: "nodeId"
+                value: nodeId
 
     - label:
-          "Step 2: TH writes a valid value to DUT within the range of
-          SupportedTemperatureLevels"
+          "Step 2: Operate device such that a temperature level can be accepted"
+      verification: |
+          Operate device such that a temperature level can be accepted
+      cluster: "LogCommands"
+      command: "UserPrompt"
+      PICS: PICS_USER_PROMPT
+      arguments:
+          values:
+              - name: "message"
+                value: "Please enter 'y' after success"
+              - name: "expectedValue"
+                value: "y"
+
+    - label:
+          "Step 3: TH reads from the DUT the SupportedTemperatureLevels
+          attribute"
+      PICS: TCTL.S.A0005
+      command: "readAttribute"
+      attribute: "SupportedTemperatureLevels"
+      response:
+          saveAs: supportedLevels
+          constraints:
+              type: list
+
+    - label:
+          "Step 4: TH sends command SetTemperatureCommand with a value from
+          supportedLevels saved as setLevel"
       PICS: TCTL.S.C00.Rsp
-      verification: |
+      command: "SetTemperature"
+      arguments:
+          values:
+              - name: "TargetTemperatureLevel"
+                value: Step_4_setLevel
 
-      disabled: true
+    - label: "Wait for 5s"
+      PICS: TCTL.S.C00.Rsp
+      cluster: "DelayCommands"
+      command: "WaitForMs"
+      arguments:
+          values:
+              - name: "ms"
+                value: 5000
 
     - label:
-          "Step 3: after a few seconds, TH reads from the DUT the
-          SelectedTemperatureLevel attribute"
-      PICS: TCTL.S.A0004
-      verification: |
+          "Step 5: TH reads from the DUT the SelectedTemperatureLevel attribute"
+      PICS: TCTL.S.A0004 && TCTL.S.C00.Rsp
+      command: "readAttribute"
+      attribute: "SelectedTemperatureLevel"
+      response:
+          value: Step_4_setLevel
 
-      disabled: true
+    - label:
+          "Step 6:Operate device such that a temperature level cannot be
+          accepted"
+      verification: |
+          Operate device such that a temperature level cannot be accepted
+      cluster: "LogCommands"
+      command: "UserPrompt"
+      PICS: PICS_USER_PROMPT && TCTL.S.M.SupportsInvalidInState
+      arguments:
+          values:
+              - name: "message"
+                value: "Please enter 'y' after success"
+              - name: "expectedValue"
+                value: "y"
+
+    - label:
+          "Step 7: TH sends command SetTemperatureCommand with an invalid value"
+      PICS: TCTL.S.C00.Rsp && TCTL.S.M.SupportsInvalidInState
+      command: "SetTemperature"
+      arguments:
+          values:
+              - name: "TargetTemperatureLevel"
+                value: Step_7_setLevel
+      response:
+          error: CONSTRAINT_ERROR
+
+    - label: "Wait for 5s"
+      PICS: TCTL.S.C00.Rsp && TCTL.S.M.SupportsInvalidInState
+      cluster: "DelayCommands"
+      command: "WaitForMs"
+      arguments:
+          values:
+              - name: "ms"
+                value: 5000
+
+    - label:
+          "Step 8: TH reads from the DUT the SelectedTemperatureLevel attribute"
+      PICS: TCTL.S.A0004 && TCTL.S.M.SupportsInvalidInState
+      command: "readAttribute"
+      attribute: "SelectedTemperatureLevel"
+      response:
+          value: Step_4_setLevel

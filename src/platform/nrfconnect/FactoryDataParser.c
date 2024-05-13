@@ -91,7 +91,7 @@ bool FindUserDataEntry(struct FactoryData * factoryData, const char * entry, voi
         return false;
     }
 
-    ZCBOR_STATE_D(states, MAX_FACTORY_DATA_NESTING_LEVEL - 1, factoryData->user.data, factoryData->user.len, 1);
+    ZCBOR_STATE_D(states, MAX_FACTORY_DATA_NESTING_LEVEL - 1, factoryData->user.data, factoryData->user.len, 1, 0);
 
     bool res      = zcbor_map_start_decode(states);
     bool keyFound = false;
@@ -124,7 +124,7 @@ bool FindUserDataEntry(struct FactoryData * factoryData, const char * entry, voi
 bool ParseFactoryData(uint8_t * buffer, uint16_t bufferSize, struct FactoryData * factoryData)
 {
     memset(factoryData, 0, sizeof(*factoryData));
-    ZCBOR_STATE_D(states, MAX_FACTORY_DATA_NESTING_LEVEL, buffer, bufferSize, 1);
+    ZCBOR_STATE_D(states, MAX_FACTORY_DATA_NESTING_LEVEL, buffer, bufferSize, 1, 0);
 
     bool res = zcbor_map_start_decode(states);
     struct zcbor_string currentString;
@@ -184,10 +184,11 @@ bool ParseFactoryData(uint8_t * buffer, uint16_t bufferSize, struct FactoryData 
                 isdigit(date.value[3]) && date.value[4] == '-' && isdigit(date.value[5]) && isdigit(date.value[6]) &&
                 date.value[7] == '-' && isdigit(date.value[8]) && isdigit(date.value[9]))
             {
-                factoryData->date_year = (uint16_t)(1000 * (uint16_t)(date.value[0] - '0') + 100 * (uint16_t)(date.value[1] - '0') +
-                                                    10 * (uint16_t)(date.value[2] - '0') + (uint16_t)(date.value[3] - '0'));
-                factoryData->date_month = (uint8_t)(10 * (uint16_t)(date.value[5] - '0') + (uint16_t)(date.value[6] - '0'));
-                factoryData->date_day   = (uint8_t)(10 * (uint16_t)(date.value[8] - '0') + (uint16_t)(date.value[9] - '0'));
+                factoryData->date_year =
+                    (uint16_t) (1000 * (uint16_t) (date.value[0] - '0') + 100 * (uint16_t) (date.value[1] - '0') +
+                                10 * (uint16_t) (date.value[2] - '0') + (uint16_t) (date.value[3] - '0'));
+                factoryData->date_month = (uint8_t) (10 * (uint16_t) (date.value[5] - '0') + (uint16_t) (date.value[6] - '0'));
+                factoryData->date_day   = (uint8_t) (10 * (uint16_t) (date.value[8] - '0') + (uint16_t) (date.value[9] - '0'));
             }
             else
             {
@@ -260,7 +261,7 @@ bool ParseFactoryData(uint8_t * buffer, uint16_t bufferSize, struct FactoryData 
         {
             factoryData->user.data = (void *) states->payload;
             res                    = res && zcbor_any_skip(states, NULL);
-            factoryData->user.len  = (size_t)((void *) states->payload - factoryData->user.data);
+            factoryData->user.len  = (size_t) ((void *) states->payload - factoryData->user.data);
         }
         else
         {

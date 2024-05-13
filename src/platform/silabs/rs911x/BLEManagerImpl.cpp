@@ -28,7 +28,7 @@
 
 #include "cmsis_os2.h"
 #include <platform/internal/BLEManager.h>
-#ifndef SIWX_917
+#ifndef SLI_SI91X_MCU_INTERFACE
 #include "rail.h"
 #endif
 #include <crypto/RandUtils.h>
@@ -42,7 +42,7 @@ extern "C" {
 #include "wfx_host_events.h"
 #include "wfx_rsi.h"
 #include "wfx_sl_ble_init.h"
-#ifndef SIWX_917
+#if !(SLI_SI91X_MCU_INTERFACE | EXP_BOARD)
 #include <rsi_driver.h>
 #endif
 #include <rsi_utils.h>
@@ -51,16 +51,29 @@ extern "C" {
 }
 #endif
 
-#include <ble/CHIPBleServiceData.h>
+#include <ble/Ble.h>
 #include <lib/support/CodeUtils.h>
 #include <lib/support/logging/CHIPLogging.h>
 #include <platform/CommissionableDataProvider.h>
 #include <platform/DeviceInstanceInfoProvider.h>
 #include <string.h>
 
+#ifdef SLI_SI91X_MCU_INTERFACE
+extern "C" {
+#include "sl_si91x_trng.h"
+}
+#endif // SLI_SI91X_MCU_INTERFACE
+
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
 #include <setup_payload/AdditionalDataPayloadGenerator.h>
 #endif
+
+#define BLE_MIN_CONNECTION_INTERVAL_MS 45
+#define BLE_MAX_CONNECTION_INTERVAL_MS 45
+#define BLE_SLAVE_LATENCY_MS 0
+#define BLE_TIMEOUT_MS 400
+#define BLE_DEFAULT_TIMER_PERIOD_MS (1)
+#define BLE_SEND_INDICATION_TIMER_PERIOD_MS (5000)
 
 extern sl_wfx_msg_t event_msg;
 
@@ -78,25 +91,38 @@ using namespace ::chip::DeviceLayer::Internal;
 
 void sl_ble_init()
 {
-    uint8_t randomAddrBLE[6] = { 0 };
-    uint64_t randomAddr      = chip::Crypto::GetRandU64();
+    uint8_t randomAddrBLE[RSI_BLE_ADDR_LENGTH] = { 0 };
+#if SLI_SI91X_MCU_INTERFACE
+    sl_status_t sl_status;
+    //! Get Random number of desired length
+    sl_status = sl_si91x_trng_get_random_num((uint32_t *) randomAddrBLE, RSI_BLE_ADDR_LENGTH);
+    if (sl_status != SL_STATUS_OK)
+    {
+        ChipLogError(DeviceLayer, " TRNG Random number generation Failed ");
+        return;
+    }
+    // Set the two least significant bits as the first 2 bits of the address has to be '11' to ensure the address is a random
+    // non-resolvable private address
+    randomAddrBLE[5] |= 0xC0;
+#else
+    uint64_t randomAddr = chip::Crypto::GetRandU64();
+    memcpy(randomAddrBLE, &randomAddr, RSI_BLE_ADDR_LENGTH);
+#endif // SLI_SI91X_MCU_INTERFACE
 
     // registering the GAP callback functions
     rsi_ble_gap_register_callbacks(NULL, NULL, rsi_ble_on_disconnect_event, NULL, NULL, NULL, rsi_ble_on_enhance_conn_status_event,
                                    NULL, NULL, NULL);
 
     // registering the GATT call back functions
-    rsi_ble_gatt_register_callbacks(NULL, NULL, NULL, NULL, NULL, NULL, NULL, rsi_ble_on_gatt_write_event, NULL, NULL, NULL,
-                                    rsi_ble_on_mtu_event, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-                                    rsi_ble_on_event_indication_confirmation, NULL);
+    rsi_ble_gatt_register_callbacks(NULL, NULL, NULL, NULL, NULL, NULL, NULL, rsi_ble_on_gatt_write_event, NULL, NULL,
+                                    rsi_ble_on_read_req_event, rsi_ble_on_mtu_event, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+                                    NULL, rsi_ble_on_event_indication_confirmation, NULL);
 
     //  Exchange of GATT info with BLE stack
 
     rsi_ble_add_matter_service();
-
     //  initializing the application events map
     rsi_ble_app_init_events();
-    memcpy(randomAddrBLE, &randomAddr, 6);
     rsi_ble_set_random_address_with_value(randomAddrBLE);
     chip::DeviceLayer::Internal::BLEMgrImpl().HandleBootEvent();
 }
@@ -130,6 +156,7 @@ void sl_ble_event_handling_task(void)
             // Requests the connection parameters change with the remote device
             rsi_ble_conn_params_update(event_msg.resp_enh_conn.dev_addr, BLE_MIN_CONNECTION_INTERVAL_MS,
                                        BLE_MAX_CONNECTION_INTERVAL_MS, BLE_SLAVE_LATENCY_MS, BLE_TIMEOUT_MS);
+            rsi_ble_set_data_len(event_msg.resp_enh_conn.dev_addr, RSI_BLE_TX_OCTETS, RSI_BLE_TX_TIME);
         }
         break;
         case RSI_BLE_DISCONN_EVENT: {
@@ -146,6 +173,17 @@ void sl_ble_event_handling_task(void)
             rsi_ble_app_clear_event(RSI_BLE_MTU_EVENT);
         }
         break;
+        case RSI_BLE_EVENT_GATT_RD: {
+#if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
+            if (event_msg.rsi_ble_read_req->type == 0)
+            {
+                BLEMgrImpl().HandleC3ReadRequest(event_msg.rsi_ble_read_req);
+            }
+#endif // CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
+       // clear the served event
+            rsi_ble_app_clear_event(RSI_BLE_EVENT_GATT_RD);
+        }
+        break;
         case RSI_BLE_GATT_WRITE_EVENT: {
             // event invokes when write/notification events received
             BLEMgrImpl().HandleWriteEvent(event_msg.rsi_ble_write);
@@ -160,6 +198,13 @@ void sl_ble_event_handling_task(void)
         break;
         default:
             break;
+        }
+
+        if (chip::DeviceLayer::ConnectivityMgr().IsWiFiStationConnected())
+        {
+            // Once DUT is connected adding a 500ms delay
+            // TODO: Fix this with a better event handling
+            vTaskDelay(pdMS_TO_TICKS(500));
         }
     }
 }
@@ -208,12 +253,10 @@ namespace {
 #define BLE_CONFIG_MIN_CE_LENGTH (0)      // Leave to min value
 #define BLE_CONFIG_MAX_CE_LENGTH (0xFFFF) // Leave to max value
 
-#define BLE_DEFAULT_TIMER_PERIOD_MS (1)
-
 TimerHandle_t sbleAdvTimeoutTimer; // FreeRTOS sw timer.
 
 const uint8_t UUID_CHIPoBLEService[]       = { 0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x00, 0x00, 0x80,
-                                         0x00, 0x10, 0x00, 0x00, 0xF6, 0xFF, 0x00, 0x00 };
+                                               0x00, 0x10, 0x00, 0x00, 0xF6, 0xFF, 0x00, 0x00 };
 const uint8_t ShortUUID_CHIPoBLEService[]  = { 0xF6, 0xFF };
 const ChipBleUUID ChipUUID_CHIPoBLEChar_RX = { { 0x18, 0xEE, 0x2E, 0xF5, 0x26, 0x3D, 0x45, 0x59, 0x95, 0x9F, 0x4F, 0x9C, 0x42, 0x9F,
                                                  0x9D, 0x11 } };
@@ -261,6 +304,18 @@ CHIP_ERROR BLEManagerImpl::_Init()
 
 exit:
     return err;
+}
+
+void BLEManagerImpl::OnSendIndicationTimeout(System::Layer * aLayer, void * appState)
+{
+    // TODO: change the connection handle with the ble device ID
+    uint8_t connHandle = 1;
+    ChipLogProgress(DeviceLayer, "BLEManagerImpl::HandleSoftTimerEvent CHIPOBLE_PROTOCOL_ABORT");
+    ChipDeviceEvent event;
+    event.Type                           = DeviceEventType::kCHIPoBLEConnectionError;
+    event.CHIPoBLEConnectionError.ConId  = connHandle;
+    event.CHIPoBLEConnectionError.Reason = BLE_ERROR_CHIPOBLE_PROTOCOL_ABORT;
+    PlatformMgr().PostEventOrDie(&event);
 }
 
 uint16_t BLEManagerImpl::_NumConnections(void)
@@ -385,6 +440,7 @@ void BLEManagerImpl::_OnPlatformEvent(const ChipDeviceEvent * event)
 
     case DeviceEventType::kCHIPoBLEIndicateConfirm: {
         ChipLogProgress(DeviceLayer, "_OnPlatformEvent kCHIPoBLEIndicateConfirm");
+        DeviceLayer::SystemLayer().CancelTimer(OnSendIndicationTimeout, this);
         HandleIndicationConfirmation(event->CHIPoBLEIndicateConfirm.ConId, &CHIP_BLE_SVC_ID, &ChipUUID_CHIPoBLEChar_TX);
     }
     break;
@@ -433,12 +489,16 @@ bool BLEManagerImpl::SendIndication(BLE_CONNECTION_OBJECT conId, const ChipBleUU
     int32_t status = 0;
     status = rsi_ble_indicate_value(event_msg.resp_enh_conn.dev_addr, event_msg.rsi_ble_measurement_hndl, (data->DataLength()),
                                     data->Start());
+
     if (status != RSI_SUCCESS)
     {
         ChipLogProgress(DeviceLayer, "indication failed with error code %lx ", status);
         return false;
     }
 
+    // start timer for the indication Confirmation Event
+    DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(BLE_SEND_INDICATION_TIMER_PERIOD_MS),
+                                          OnSendIndicationTimeout, this);
     return true;
 }
 
@@ -562,6 +622,7 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(void)
 
     mDeviceNameLength = strlen(mDeviceName); // Device Name length + length field
     VerifyOrExit(mDeviceNameLength < kMaxDeviceNameLength, err = CHIP_ERROR_INVALID_ARGUMENT);
+    static_assert((kFlagTlvSize + kUUIDTlvSize + kDeviceNameTlvSize) <= MAX_RESPONSE_DATA_LEN, "Scan Response buffer is too small");
 
     mDeviceIdInfoLength = sizeof(mDeviceIdInfo); // Servicedatalen + length+ UUID (Short)
     static_assert(sizeof(mDeviceIdInfo) + CHIP_ADV_SHORT_UUID_LEN + 1 <= UINT8_MAX, "Our length won't fit in a uint8_t");
@@ -617,8 +678,9 @@ exit:
 
 CHIP_ERROR BLEManagerImpl::StartAdvertising(void)
 {
-    CHIP_ERROR err;
-    int32_t status = 0;
+    CHIP_ERROR err          = CHIP_NO_ERROR;
+    int32_t status          = 0;
+    bool postAdvChangeEvent = false;
 
     ChipLogProgress(DeviceLayer, "StartAdvertising start");
 
@@ -633,11 +695,15 @@ CHIP_ERROR BLEManagerImpl::StartAdvertising(void)
     }
     else
     {
-        ChipLogDetail(DeviceLayer, "Start BLE advertissement");
+        ChipLogDetail(DeviceLayer, "Start BLE advertisement");
+        postAdvChangeEvent = true;
     }
 
-    err = ConfigureAdvertisingData();
-    SuccessOrExit(err);
+    if (!(mFlags.Has(Flags::kAdvertising)))
+    {
+        err = ConfigureAdvertisingData();
+        SuccessOrExit(err);
+    }
 
     mFlags.Clear(Flags::kRestartAdvertising);
 
@@ -655,6 +721,16 @@ CHIP_ERROR BLEManagerImpl::StartAdvertising(void)
             StartBleAdvTimeoutTimer(CHIP_DEVICE_CONFIG_BLE_ADVERTISING_INTERVAL_CHANGE_TIME);
         }
         mFlags.Set(Flags::kAdvertising);
+
+        if (postAdvChangeEvent)
+        {
+            // Post CHIPoBLEAdvertisingChange event.
+            ChipDeviceEvent advChange;
+            advChange.Type                             = DeviceEventType::kCHIPoBLEAdvertisingChange;
+            advChange.CHIPoBLEAdvertisingChange.Result = kActivity_Started;
+
+            ReturnErrorOnFailure(PlatformMgr().PostEvent(&advChange));
+        }
     }
     else
     {
@@ -662,8 +738,9 @@ CHIP_ERROR BLEManagerImpl::StartAdvertising(void)
     }
 
 exit:
+    // TODO: Add MapBLEError to return the correct error code
     ChipLogError(DeviceLayer, "StartAdvertising() End error: %s", ErrorStr(err));
-    return CHIP_NO_ERROR; // err;
+    return err;
 }
 
 int32_t BLEManagerImpl::SendBLEAdvertisementCommand(void)
@@ -692,7 +769,6 @@ int32_t BLEManagerImpl::SendBLEAdvertisementCommand(void)
     return rsi_ble_start_advertising_with_values(&ble_adv);
 }
 
-// TODO:: Implementation need to be done.
 CHIP_ERROR BLEManagerImpl::StopAdvertising(void)
 {
     CHIP_ERROR err = CHIP_NO_ERROR;
@@ -708,12 +784,16 @@ CHIP_ERROR BLEManagerImpl::StopAdvertising(void)
             mFlags.Set(Flags::kFastAdvertisingEnabled, true);
             advertising_set_handle = 0xff;
             CancelBleAdvTimeoutTimer();
-        }
-        else
-        {
-            ChipLogProgress(DeviceLayer, "advertising failed to stop, with status = 0x%lx", status);
+
+            // Post CHIPoBLEAdvertisingChange event.
+            ChipDeviceEvent advChange;
+            advChange.Type                             = DeviceEventType::kCHIPoBLEAdvertisingChange;
+            advChange.CHIPoBLEAdvertisingChange.Result = kActivity_Stopped;
+            err                                        = PlatformMgr().PostEvent(&advChange);
         }
     }
+
+    // TODO: Add MapBLEError to return the correct error code
     return err;
 }
 
@@ -885,12 +965,6 @@ void BLEManagerImpl::HandleTxConfirmationEvent(BLE_CONNECTION_OBJECT conId)
     PlatformMgr().PostEventOrDie(&event);
 }
 
-// TODO:: Need to Implement
-void BLEManagerImpl::HandleSoftTimerEvent(void)
-{
-    // TODO:: Need to Implement
-}
-
 bool BLEManagerImpl::RemoveConnection(uint8_t connectionHandle)
 {
     CHIPoBLEConState * bleConnState = GetConnectionState(connectionHandle, true);
@@ -982,8 +1056,16 @@ exit:
     return err;
 }
 
-// TODO:: Need to do the correct implementation
-void BLEManagerImpl::HandleC3ReadRequest(void) {}
+void BLEManagerImpl::HandleC3ReadRequest(rsi_ble_read_req_t * rsi_ble_read_req)
+{
+    sl_status_t ret = rsi_ble_gatt_read_response(rsi_ble_read_req->dev_addr, GATT_READ_RESP, rsi_ble_read_req->handle,
+                                                 GATT_READ_ZERO_OFFSET, sInstance.c3AdditionalDataBufferHandle->DataLength(),
+                                                 sInstance.c3AdditionalDataBufferHandle->Start());
+    if (ret != SL_STATUS_OK)
+    {
+        ChipLogDetail(DeviceLayer, "Failed to send read response, err:%ld", ret);
+    }
+}
 
 #endif // CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
 
@@ -1022,7 +1104,7 @@ void BLEManagerImpl::BleAdvTimeoutHandler(TimerHandle_t xTimer)
 {
     if (BLEMgrImpl().mFlags.Has(Flags::kFastAdvertisingEnabled))
     {
-        ChipLogDetail(DeviceLayer, "bleAdv Timeout : Start slow advertissment");
+        ChipLogDetail(DeviceLayer, "bleAdv Timeout : Start slow advertisement");
         BLEMgr().SetAdvertisingMode(BLEAdvertisingMode::kSlowAdvertising);
     }
 }

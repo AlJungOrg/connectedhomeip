@@ -32,7 +32,6 @@
 #include <app-common/zap-generated/ids/Clusters.h>
 #include <app/CommandHandler.h>
 #include <app/server/Dnssd.h>
-#include <app/util/af.h>
 #include <app/util/basic-types.h>
 #include <app/util/util.h>
 #include <lib/dnssd/Advertiser.h>
@@ -42,8 +41,6 @@
 #if defined CONFIG_LWIP_HOOK_IP6_ROUTE_DEFAULT || defined CONFIG_LWIP_HOOK_ND6_GET_GW_DEFAULT
 #include "route_hook/asr_route_hook.h"
 #endif
-
-static const char * TAG = "app-devicecallbacks";
 
 using namespace ::chip;
 using namespace ::chip::Inet;
@@ -168,9 +165,8 @@ extern LEDWidget lightLED;
 void DeviceCallbacks::OnOnOffPostAttributeChangeCallback(EndpointId endpointId, AttributeId attributeId, uint8_t * value)
 {
     VerifyOrExit(attributeId == app::Clusters::OnOff::Attributes::OnOff::Id,
-                 ChipLogError(DeviceLayer, TAG, "Unhandled Attribute ID: '0x%04x", attributeId));
-    VerifyOrExit(endpointId == 1 || endpointId == 2,
-                 ChipLogError(DeviceLayer, TAG, "Unexpected EndPoint ID: `0x%02x'", endpointId));
+                 ChipLogError(DeviceLayer, "Unhandled Attribute ID: '0x%04lx", attributeId));
+    VerifyOrExit(endpointId == 1 || endpointId == 2, ChipLogError(DeviceLayer, "Unexpected EndPoint ID: `0x%02x'", endpointId));
 
     lightLED.Set(*value);
 
@@ -182,9 +178,8 @@ void DeviceCallbacks::OnLevelPostAttributeChangeCallback(EndpointId endpointId, 
                                                          uint8_t * value)
 {
     VerifyOrExit(attributeId == app::Clusters::LevelControl::Attributes::CurrentLevel::Id,
-                 ChipLogError(DeviceLayer, TAG, "Unhandled Attribute ID: '0x%04x", attributeId));
-    VerifyOrExit(endpointId == 1 || endpointId == 2,
-                 ChipLogError(DeviceLayer, TAG, "Unexpected EndPoint ID: `0x%02x'", endpointId));
+                 ChipLogError(DeviceLayer, "Unhandled Attribute ID: '0x%04lx", attributeId));
+    VerifyOrExit(endpointId == 1 || endpointId == 2, ChipLogError(DeviceLayer, "Unexpected EndPoint ID: `0x%02x'", endpointId));
 
     if (size == 1)
     {
@@ -232,8 +227,8 @@ void DeviceCallbacks::OnColorPostAttributeChangeCallback(EndpointId endpointId, 
 void DeviceCallbacks::OnIdentifyPostAttributeChangeCallback(EndpointId endpointId, AttributeId attributeId, uint8_t * value)
 {
     VerifyOrExit(attributeId == app::Clusters::Identify::Attributes::IdentifyTime::Id,
-                 ChipLogError(DeviceLayer, "[%s] Unhandled Attribute ID: '0x%04lx", TAG, attributeId));
-    VerifyOrExit(endpointId == 1, ChipLogError(DeviceLayer, "[%s] Unexpected EndPoint ID: `0x%02x'", TAG, endpointId));
+                 ChipLogError(DeviceLayer, "Unhandled Attribute ID: '0x%04lx", attributeId));
+    VerifyOrExit(endpointId == 1, ChipLogError(DeviceLayer, "Unexpected EndPoint ID: `0x%02x'", endpointId));
 
     // timerCount represents the number of callback executions before we stop the timer.
     // value is expressed in seconds and the timer is fired every 250ms, so just multiply value by 4.

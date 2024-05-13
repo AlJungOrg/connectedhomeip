@@ -24,6 +24,7 @@
 
 #include "Command.h"
 #include <map>
+#include <string>
 
 class Commands
 {
@@ -42,7 +43,7 @@ public:
         Register(commandSetName, commandsList, helpText, false);
     }
     int Run(int argc, char ** argv);
-    int RunInteractive(const char * command, const chip::Optional<char *> & storageDirectory = chip::NullOptional);
+    int RunInteractive(const char * command, const chip::Optional<char *> & storageDirectory, bool advertiseOperational);
 
 private:
     struct CommandSet
@@ -56,7 +57,8 @@ private:
     using CommandSetMap = std::map<std::string, CommandSet>;
 
     CHIP_ERROR RunCommand(int argc, char ** argv, bool interactive = false,
-                          const chip::Optional<char *> & interactiveStorageDirectory = chip::NullOptional);
+                          const chip::Optional<char *> & interactiveStorageDirectory = chip::NullOptional,
+                          bool interactiveAdvertiseOperational                       = false);
 
     CommandSetMap::iterator GetCommandSet(std::string commandSetName);
     Command * GetCommand(CommandsVector & commands, std::string commandName);

@@ -25,7 +25,7 @@
  */
 
 #include "MockEvents.h"
-#include <app/AttributeAccessInterface.h>
+#include <app/AttributeValueEncoder.h>
 #include <app/CommandHandler.h>
 #include <app/CommandSender.h>
 #include <app/ConcreteAttributePath.h>
@@ -35,9 +35,9 @@
 #include <app/reporting/tests/MockReportScheduler.h>
 #include <app/tests/integration/common.h>
 #include <lib/core/CHIPCore.h>
+#include <lib/core/ErrorStr.h>
 #include <lib/support/CHIPCounter.h>
 #include <lib/support/CodeUtils.h>
-#include <lib/support/ErrorStr.h>
 #include <messaging/ExchangeContext.h>
 #include <messaging/ExchangeMgr.h>
 #include <messaging/Flags.h>
@@ -73,12 +73,12 @@ Protocols::InteractionModel::Status ServerClusterCommandExists(const ConcreteCom
     return Status::Success;
 }
 
-void DispatchSingleClusterCommand(const ConcreteCommandPath & aCommandPath, chip::TLV::TLVReader & aReader,
+void DispatchSingleClusterCommand(const ConcreteCommandPath & aRequestCommandPath, chip::TLV::TLVReader & aReader,
                                   CommandHandler * apCommandObj)
 {
     static bool statusCodeFlipper = false;
 
-    if (ServerClusterCommandExists(aCommandPath) != Protocols::InteractionModel::Status::Success)
+    if (ServerClusterCommandExists(aRequestCommandPath) != Protocols::InteractionModel::Status::Success)
     {
         return;
     }
@@ -106,7 +106,8 @@ void DispatchSingleClusterCommand(const ConcreteCommandPath & aCommandPath, chip
 
         chip::TLV::TLVWriter * writer;
 
-        ReturnOnFailure(apCommandObj->PrepareCommand(path));
+        const CommandHandler::InvokeResponseParameters prepareParams(aRequestCommandPath);
+        ReturnOnFailure(apCommandObj->PrepareInvokeResponseCommand(path, prepareParams));
 
         writer = apCommandObj->GetCommandDataIBTLVWriter();
         ReturnOnFailure(writer->Put(chip::TLV::ContextTag(kTestFieldId1), kTestFieldValue1));
@@ -120,10 +121,9 @@ void DispatchSingleClusterCommand(const ConcreteCommandPath & aCommandPath, chip
 
 CHIP_ERROR ReadSingleClusterData(const Access::SubjectDescriptor & aSubjectDescriptor, bool aIsFabricFiltered,
                                  const ConcreteReadAttributePath & aPath, AttributeReportIBs::Builder & aAttributeReports,
-                                 AttributeValueEncoder::AttributeEncodeState * apEncoderState)
+                                 AttributeEncodeState * apEncoderState)
 {
-    ReturnErrorOnFailure(AttributeValueEncoder(aAttributeReports, 0, aPath, 0).Encode(kTestFieldValue1));
-    return CHIP_NO_ERROR;
+    return AttributeValueEncoder(aAttributeReports, aSubjectDescriptor, aPath, 0).Encode(kTestFieldValue1);
 }
 
 bool ConcreteAttributePathExists(const ConcreteAttributePath & aPath)

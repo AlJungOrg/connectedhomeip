@@ -26,6 +26,8 @@
 #include <app/server/Server.h>
 #include <lib/support/logging/CHIPLogging.h>
 
+#include <string>
+
 #if defined(CHIP_IMGUI_ENABLED) && CHIP_IMGUI_ENABLED
 #include <imgui_ui/ui.h>
 #include <imgui_ui/windows/light.h>
@@ -40,7 +42,7 @@ using namespace chip::app::Clusters;
 
 namespace {
 
-constexpr const char kChipEventFifoPathPrefix[] = "/tmp/chip_lighting_fifo_";
+constexpr char kChipEventFifoPathPrefix[] = "/tmp/chip_lighting_fifo_";
 NamedPipeCommands sChipNamedPipeCommands;
 LightingAppCommandDelegate sLightingAppCommandDelegate;
 } // namespace

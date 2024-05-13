@@ -19,13 +19,15 @@
  *    @file
  *          Provides the implementation of the FailSafeContext object.
  */
-
+#include "FailSafeContext.h"
+#include <app/icd/server/ICDServerConfig.h>
+#if CHIP_CONFIG_ENABLE_ICD_SERVER
+#include <app/icd/server/ICDNotifier.h> // nogncheck
+#endif
 #include <lib/support/SafeInt.h>
 #include <platform/CHIPDeviceConfig.h>
 #include <platform/ConnectivityManager.h>
 #include <platform/internal/CHIPDeviceLayerInternal.h>
-
-#include "FailSafeContext.h"
 
 using namespace chip::DeviceLayer;
 
@@ -52,25 +54,10 @@ void FailSafeContext::HandleDisarmFailSafe(intptr_t arg)
 
 void FailSafeContext::SetFailSafeArmed(bool armed)
 {
-#if CHIP_DEVICE_CONFIG_ENABLE_SED
-    if (IsFailSafeArmed() != armed)
-    {
-        // Per spec, we should be staying in active mode while a fail-safe is
-        // armed.
-        DeviceLayer::ConnectivityMgr().RequestSEDActiveMode(armed);
-    }
-#endif // CHIP_DEVICE_CONFIG_ENABLE_SED
 #if CHIP_CONFIG_ENABLE_ICD_SERVER
     if (IsFailSafeArmed() != armed)
     {
-        DeviceLayer::ChipDeviceEvent event;
-        event.Type                = DeviceLayer::DeviceEventType::kFailSafeStateChanged;
-        event.FailSafeState.armed = armed;
-        CHIP_ERROR err            = DeviceLayer::PlatformMgr().PostEvent(&event);
-        if (err != CHIP_NO_ERROR)
-        {
-            ChipLogError(AppServer, "Failed to post kFailSafeStateChanged event %" CHIP_ERROR_FORMAT, err.Format());
-        }
+        ICDNotifier::GetInstance().BroadcastActiveRequest(ICDListener::KeepActiveFlag::kFailSafeArmed, armed);
     }
 #endif
     mFailSafeArmed = armed;
@@ -98,12 +85,11 @@ void FailSafeContext::ScheduleFailSafeCleanup(FabricIndex fabricIndex, bool addN
 
     SetFailSafeArmed(false);
 
-    ChipDeviceEvent event;
-    event.Type                                                = DeviceEventType::kFailSafeTimerExpired;
-    event.FailSafeTimerExpired.fabricIndex                    = fabricIndex;
-    event.FailSafeTimerExpired.addNocCommandHasBeenInvoked    = addNocCommandInvoked;
-    event.FailSafeTimerExpired.updateNocCommandHasBeenInvoked = updateNocCommandInvoked;
-    CHIP_ERROR status                                         = PlatformMgr().PostEvent(&event);
+    ChipDeviceEvent event{ .Type                 = DeviceEventType::kFailSafeTimerExpired,
+                           .FailSafeTimerExpired = { .fabricIndex                    = fabricIndex,
+                                                     .addNocCommandHasBeenInvoked    = addNocCommandInvoked,
+                                                     .updateNocCommandHasBeenInvoked = updateNocCommandInvoked } };
+    CHIP_ERROR status = PlatformMgr().PostEvent(&event);
 
     if (status != CHIP_NO_ERROR)
     {

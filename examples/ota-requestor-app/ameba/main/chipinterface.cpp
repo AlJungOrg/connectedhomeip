@@ -24,9 +24,9 @@
 
 #include <app/clusters/network-commissioning/network-commissioning.h>
 #include <app/server/Server.h>
-#include <app/util/af.h>
+#include <app/util/endpoint-config-api.h>
 
-#include <lib/support/ErrorStr.h>
+#include <lib/core/ErrorStr.h>
 #include <platform/Ameba/AmebaConfig.h>
 #include <platform/Ameba/NetworkCommissioningDriver.h>
 #include <platform/CHIPDeviceLayer.h>

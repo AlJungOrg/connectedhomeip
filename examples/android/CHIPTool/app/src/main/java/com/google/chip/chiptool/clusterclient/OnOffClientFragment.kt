@@ -22,19 +22,20 @@ import chip.devicecontroller.model.ChipAttributePath
 import chip.devicecontroller.model.ChipEventPath
 import chip.devicecontroller.model.InvokeElement
 import chip.devicecontroller.model.NodeState
-import chip.tlv.AnonymousTag
-import chip.tlv.ContextSpecificTag
-import chip.tlv.TlvWriter
 import com.google.chip.chiptool.ChipClient
 import com.google.chip.chiptool.GenericChipDeviceListener
 import com.google.chip.chiptool.R
 import com.google.chip.chiptool.databinding.OnOffClientFragmentBinding
-import com.google.chip.chiptool.util.TlvParseUtil
+import com.google.chip.chiptool.util.toAny
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import matter.tlv.AnonymousTag
+import matter.tlv.ContextSpecificTag
+import matter.tlv.TlvReader
+import matter.tlv.TlvWriter
 
 class OnOffClientFragment : Fragment() {
   private val deviceController: ChipDeviceController
@@ -104,6 +105,15 @@ class OnOffClientFragment : Fragment() {
 
     val attributePath = ChipAttributePath.newInstance(endpointId, clusterId, attributeId)
 
+    val devicePointer =
+      try {
+        ChipClient.getConnectedDevicePointer(requireContext(), addressUpdateFragment.deviceId)
+      } catch (e: IllegalStateException) {
+        Log.d(TAG, "getConnectedDevicePointer exception", e)
+        showMessage("Get DevicePointer fail!")
+        return
+      }
+
     ChipClient.getDeviceController(requireContext())
       .readPath(
         object : ReportCallback {
@@ -116,18 +126,18 @@ class OnOffClientFragment : Fragment() {
           }
 
           override fun onReport(nodeState: NodeState?) {
-            val value =
+            val tlv =
               nodeState
                 ?.getEndpointState(endpointId)
                 ?.getClusterState(clusterId)
                 ?.getAttributeState(attributeId)
-                ?.value
-                ?: "null"
+                ?.tlv
+            val value = tlv?.let { TlvReader(it).toAny() }
             Log.v(TAG, "On/Off attribute value: $value")
             showMessage("On/Off attribute value: $value")
           }
         },
-        getConnectedDevicePointer(),
+        devicePointer,
         listOf(attributePath),
         null,
         false,
@@ -180,6 +190,15 @@ class OnOffClientFragment : Fragment() {
         )
       }
 
+    val devicePointer =
+      try {
+        ChipClient.getConnectedDevicePointer(requireContext(), addressUpdateFragment.deviceId)
+      } catch (e: IllegalStateException) {
+        Log.d(TAG, "getConnectedDevicePointer exception", e)
+        showMessage("Get DevicePointer fail!")
+        return
+      }
+
     deviceController.subscribeToPath(
       subscriptionEstablishedCallback,
       resubscriptionAttemptCallback,
@@ -201,7 +220,7 @@ class OnOffClientFragment : Fragment() {
               ?.tlv
               ?: return
           // TODO : Need to be implement poj-to-tlv
-          val value = TlvParseUtil.decodeBoolean(tlv)
+          val value = TlvReader(tlv).getBool(AnonymousTag)
           val formatter = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
           val time = formatter.format(Calendar.getInstance(Locale.getDefault()).time)
           val message = "Subscribed on/off value at $time: ${if (value) "ON" else "OFF"}"
@@ -210,7 +229,7 @@ class OnOffClientFragment : Fragment() {
           showReportMessage(message)
         }
       },
-      getConnectedDevicePointer(),
+      devicePointer,
       listOf(attributePath),
       null,
       minInterval,
@@ -224,7 +243,7 @@ class OnOffClientFragment : Fragment() {
   inner class ChipControllerCallback : GenericChipDeviceListener() {
     override fun onConnectDeviceComplete() {}
 
-    override fun onCommissioningComplete(nodeId: Long, errorCode: Int) {
+    override fun onCommissioningComplete(nodeId: Long, errorCode: Long) {
       Log.d(TAG, "onCommissioningComplete for nodeId $nodeId: $errorCode")
       showMessage("Address update complete for nodeId $nodeId with code $errorCode")
     }
@@ -264,6 +283,15 @@ class OnOffClientFragment : Fragment() {
         null
       )
 
+    val devicePointer =
+      try {
+        ChipClient.getConnectedDevicePointer(requireContext(), addressUpdateFragment.deviceId)
+      } catch (e: IllegalStateException) {
+        Log.d(TAG, "getConnectedDevicePointer exception", e)
+        showMessage("Get DevicePointer fail!")
+        return
+      }
+
     deviceController.invoke(
       object : InvokeCallback {
         override fun onError(ex: Exception?) {
@@ -276,7 +304,7 @@ class OnOffClientFragment : Fragment() {
           showMessage("MoveToLevel command success")
         }
       },
-      getConnectedDevicePointer(),
+      devicePointer,
       invokeElement,
       0,
       0
@@ -297,6 +325,15 @@ class OnOffClientFragment : Fragment() {
         null
       )
 
+    val devicePointer =
+      try {
+        ChipClient.getConnectedDevicePointer(requireContext(), addressUpdateFragment.deviceId)
+      } catch (e: IllegalStateException) {
+        Log.d(TAG, "getConnectedDevicePointer exception", e)
+        showMessage("Get DevicePointer fail!")
+        return
+      }
+
     deviceController.invoke(
       object : InvokeCallback {
         override fun onError(ex: Exception?) {
@@ -309,15 +346,11 @@ class OnOffClientFragment : Fragment() {
           showMessage("${commandId.name} command success")
         }
       },
-      getConnectedDevicePointer(),
+      devicePointer,
       invokeElement,
       0,
       0
     )
-  }
-
-  private suspend fun getConnectedDevicePointer(): Long {
-    return ChipClient.getConnectedDevicePointer(requireContext(), addressUpdateFragment.deviceId)
   }
 
   private fun showMessage(msg: String) {

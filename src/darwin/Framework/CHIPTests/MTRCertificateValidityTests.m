@@ -163,6 +163,8 @@ static MTRDeviceController * sController = nil;
 
     __auto_type * operationalCertificate = [self issueOperationalCertificateForNode:@(kDeviceId)
                                                                operationalPublicKey:operationalPublicKey];
+    // Release no-longer-needed key before we do anything else.
+    CFRelease(operationalPublicKey);
     XCTAssertNotNil(operationalCertificate);
 
     __auto_type * certChain = [[MTROperationalCertificateChain alloc] initWithOperationalCertificate:operationalCertificate
@@ -251,7 +253,6 @@ static BOOL sNeedsStackShutdown = YES;
 
     __auto_type * factoryParams = [[MTRDeviceControllerFactoryParams alloc] initWithStorage:storage];
     factoryParams.port = @(kLocalPort);
-    factoryParams.shouldStartServer = YES;
 
     BOOL ok = [factory startControllerFactory:factoryParams error:nil];
     XCTAssertTrue(ok);

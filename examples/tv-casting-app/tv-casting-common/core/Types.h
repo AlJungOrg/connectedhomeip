@@ -37,17 +37,19 @@ using Strong = std::shared_ptr<T>;
 
 } // namespace memory
 
-namespace app {
+namespace core {
 
 class CastingApp;
 
-};
+}; // namespace core
 
 namespace support {
 
 class AppParameters;
 class ByteSpanDataProvider;
 class ServerInitParamsProvider;
+
+class EndpointListLoader;
 
 } // namespace support
 

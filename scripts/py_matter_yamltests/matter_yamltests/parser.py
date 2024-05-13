@@ -14,13 +14,17 @@
 #    limitations under the License.
 
 import copy
+import logging
+import re
 from dataclasses import dataclass, field
 from enum import Enum, auto
+from typing import Optional
 
 from . import fixes
 from .constraints import get_constraints, is_typed_constraint
 from .definitions import SpecDefinitions
-from .errors import TestStepError, TestStepKeyError, TestStepValueNameError
+from .errors import (TestStepEnumError, TestStepEnumSpecifierNotUnknownError, TestStepEnumSpecifierWrongError, TestStepError,
+                     TestStepKeyError, TestStepValueNameError)
 from .pics_checker import PICSChecker
 from .yaml_loader import YamlLoader
 
@@ -35,6 +39,9 @@ ANY_COMMANDS_LIST = [
     'ReadAll',
     'SubscribeAll',
 ]
+
+# If True, enum values should use a valid name instead of a raw value
+STRICT_ENUM_VALUE_CHECK = False
 
 
 class UnknownPathQualifierError(TestStepError):
@@ -167,6 +174,99 @@ def _value_or_config(data, key, config):
     return data[key] if key in data else config.get(key)
 
 
+class EnumType:
+    def __init__(self, enum: Enum):
+        self.type = enum.name
+        self.base_type = enum.base_type
+
+        self._codes = {}
+        self.entries_by_name = {}
+        self.entries_by_code = {}
+        self._compute_entries(enum)
+
+    def translate(self, key: str, value) -> int:
+        if self._codes.get(key) is not None and self._codes.get(key) == value:
+            return self._codes.get(key)
+
+        if type(value) is str:
+            code = self._get_code_by_name(value)
+        else:
+            code = self._get_code_by_value(value)
+
+        if code is None:
+            raise TestStepEnumError(value, self.entries_by_name)
+
+        self._codes[key] = code
+        return code
+
+    def _get_code_by_name(self, value):
+        # For readability the name could sometimes be written as "enum_name(enum_code)" instead of "enum_name"
+        # In this case the enum_code should be checked to ensure that it is correct, unless enum_name is UnknownEnumValue
+        # in which case only invalid enum_code are allowed.
+        specified_name, specified_code = self._extract_name_and_code(value)
+        if specified_name not in self.entries_by_name:
+            return None
+
+        enum_code = self.entries_by_name.get(specified_name)
+        if specified_code is None or specified_code == enum_code:
+            return enum_code
+
+        if specified_name != f'{self.type}.UnknownEnumValue':
+            raise TestStepEnumSpecifierWrongError(
+                specified_code, specified_name, enum_code)
+
+        enum_name = self.entries_by_code.get(specified_code)
+        if enum_name:
+            raise TestStepEnumSpecifierNotUnknownError(value, enum_name)
+
+        return specified_code
+
+    def _get_code_by_value(self, value):
+        enum_name = self.entries_by_code.get(value)
+        if not enum_name:
+            return None
+
+        if STRICT_ENUM_VALUE_CHECK:
+            raise TestStepEnumError(value, self.entries_by_name)
+
+        return value
+
+    def _compute_entries(self, enum: Enum):
+        enum_codes = []
+        for enum_entry in enum.entries:
+            name = f'{self.type}.{enum_entry.name}'
+            code = enum_entry.code
+
+            self.entries_by_name[name] = code
+            self.entries_by_code[code] = name
+            enum_codes.append(code)
+
+        # search for the first invalid entry if any
+        max_code = 0xFF + 1
+        if self.base_type == 'enum16':
+            max_code = 0xFFFF + 1
+
+        for code in range(0, max_code):
+            if code not in enum_codes:
+                name = f'{self.type}.UnknownEnumValue'
+                self.entries_by_name[name] = code
+                self.entries_by_code[code] = name
+                break
+
+    def _extract_name_and_code(self, enum_name: str):
+        match = re.match(r"([\w.]+)(?:\((\w+)\))?", enum_name)
+        if match:
+            name = match.group(1)
+            code = int(match.group(2)) if match.group(2) else None
+            return name, code
+
+        return None, None
+
+    @staticmethod
+    def is_valid_type(target_type: str):
+        return target_type == 'enum8' or target_type == 'enum16'
+
+
 class _TestStepWithPlaceholders:
     '''A single YAML test parsed, as is, from YAML.
 
@@ -189,6 +289,8 @@ class _TestStepWithPlaceholders:
         self.group_id = _value_or_config(test, 'groupId', config)
         self.cluster = _value_or_config(test, 'cluster', config)
         self.command = _value_or_config(test, 'command', config)
+        if not self.command:
+            self.command = _value_or_config(test, 'wait', config)
         self.attribute = _value_or_none(test, 'attribute')
         self.event = _value_or_none(test, 'event')
         self.endpoint = _value_or_config(test, 'endpoint', config)
@@ -199,6 +301,7 @@ class _TestStepWithPlaceholders:
         self.fabric_filtered = _value_or_none(test, 'fabricFiltered')
         self.min_interval = _value_or_none(test, 'minInterval')
         self.max_interval = _value_or_none(test, 'maxInterval')
+        self.keep_subscriptions = _value_or_none(test, 'keepSubscriptions')
         self.timed_interaction_timeout_ms = _value_or_none(
             test, 'timedInteractionTimeoutMs')
         self.timeout = _value_or_none(test, 'timeout')
@@ -436,7 +539,11 @@ class _TestStepWithPlaceholders:
         element = definitions.get_type_by_name(cluster_name, target_name)
 
         if hasattr(element, 'base_type'):
-            target_name = element.base_type.lower()
+            if EnumType.is_valid_type(element.base_type):
+                target_name = EnumType(element)
+            else:
+                target_name = element.base_type
+
         elif hasattr(element, 'fields'):
             target_name = {f.name: self._as_mapping(
                 definitions, cluster_name, f.data_type.name) for f in element.fields}
@@ -475,7 +582,11 @@ class _TestStepWithPlaceholders:
 
                 if key == 'value':
                     value[key] = self._update_value_with_definition(
-                        item_value, mapping)
+                        value,
+                        key,
+                        item_value,
+                        mapping
+                    )
                 elif key == 'saveAs' and type(item_value) is str and item_value not in self._parsing_config_variable_storage:
                     self._parsing_config_variable_storage[item_value] = None
                 elif key == 'saveDataVersionAs' and type(item_value) is str and item_value not in self._parsing_config_variable_storage:
@@ -486,37 +597,80 @@ class _TestStepWithPlaceholders:
                         # the the value type for the target field.
                         if is_typed_constraint(constraint):
                             value[key][constraint] = self._update_value_with_definition(
-                                constraint_value, mapping_type)
+                                item_value,
+                                constraint,
+                                constraint_value,
+                                mapping
+                            )
                 else:
                     # This key, value pair does not rely on cluster specifications.
                     pass
 
-    def _update_value_with_definition(self, value, mapping_type):
+    def _update_value_with_definition(self, container: dict, key: str, value, mapping_type):
+        """
+        Processes a given value based on a specified mapping type and returns the updated value.
+        This method does not modify the container in place; rather, it returns a new value that should be
+        used to update or process further as necessary.
+
+        The 'container' and 'key' parameters are primarily used for error tagging. If an error occurs
+        during the value processing, these parameters allow for the error to be precisely located and
+        reported, facilitating easier debugging and error tracking.
+
+        Parameters:
+          - container (dict): A dictionary that serves as a context for the operation. It is used for error
+            tagging if processing fails, by associating errors with specific locations within the data structure.
+          - key (str): The key related to the value being processed. It is used alongside 'container' to tag
+            errors, enabling precise identification of the error source.
+          - value: The value to be processed according to the mapping type.
+          - mapping_type: Dictates the processing or mapping logic to be applied to 'value'.
+
+        Returns:
+          The processed value, which is the result of applying the specified mapping type to the original 'value'.
+          This method does not update the 'container'; any necessary updates based on the processed value must
+          be handled outside this method.
+
+        Raises:
+          - TestStepError: If an error occurs during the processing of the value. The error includes details
+          from the 'container' and 'key' to facilitate error tracing and debugging.
+        """
+
         if not mapping_type:
             return value
 
         if type(value) is dict:
             rv = {}
-            for key in value:
+            for item_key in value:
                 # FabricIndex is a special case where the framework requires it to be passed even
                 # if it is not part of the requested arguments per spec and not part of the XML
                 # definition.
-                if key == 'FabricIndex' or key == 'fabricIndex':
-                    rv[key] = value[key]  # int64u
+                if item_key == 'FabricIndex' or item_key == 'fabricIndex':
+                    rv[item_key] = value[item_key]  # int64u
                 else:
-                    if not mapping_type.get(key):
-                        raise TestStepKeyError(value, key)
-                    mapping = mapping_type[key]
-                    rv[key] = self._update_value_with_definition(
-                        value[key], mapping)
+                    if not mapping_type.get(item_key):
+                        raise TestStepKeyError(value, item_key)
+                    mapping = mapping_type[item_key]
+                    rv[item_key] = self._update_value_with_definition(
+                        value,
+                        item_key,
+                        value[item_key],
+                        mapping
+                    )
             return rv
+
         if type(value) is list:
-            return [self._update_value_with_definition(entry, mapping_type) for entry in value]
+            return [self._update_value_with_definition(container, key, entry, mapping_type) for entry in value]
+
         # TODO currently unsure if the check of `value not in config` is sufficant. For
         # example let's say value = 'foo + 1' and map type is 'int64u', we would arguably do
         # the wrong thing below.
         if value is not None and value not in self._parsing_config_variable_storage:
-            if mapping_type == 'int64u' or mapping_type == 'int64s' or mapping_type == 'bitmap64' or mapping_type == 'epoch_us':
+            if type(mapping_type) is EnumType:
+                try:
+                    value = mapping_type.translate(key, value)
+                except (TestStepEnumError, TestStepEnumSpecifierNotUnknownError, TestStepEnumSpecifierWrongError) as e:
+                    e.tag_key_with_error(container, key)
+                    raise e
+            elif mapping_type == 'int64u' or mapping_type == 'int64s' or mapping_type == 'bitmap64' or mapping_type == 'epoch_us':
                 value = fixes.try_apply_float_to_integer_fix(value)
                 value = fixes.try_apply_yaml_cpp_longlong_limitation_fix(value)
                 value = fixes.try_apply_yaml_unrepresentable_integer_for_javascript_fixes(
@@ -588,6 +742,10 @@ class TestStep:
                 self._test.event)
             self._test.endpoint = self._config_variable_substitution(
                 self._test.endpoint)
+            self._test.group_id = self._config_variable_substitution(
+                self._test.group_id)
+            self._test.node_id = self._config_variable_substitution(
+                self._test.node_id)
             test.update_arguments(self.arguments)
             test.update_responses(self.responses)
 
@@ -660,6 +818,10 @@ class TestStep:
         return self._test.max_interval
 
     @property
+    def keep_subscriptions(self):
+        return self._test.keep_subscriptions
+
+    @property
     def timed_interaction_timeout_ms(self):
         return self._test.timed_interaction_timeout_ms
 
@@ -683,9 +845,35 @@ class TestStep:
     def event_number(self):
         return self._test.event_number
 
+    @event_number.setter
+    def event_number(self, value):
+        self._test.event_number = value
+
     @property
     def pics(self):
         return self._test.pics
+
+    def _get_last_event_number(self, responses) -> Optional[int]:
+        if not self.is_event:
+            return None
+
+        # find the largest event number in all responses
+        # This iterates over everything (not just last element) since some commands like
+        # `chip-tool any read-all` may return multiple replies
+        event_number = None
+
+        for response in responses:
+            if not isinstance(response, dict):
+                continue
+            received_event_number = response.get('eventNumber')
+
+            if not isinstance(received_event_number, int):
+                continue
+
+            if (event_number is None) or (event_number < received_event_number):
+                event_number = received_event_number
+
+        return event_number
 
     def post_process_response(self, received_responses):
         result = PostProcessResponseResult()
@@ -698,6 +886,18 @@ class TestStep:
 
         if self._test.save_response_as:
             self._runtime_config_variable_storage[self._test.save_response_as] = received_responses
+
+        if self.is_event:
+            last_event_number = self._get_last_event_number(received_responses)
+            if last_event_number:
+                if 'LastReceivedEventNumber' in self._runtime_config_variable_storage:
+                    if self._runtime_config_variable_storage['LastReceivedEventNumber'] > last_event_number:
+                        logging.warning(
+                            "Received an older event than expected: received %r < %r",
+                            last_event_number,
+                            self._runtime_config_variable_storage['LastReceivedEventNumber']
+                        )
+                self._runtime_config_variable_storage['LastReceivedEventNumber'] = last_event_number
 
         if self.wait_for is not None:
             self._response_cluster_wait_validation(received_responses, result)
@@ -777,8 +977,12 @@ class TestStep:
             expected_wait_type
         ]
 
+        wait_for_str = received_response.get('wait_for')
+        if not wait_for_str:
+            wait_for_str = received_response.get('command')
+
         received_values = [
-            received_response.get('wait_for'),
+            wait_for_str,
             received_response.get('endpoint'),
             received_response.get('cluster'),
             received_wait_type
@@ -867,7 +1071,7 @@ class TestStep:
     def _response_values_validation(self, expected_response, received_response, result):
         check_type = PostProcessCheckType.RESPONSE_VALIDATION
         error_success = 'The test expectation "{name} == {value}" is true'
-        error_failure = 'The test expectation "{name} == {value}" is false'
+        error_failure = 'The test expectation "{name} ({actual}) == {value}" is false'
         error_name_does_not_exist = 'The test expects a value named "{name}" but it does not exists in the response."'
         error_value_does_not_exist = 'The test expects a value but it does not exists in the response."'
 
@@ -882,7 +1086,7 @@ class TestStep:
                 break
 
             received_value = received_response.get('value')
-            if not self.is_attribute and not self.is_event and not (self.command in ANY_COMMANDS_LIST):
+            if not self.is_attribute and not self.is_event and self.command not in ANY_COMMANDS_LIST:
                 expected_name = value.get('name')
                 if expected_name not in received_value:
                     result.error(check_type, error_name_does_not_exist.format(
@@ -898,7 +1102,7 @@ class TestStep:
                     name=expected_name, value=expected_value))
             else:
                 result.error(check_type, error_failure.format(
-                    name=expected_name, value=expected_value))
+                    name=expected_name, actual=received_value, value=expected_value))
 
     def _response_value_validation(self, expected_value, received_value):
         if isinstance(expected_value, list):
@@ -969,7 +1173,7 @@ class TestStep:
                 continue
 
             received_value = received_response.get(default_target)
-            if not self.is_attribute and not self.is_event and not (self.command in ANY_COMMANDS_LIST):
+            if not self.is_attribute and not self.is_event and self.command not in ANY_COMMANDS_LIST:
                 expected_name = value.get('name')
                 if received_value is None or expected_name not in received_value:
                     result.error(check_type, error_name_does_not_exist.format(
@@ -1019,7 +1223,8 @@ class TestStep:
             # But some other tests were relying on the fact that the expression was put 'as if' in
             # the generated code and was resolved before being sent over the wire. For such
             # expressions (e.g 'myVar + 1') we need to compute it before sending it over the wire.
-            tokens = value.split()
+            delimiter_regex = "(\ |\(|\)|\+|\-|\*|\/|\%)"
+            tokens = re.split(delimiter_regex, value)
             if len(tokens) == 0:
                 return value
 
@@ -1029,15 +1234,14 @@ class TestStep:
                     variable_info = self._runtime_config_variable_storage[token]
                     if type(variable_info) is dict and 'defaultValue' in variable_info:
                         variable_info = variable_info['defaultValue']
-                    if variable_info is not None:
-                        tokens[idx] = variable_info
-                        substitution_occured = True
+                    tokens[idx] = variable_info
+                    substitution_occured = True
 
             if len(tokens) == 1:
                 return tokens[0]
 
             tokens = [str(token) for token in tokens]
-            value = ' '.join(tokens)
+            value = ''.join(tokens)
             # TODO we should move away from eval. That will mean that we will need to do extra
             # parsing, but it would be safer then just blindly running eval.
             return value if not substitution_occured else eval(value)
@@ -1146,6 +1350,10 @@ class TestParser:
         self.__apply_legacy_config_if_missing(config, 'endpoint', '')
         self.__apply_legacy_config_if_missing(config, 'cluster', '')
         self.__apply_legacy_config_if_missing(config, 'timeout', 90)
+
+        # These values are default runtime values (non-legacy)
+        self.__apply_legacy_config_if_missing(
+            config, 'LastReceivedEventNumber', 0)
 
     def __apply_legacy_config_if_missing(self, config, key, value):
         if key not in config:

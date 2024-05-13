@@ -19,13 +19,24 @@
 #include "AllClustersCommandDelegate.h"
 
 #include <app-common/zap-generated/attributes/Accessors.h>
-#include <app/att-storage.h>
 #include <app/clusters/general-diagnostics-server/general-diagnostics-server.h>
 #include <app/clusters/smoke-co-alarm-server/smoke-co-alarm-server.h>
 #include <app/clusters/software-diagnostics-server/software-diagnostics-server.h>
 #include <app/clusters/switch-server/switch-server.h>
 #include <app/server/Server.h>
+#include <app/util/att-storage.h>
+#include <app/util/attribute-storage.h>
 #include <platform/PlatformManager.h>
+
+#include <air-quality-instance.h>
+#include <dishwasher-mode.h>
+#include <laundry-washer-mode.h>
+#include <operational-state-delegate-impl.h>
+#include <oven-modes.h>
+#include <oven-operational-state-delegate.h>
+#include <rvc-modes.h>
+
+#include <string>
 
 using namespace chip;
 using namespace chip::app;
@@ -143,6 +154,42 @@ void AllClustersAppCommandHandler::HandleCommand(intptr_t context)
     {
         self->OnRebootSignalHandler(BootReasonType::kSoftwareReset);
     }
+    else if (name == "ModeChange")
+    {
+        using chip::app::DataModel::MakeNullable;
+        std::string device   = self->mJsonValue["Device"].asString();
+        std::string type     = self->mJsonValue["Type"].asString();
+        Json::Value jsonMode = self->mJsonValue["Mode"];
+        DataModel::Nullable<uint8_t> mode;
+        if (!jsonMode.isNull())
+        {
+            mode = MakeNullable(static_cast<uint8_t>(jsonMode.asUInt()));
+        }
+        else
+        {
+            mode.SetNull();
+        }
+        self->OnModeChangeHandler(device, type, mode);
+    }
+    else if (name == "SetAirQuality")
+    {
+        Json::Value jsonAirQualityEnum = self->mJsonValue["NewValue"];
+
+        if (jsonAirQualityEnum.isNull())
+        {
+            ChipLogError(NotSpecified, "The SetAirQuality command requires the NewValue key.");
+        }
+        else
+        {
+            self->OnAirQualityChange(static_cast<uint32_t>(jsonAirQualityEnum.asUInt()));
+        }
+    }
+    else if (name == "OperationalStateChange")
+    {
+        std::string device    = self->mJsonValue["Device"].asString();
+        std::string operation = self->mJsonValue["Operation"].asString();
+        self->OnOperationalStateChange(device, operation, self->mJsonValue["Param"]);
+    }
     else
     {
         ChipLogError(NotSpecified, "Unhandled command: Should never happens");
@@ -200,13 +247,13 @@ void AllClustersAppCommandHandler::OnGeneralFaultEventHandler(uint32_t eventId)
         GeneralFaults<kMaxRadioFaults> current;
 
         // On Linux Simulation, set following radio faults statically.
-        ReturnOnFailure(previous.add(EMBER_ZCL_RADIO_FAULT_ENUM_WI_FI_FAULT));
-        ReturnOnFailure(previous.add(EMBER_ZCL_RADIO_FAULT_ENUM_THREAD_FAULT));
+        ReturnOnFailure(previous.add(to_underlying(GeneralDiagnostics::RadioFaultEnum::kWiFiFault)));
+        ReturnOnFailure(previous.add(to_underlying(GeneralDiagnostics::RadioFaultEnum::kThreadFault)));
 
-        ReturnOnFailure(current.add(EMBER_ZCL_RADIO_FAULT_ENUM_WI_FI_FAULT));
-        ReturnOnFailure(current.add(EMBER_ZCL_RADIO_FAULT_ENUM_CELLULAR_FAULT));
-        ReturnOnFailure(current.add(EMBER_ZCL_RADIO_FAULT_ENUM_THREAD_FAULT));
-        ReturnOnFailure(current.add(EMBER_ZCL_RADIO_FAULT_ENUM_NFC_FAULT));
+        ReturnOnFailure(current.add(to_underlying(GeneralDiagnostics::RadioFaultEnum::kWiFiFault)));
+        ReturnOnFailure(current.add(to_underlying(GeneralDiagnostics::RadioFaultEnum::kCellularFault)));
+        ReturnOnFailure(current.add(to_underlying(GeneralDiagnostics::RadioFaultEnum::kThreadFault)));
+        ReturnOnFailure(current.add(to_underlying(GeneralDiagnostics::RadioFaultEnum::kNFCFault)));
         Clusters::GeneralDiagnosticsServer::Instance().OnRadioFaultsDetect(previous, current);
     }
     else if (eventId == Clusters::GeneralDiagnostics::Events::NetworkFaultChange::Id)
@@ -260,8 +307,9 @@ void AllClustersAppCommandHandler::OnSwitchLatchedHandler(uint8_t newPosition)
 {
     EndpointId endpoint = 1;
 
-    EmberAfStatus status = Switch::Attributes::CurrentPosition::Set(endpoint, newPosition);
-    VerifyOrReturn(EMBER_ZCL_STATUS_SUCCESS == status, ChipLogError(NotSpecified, "Failed to set CurrentPosition attribute"));
+    Protocols::InteractionModel::Status status = Switch::Attributes::CurrentPosition::Set(endpoint, newPosition);
+    VerifyOrReturn(Protocols::InteractionModel::Status::Success == status,
+                   ChipLogError(NotSpecified, "Failed to set CurrentPosition attribute"));
     ChipLogDetail(NotSpecified, "The latching switch is moved to a new position:%d", newPosition);
 
     Clusters::SwitchServer::Instance().OnSwitchLatch(endpoint, newPosition);
@@ -271,8 +319,9 @@ void AllClustersAppCommandHandler::OnSwitchInitialPressedHandler(uint8_t newPosi
 {
     EndpointId endpoint = 1;
 
-    EmberAfStatus status = Switch::Attributes::CurrentPosition::Set(endpoint, newPosition);
-    VerifyOrReturn(EMBER_ZCL_STATUS_SUCCESS == status, ChipLogError(NotSpecified, "Failed to set CurrentPosition attribute"));
+    Protocols::InteractionModel::Status status = Switch::Attributes::CurrentPosition::Set(endpoint, newPosition);
+    VerifyOrReturn(Protocols::InteractionModel::Status::Success == status,
+                   ChipLogError(NotSpecified, "Failed to set CurrentPosition attribute"));
     ChipLogDetail(NotSpecified, "The new position when the momentary switch starts to be pressed:%d", newPosition);
 
     Clusters::SwitchServer::Instance().OnInitialPress(endpoint, newPosition);
@@ -282,8 +331,9 @@ void AllClustersAppCommandHandler::OnSwitchLongPressedHandler(uint8_t newPositio
 {
     EndpointId endpoint = 1;
 
-    EmberAfStatus status = Switch::Attributes::CurrentPosition::Set(endpoint, newPosition);
-    VerifyOrReturn(EMBER_ZCL_STATUS_SUCCESS == status, ChipLogError(NotSpecified, "Failed to set CurrentPosition attribute"));
+    Protocols::InteractionModel::Status status = Switch::Attributes::CurrentPosition::Set(endpoint, newPosition);
+    VerifyOrReturn(Protocols::InteractionModel::Status::Success == status,
+                   ChipLogError(NotSpecified, "Failed to set CurrentPosition attribute"));
     ChipLogDetail(NotSpecified, "The new position when the momentary switch has been pressed for a long time:%d", newPosition);
 
     Clusters::SwitchServer::Instance().OnLongPress(endpoint, newPosition);
@@ -296,8 +346,9 @@ void AllClustersAppCommandHandler::OnSwitchShortReleasedHandler(uint8_t previous
 {
     EndpointId endpoint = 1;
 
-    EmberAfStatus status = Switch::Attributes::CurrentPosition::Set(endpoint, 0);
-    VerifyOrReturn(EMBER_ZCL_STATUS_SUCCESS == status, ChipLogError(NotSpecified, "Failed to reset CurrentPosition attribute"));
+    Protocols::InteractionModel::Status status = Switch::Attributes::CurrentPosition::Set(endpoint, 0);
+    VerifyOrReturn(Protocols::InteractionModel::Status::Success == status,
+                   ChipLogError(NotSpecified, "Failed to reset CurrentPosition attribute"));
     ChipLogDetail(NotSpecified, "The the previous value of the CurrentPosition when the momentary switch has been released:%d",
                   previousPosition);
 
@@ -308,8 +359,9 @@ void AllClustersAppCommandHandler::OnSwitchLongReleasedHandler(uint8_t previousP
 {
     EndpointId endpoint = 1;
 
-    EmberAfStatus status = Switch::Attributes::CurrentPosition::Set(endpoint, 0);
-    VerifyOrReturn(EMBER_ZCL_STATUS_SUCCESS == status, ChipLogError(NotSpecified, "Failed to reset CurrentPosition attribute"));
+    Protocols::InteractionModel::Status status = Switch::Attributes::CurrentPosition::Set(endpoint, 0);
+    VerifyOrReturn(Protocols::InteractionModel::Status::Success == status,
+                   ChipLogError(NotSpecified, "Failed to reset CurrentPosition attribute"));
     ChipLogDetail(NotSpecified,
                   "The the previous value of the CurrentPosition when the momentary switch has been released after having been "
                   "pressed for a long time:%d",
@@ -322,8 +374,9 @@ void AllClustersAppCommandHandler::OnSwitchMultiPressOngoingHandler(uint8_t newP
 {
     EndpointId endpoint = 1;
 
-    EmberAfStatus status = Switch::Attributes::CurrentPosition::Set(endpoint, newPosition);
-    VerifyOrReturn(EMBER_ZCL_STATUS_SUCCESS == status, ChipLogError(NotSpecified, "Failed to set CurrentPosition attribute"));
+    Protocols::InteractionModel::Status status = Switch::Attributes::CurrentPosition::Set(endpoint, newPosition);
+    VerifyOrReturn(Protocols::InteractionModel::Status::Success == status,
+                   ChipLogError(NotSpecified, "Failed to set CurrentPosition attribute"));
     ChipLogDetail(NotSpecified, "The new position when the momentary switch has been pressed in a multi-press sequence:%d",
                   newPosition);
     ChipLogDetail(NotSpecified, "%d times the momentary switch has been pressed", count);
@@ -335,13 +388,123 @@ void AllClustersAppCommandHandler::OnSwitchMultiPressCompleteHandler(uint8_t pre
 {
     EndpointId endpoint = 1;
 
-    EmberAfStatus status = Switch::Attributes::CurrentPosition::Set(endpoint, 0);
-    VerifyOrReturn(EMBER_ZCL_STATUS_SUCCESS == status, ChipLogError(NotSpecified, "Failed to reset CurrentPosition attribute"));
+    Protocols::InteractionModel::Status status = Switch::Attributes::CurrentPosition::Set(endpoint, 0);
+    VerifyOrReturn(Protocols::InteractionModel::Status::Success == status,
+                   ChipLogError(NotSpecified, "Failed to reset CurrentPosition attribute"));
     ChipLogDetail(NotSpecified, "The previous position when the momentary switch has been pressed in a multi-press sequence:%d",
                   previousPosition);
     ChipLogDetail(NotSpecified, "%d times the momentary switch has been pressed", count);
 
     Clusters::SwitchServer::Instance().OnMultiPressComplete(endpoint, previousPosition, count);
+}
+
+void AllClustersAppCommandHandler::OnModeChangeHandler(std::string device, std::string type, DataModel::Nullable<uint8_t> mode)
+{
+    ModeBase::Instance * modeInstance = nullptr;
+    if (device == "DishWasher")
+    {
+        modeInstance = DishwasherMode::Instance();
+    }
+    else if (device == "LaundryWasher")
+    {
+        modeInstance = LaundryWasherMode::Instance();
+    }
+    else if (device == "RvcClean")
+    {
+        modeInstance = RvcCleanMode::Instance();
+    }
+    else if (device == "RvcRun")
+    {
+        modeInstance = RvcRunMode::Instance();
+    }
+    else
+    {
+        ChipLogDetail(NotSpecified, "Invalid device type : %s", device.c_str());
+        return;
+    }
+
+    if (type == "Current")
+    {
+        if (mode.IsNull())
+        {
+            ChipLogDetail(NotSpecified, "Invalid value : null");
+            return;
+        }
+        modeInstance->UpdateCurrentMode(mode.Value());
+    }
+    else if (type == "StartUp")
+    {
+        modeInstance->UpdateStartUpMode(mode);
+    }
+    else if (type == "On")
+    {
+        modeInstance->UpdateOnMode(mode);
+    }
+    else
+    {
+        ChipLogDetail(NotSpecified, "Invalid mode type : %s", type.c_str());
+        return;
+    }
+}
+
+void AllClustersAppCommandHandler::OnOperationalStateChange(std::string device, std::string operation, Json::Value param)
+{
+    OperationalState::Instance * operationalStateInstance = nullptr;
+    if (device == "Generic")
+    {
+        operationalStateInstance = OperationalState::GetOperationalStateInstance();
+    }
+    else if (device == "Oven")
+    {
+        operationalStateInstance = OvenCavityOperationalState::GetOperationalStateInstance();
+    }
+    else
+    {
+        ChipLogDetail(NotSpecified, "Invalid device type : %s", device.c_str());
+        return;
+    }
+
+    if (operation == "Start" || operation == "Resume")
+    {
+        operationalStateInstance->SetOperationalState(to_underlying(OperationalState::OperationalStateEnum::kRunning));
+    }
+    else if (operation == "Pause")
+    {
+        operationalStateInstance->SetOperationalState(to_underlying(OperationalState::OperationalStateEnum::kPaused));
+    }
+    else if (operation == "Stop")
+    {
+        operationalStateInstance->SetOperationalState(to_underlying(OperationalState::OperationalStateEnum::kStopped));
+    }
+    else if (operation == "OnFault")
+    {
+
+        uint8_t event_id = to_underlying(OperationalState::ErrorStateEnum::kUnableToCompleteOperation);
+        if (!param.isNull())
+        {
+            event_id = to_underlying(static_cast<OperationalState::ErrorStateEnum>(param.asUInt()));
+        }
+
+        OperationalState::GenericOperationalError err(event_id);
+        operationalStateInstance->OnOperationalErrorDetected(err);
+    }
+    else
+    {
+        ChipLogDetail(NotSpecified, "Invalid operation : %s", operation.c_str());
+        return;
+    }
+}
+
+void AllClustersAppCommandHandler::OnAirQualityChange(uint32_t aNewValue)
+{
+    AirQuality::Instance * airQualityInstance = AirQuality::GetInstance();
+    Protocols::InteractionModel::Status status =
+        airQualityInstance->UpdateAirQuality(static_cast<AirQuality::AirQualityEnum>(aNewValue));
+
+    if (status != Protocols::InteractionModel::Status::Success)
+    {
+        ChipLogDetail(NotSpecified, "Invalid value: %u", aNewValue);
+    }
 }
 
 void AllClustersCommandDelegate::OnEventCommandReceived(const char * json)

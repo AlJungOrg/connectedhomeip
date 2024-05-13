@@ -23,9 +23,9 @@
 #include <access/AccessControl.h>
 #include <app-common/zap-generated/attributes/Accessors.h>
 #include <app-common/zap-generated/cluster-objects.h>
-#include <app-common/zap-generated/enums.h>
 #include <app-common/zap-generated/ids/Attributes.h>
 #include <app/AttributeAccessInterface.h>
+#include <app/AttributeAccessInterfaceRegistry.h>
 #include <app/CommandHandler.h>
 #include <app/ConcreteCommandPath.h>
 #include <app/EventLogging.h>
@@ -33,7 +33,6 @@
 #include <app/reporting/reporting.h>
 #include <app/server/Dnssd.h>
 #include <app/server/Server.h>
-#include <app/util/af.h>
 #include <app/util/attribute-storage.h>
 #include <credentials/CHIPCert.h>
 #include <credentials/CertificationDeclaration.h>
@@ -56,6 +55,7 @@ using namespace chip::app;
 using namespace chip::app::Clusters;
 using namespace chip::app::Clusters::OperationalCredentials;
 using namespace chip::Credentials;
+using namespace chip::Crypto;
 using namespace chip::Protocols::InteractionModel;
 
 namespace {
@@ -642,6 +642,10 @@ bool emberAfOperationalCredentialsClusterAddNOCCallback(app::CommandHandler * co
     // missing root. Let's early-bail with InvalidNOC.
     VerifyOrExit(failSafeContext.AddTrustedRootCertHasBeenInvoked(), nocResponse = NodeOperationalCertStatusEnum::kInvalidNOC);
 
+    // Check this explicitly before adding the fabric so we don't need to back out changes if this is an error.
+    VerifyOrExit(IsOperationalNodeId(commandData.caseAdminSubject) || IsCASEAuthTag(commandData.caseAdminSubject),
+                 nocResponse = NodeOperationalCertStatusEnum::kInvalidAdminSubject);
+
     err = fabricTable.AddNewPendingFabricWithOperationalKeystore(NOCValue, ICACValue.ValueOr(ByteSpan{}), adminVendorId,
                                                                  &newFabricIndex);
     VerifyOrExit(err == CHIP_NO_ERROR, nocResponse = ConvertToNOCResponseStatus(err));
@@ -1038,7 +1042,7 @@ bool emberAfOperationalCredentialsClusterCSRRequestCallback(app::CommandHandler 
 
     // Prepare NOCSRElements structure
     {
-        constexpr size_t csrLength = Crypto::kMAX_CSR_Length;
+        constexpr size_t csrLength = Crypto::kMIN_CSR_Buffer_Size;
         size_t nocsrLengthEstimate = 0;
         ByteSpan kNoVendorReserved;
         Platform::ScopedMemoryBuffer<uint8_t> csr;
@@ -1060,7 +1064,7 @@ bool emberAfOperationalCredentialsClusterCSRRequestCallback(app::CommandHandler 
 
         err = fabricTable.AllocatePendingOperationalKey(fabricIndexForCsr, csrSpan);
 
-        if (csrSpan.size() > Crypto::kMAX_CSR_Length)
+        if (csrSpan.size() > csrLength)
         {
             err = CHIP_ERROR_INTERNAL;
         }

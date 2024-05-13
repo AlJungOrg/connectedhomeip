@@ -7,6 +7,9 @@
 #include <type_traits>
 
 #include <app-common/zap-generated/cluster-objects.h>
+#include <app-common/zap-generated/ids/Clusters.h>
+#include <app-common/zap-generated/ids/Commands.h>
+#include <commands/common/Commands.h>
 #include <commands/clusters/ComplexArgument.h>
 #include <commands/clusters/ClusterCommand.h>
 #include <commands/clusters/ReportCommand.h>
@@ -28,7 +31,7 @@ public:
     {
         {{#zcl_command_arguments}}
         {{#if_chip_complex}}
-        AddArgument("{{asUpperCamelCase label}}", &mComplex_{{asUpperCamelCase label}});
+        AddArgument("{{asUpperCamelCase label}}", &mComplex_{{asUpperCamelCase label}}{{#if isOptional}}, "", Argument::kOptional{{/if}});
         {{else if (isString type)}}
         AddArgument("{{asUpperCamelCase label}}", &mRequest.{{asLowerCamelCase label}});
         {{else}}
@@ -40,16 +43,21 @@ public:
 
     CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
     {
-        ChipLogProgress(chipTool, "Sending cluster ({{asHex parent.code 8}}) command ({{asHex code 8}}) on endpoint %u", endpointIds.at(0));
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::{{asUpperCamelCase parent.name}}::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::{{asUpperCamelCase parent.name}}::Commands::{{asUpperCamelCase name}}::Id;
 
-        return ClusterCommand::SendCommand(device, endpointIds.at(0), {{asHex parent.code 8}}, {{asHex code 8}}, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId, commandId, endpointIds.at(0));
+        return ClusterCommand::SendCommand(device, endpointIds.at(0), clusterId, commandId, mRequest);
     }
 
     CHIP_ERROR SendGroupCommand(chip::GroupId groupId, chip::FabricIndex fabricIndex) override
     {
-        ChipLogProgress(chipTool, "Sending cluster ({{asHex parent.code 8}}) command ({{asHex code 8}}) on Group %u", groupId);
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::{{asUpperCamelCase parent.name}}::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::{{asUpperCamelCase parent.name}}::Commands::{{asUpperCamelCase name}}::Id;
 
-        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, {{asHex parent.code 8}}, {{asHex code 8}}, mRequest);
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on Group %u", clusterId, commandId, groupId);
+
+        return ClusterCommand::SendGroupCommand(groupId, fabricIndex, clusterId, commandId, mRequest);
     }
 
 private:

@@ -25,10 +25,6 @@
  *
  */
 
-#ifndef __STDC_LIMIT_MACROS
-#define __STDC_LIMIT_MACROS
-#endif
-
 #include <signal.h>
 #include <stdint.h>
 #include <string.h>
@@ -205,7 +201,7 @@ static void CheckSucceededOrFailed(TestState & aTestState, bool & aOutSucceeded,
 {
     const TransferStats & lStats = aTestState.mStats;
 
-#if DEBUG
+#ifdef DEBUG_TCP_TEST
     printf("%u/%u sent, %u/%u received\n", lStats.mTransmit.mActual, lStats.mTransmit.mExpected, lStats.mReceive.mActual,
            lStats.mReceive.mExpected);
 #endif
@@ -298,7 +294,7 @@ int main(int argc, char * argv[])
 
         CheckSucceededOrFailed(sTestState, lSucceeded, lFailed);
 
-#if DEBUG
+#ifdef DEBUG_TCP_TEST
         // clang-format off
         printf("%s %s number of expected bytes\n",
                ((lSucceeded) ? "successfully" :
@@ -569,7 +565,7 @@ static void HandleTCPConnectionClosed(TCPEndPoint * aEndPoint, CHIP_ERROR aError
     }
 }
 
-static void HandleTCPDataSent(TCPEndPoint * aEndPoint, uint16_t len) {}
+static void HandleTCPDataSent(TCPEndPoint * aEndPoint, size_t len) {}
 
 static CHIP_ERROR HandleTCPDataReceived(TCPEndPoint * aEndPoint, PacketBufferHandle && aBuffer)
 {

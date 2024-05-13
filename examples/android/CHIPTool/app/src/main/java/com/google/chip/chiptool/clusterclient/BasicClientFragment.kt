@@ -17,14 +17,18 @@ import chip.devicecontroller.model.AttributeWriteRequest
 import chip.devicecontroller.model.ChipAttributePath
 import chip.devicecontroller.model.ChipEventPath
 import chip.devicecontroller.model.NodeState
+import chip.devicecontroller.model.Status
 import com.google.chip.chiptool.ChipClient
 import com.google.chip.chiptool.GenericChipDeviceListener
 import com.google.chip.chiptool.R
 import com.google.chip.chiptool.databinding.BasicClientFragmentBinding
-import com.google.chip.chiptool.util.TlvParseUtil
+import com.google.chip.chiptool.util.toAny
 import java.util.Optional
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import matter.tlv.AnonymousTag
+import matter.tlv.TlvReader
+import matter.tlv.TlvWriter
 
 class BasicClientFragment : Fragment() {
   private val deviceController: ChipDeviceController
@@ -55,7 +59,7 @@ class BasicClientFragment : Fragment() {
         // TODO : Need to be implement poj-to-tlv
         sendWriteAttribute(
           BasicInformation.Attribute.NodeLabel,
-          TlvParseUtil.encode(binding.nodeLabelEd.text.toString())
+          TlvWriter().put(AnonymousTag, binding.nodeLabelEd.text.toString()).getEncoded()
         )
         binding.nodeLabelEd.onEditorAction(EditorInfo.IME_ACTION_DONE)
       }
@@ -65,7 +69,7 @@ class BasicClientFragment : Fragment() {
         // TODO : Need to be implement poj-to-tlv
         sendWriteAttribute(
           BasicInformation.Attribute.Location,
-          TlvParseUtil.encode(binding.locationEd.text.toString())
+          TlvWriter().put(AnonymousTag, binding.locationEd.text.toString()).getEncoded()
         )
         binding.locationEd.onEditorAction(EditorInfo.IME_ACTION_DONE)
       }
@@ -75,7 +79,7 @@ class BasicClientFragment : Fragment() {
         // TODO : Need to be implement poj-to-tlv
         sendWriteAttribute(
           BasicInformation.Attribute.LocalConfigDisabled,
-          TlvParseUtil.encode(isChecked)
+          TlvWriter().put(AnonymousTag, isChecked).getEncoded()
         )
       }
     }
@@ -94,7 +98,7 @@ class BasicClientFragment : Fragment() {
   inner class ChipControllerCallback : GenericChipDeviceListener() {
     override fun onConnectDeviceComplete() {}
 
-    override fun onCommissioningComplete(nodeId: Long, errorCode: Int) {
+    override fun onCommissioningComplete(nodeId: Long, errorCode: Long) {
       Log.d(TAG, "onCommissioningComplete for nodeId $nodeId: $errorCode")
     }
 
@@ -135,7 +139,13 @@ class BasicClientFragment : Fragment() {
     val attributeId = BasicInformation.Attribute.valueOf(attributeName).id
 
     val devicePtr =
-      ChipClient.getConnectedDevicePointer(requireContext(), addressUpdateFragment.deviceId)
+      try {
+        ChipClient.getConnectedDevicePointer(requireContext(), addressUpdateFragment.deviceId)
+      } catch (e: IllegalStateException) {
+        Log.d(TAG, "getConnectedDevicePointer exception", e)
+        showMessage("Get DevicePointer fail!")
+        return
+      }
 
     ChipClient.getDeviceController(requireContext())
       .readPath(
@@ -150,13 +160,13 @@ class BasicClientFragment : Fragment() {
           }
 
           override fun onReport(nodeState: NodeState?) {
-            val value =
+            val tlv =
               nodeState
                 ?.getEndpointState(endpointId)
                 ?.getClusterState(clusterId)
                 ?.getAttributeState(attributeId)
-                ?.value
-                ?: "null"
+                ?.tlv
+            val value = tlv?.let { TlvReader(it).toAny() }
             Log.i(TAG, "[Read Success] $attributeName: $value")
             showMessage("[Read Success] $attributeName: $value")
           }
@@ -178,7 +188,13 @@ class BasicClientFragment : Fragment() {
   private suspend fun sendWriteAttribute(attribute: BasicInformation.Attribute, tlv: ByteArray) {
     val clusterId = BasicInformation.ID
     val devicePtr =
-      ChipClient.getConnectedDevicePointer(requireContext(), addressUpdateFragment.deviceId)
+      try {
+        ChipClient.getConnectedDevicePointer(requireContext(), addressUpdateFragment.deviceId)
+      } catch (e: IllegalStateException) {
+        Log.d(TAG, "getConnectedDevicePointer exception", e)
+        showMessage("Get DevicePointer fail!")
+        return
+      }
 
     ChipClient.getDeviceController(requireContext())
       .write(
@@ -188,8 +204,8 @@ class BasicClientFragment : Fragment() {
             Log.e(TAG, "Write ${attribute.name} failure", ex)
           }
 
-          override fun onResponse(attributePath: ChipAttributePath?) {
-            showMessage("Write ${attribute.name} success")
+          override fun onResponse(attributePath: ChipAttributePath, status: Status) {
+            showMessage("Write ${attribute.name} response: $status")
           }
         },
         devicePtr,

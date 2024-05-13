@@ -13,7 +13,7 @@
 # limitations under the License.
 # Auto-generated scripts for harness use only, please review before automation. The endpoints and cluster names are currently set to default
 
-name: 263.3.1. [TC-DISHM-2.1] ChangeToModeWithStatus Verification DUT as Server
+name: 263.3.1. [TC-DISHM-2.1] Change to Mode functionality with DUT as Server
 
 PICS:
     - DISHM.S
@@ -24,28 +24,6 @@ config:
     endpoint: 0
 
 tests:
-    - label: "Note"
-      verification: |
-          To execute this test case set onmode to any integer value because as default it value has null.
-
-          ./chip-tool dishwashermode write on-mode 0 1 1
-
-          On TH(chip-tool) log, Verify DUT responds with a SUCCESS (value 0x00) status response and below is the sample log provided for the raspi platform:
-
-
-          [1690188722.057858][15975:15977] CHIP:DMG:                         StatusIB =
-          [1690188722.057862][15975:15977] CHIP:DMG:                         {
-          [1690188722.057865][15975:15977] CHIP:DMG:                                 status = 0x00 (SUCCESS),
-          [1690188722.057867][15975:15977] CHIP:DMG:                         },
-      disabled: true
-
-    - label: "Precondition"
-      verification: |
-          1 Dishwasher Mode and OnOff clusters are available on the same endpoint
-
-          2 The OnMode attribute is set to a non-NULL value from the mode values indicated by the SupportedModes attribute.
-      disabled: true
-
     - label:
           "Step 1: Commission DUT to TH (can be skipped if done in a preceding
           test)."
@@ -60,6 +38,7 @@ tests:
 
           Verify that the DUT response contains list of ModeOptionsStruct entries
           - Verify that the list has two or more entries
+          - Verify that PIXIT.DISHM.MODE_CHANGE_FAIL is one of supported_modes_dut
           - Save the Mode field values as supported_modes_dut on the TH (Chip-tool) and below is the sample log provided for the raspi platform:
 
           [1689998005.121163][360287:360289] CHIP:TOO: Endpoint: 1 Cluster: 0x0000_0059 Attribute 0x0000_0000 DataVersion: 1994417976
@@ -130,13 +109,13 @@ tests:
     - label:
           "Step 5: Manually put the device in a state from which it will FAIL to
           transition to PIXIT.DISHM.MODE_CHANGE_FAIL"
-      PICS: PIXIT.DISHM.CAN_TEST_MODE_FAILURE
+      PICS: DISHM.S.M.CAN_TEST_MODE_FAILURE && DISHM.S.M.CAN_MANUALLY_CONTROLLED
       verification: |
           Manual operation required
       disabled: true
 
     - label: "Step 6: TH reads from the DUT the CurrentMode attribute."
-      PICS: DISHM.S.A0001
+      PICS: DISHM.S.A0001 && DISHM.S.M.CAN_MANUALLY_CONTROLLED
       verification: |
           ./chip-tool dishwashermode read current-mode 1 1
 
@@ -150,13 +129,14 @@ tests:
     - label:
           "Step 7: TH sends a ChangeToMode command to the DUT with NewMode set
           to PIXIT.DISHM.MODE_CHANGE_FAIL"
-      PICS: PIXIT.DISHM.CAN_TEST_MODE_FAILURE && DISHM.S.C00.Rsp
+      PICS: DISHM.S.M.CAN_TEST_MODE_FAILURE && DISHM.S.C00.Rsp
       verification: |
           Note : Please skip this step as SDK is not enabled with this failure response
 
           ./chip-tool dishwashermode change-to-mode 2 1 1
 
-          Verify on TH(chip-tool) log, DUT responds contains a ChangeToModeResponse command with a GenericFailure(0x02)  status response and below is the sample log provided for the raspi platform:
+          Verify on TH(chip-tool) log, DUT responds contains a ChangeToModeResponse command with
+          Status field is set to GenericFailure(0x02), InvalidInMode(0x03) , or in the MfgCodes (0x80 to 0xBF) range and StatusText field has a length between 1 and 64,  below is the sample log provided for the raspi platform:
 
           [1690264785.719168][29854:29856] CHIP:DMG: Received Command Response Data, Endpoint=1 Cluster=0x0000_0059 Command=0x0000_0001
           [1690264785.719200][29854:29856] CHIP:TOO: Endpoint: 1 Cluster: 0x0000_0059 Command 0x0000_0001
@@ -179,12 +159,13 @@ tests:
     - label:
           "Step 9: Manually put the device in a state from which it will
           SUCCESSFULLY transition to PIXIT.DISHM.MODE_CHANGE_OK"
+      PICS: DISHM.S.M.CAN_MANUALLY_CONTROLLED
       verification: |
           Manual operation required
       disabled: true
 
     - label: "Step 10: TH reads from the DUT the CurrentMode attribute."
-      PICS: DISHM.S.A0001
+      PICS: DISHM.S.A0001 && DISHM.S.M.CAN_MANUALLY_CONTROLLED
       verification: |
           ./chip-tool dishwashermode read current-mode 1 1
 

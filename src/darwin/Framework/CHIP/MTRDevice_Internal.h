@@ -16,15 +16,32 @@
  */
 
 #import <Foundation/Foundation.h>
+#import <Matter/MTRBaseDevice.h>
+#import <Matter/MTRDevice.h>
 
-#import "MTRBaseDevice.h"
-#import "MTRDevice.h"
-
-#include <app/DeviceProxy.h>
+#import "MTRAsyncWorkQueue.h"
+#import "MTRDefines_Internal.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class MTRAsyncWorkQueue;
+
+typedef NSDictionary<NSString *, id> * MTRDeviceDataValueDictionary;
+
 typedef void (^MTRDevicePerformAsyncBlock)(MTRBaseDevice * baseDevice);
+
+/**
+ * Information about a cluster: data version and known attribute values.
+ */
+MTR_TESTABLE
+@interface MTRDeviceClusterData : NSObject <NSSecureCoding, NSCopying>
+@property (nonatomic, nullable) NSNumber * dataVersion;
+@property (nonatomic, readonly) NSDictionary<NSNumber *, MTRDeviceDataValueDictionary> * attributes; // attributeID => data-value dictionary
+
+- (void)storeValue:(MTRDeviceDataValueDictionary _Nullable)value forAttribute:(NSNumber *)attribute;
+
+- (nullable instancetype)initWithDataVersion:(NSNumber * _Nullable)dataVersion attributes:(NSDictionary<NSNumber *, MTRDeviceDataValueDictionary> * _Nullable)attributes;
+@end
 
 @interface MTRDevice ()
 - (instancetype)initWithNodeID:(NSNumber *)nodeID controller:(MTRDeviceController *)controller;
@@ -41,13 +58,37 @@ typedef void (^MTRDevicePerformAsyncBlock)(MTRBaseDevice * baseDevice);
 // false-positives, for example due to compressed fabric id collisions.
 - (void)nodeMayBeAdvertisingOperational;
 
-@property (nonatomic, readonly) MTRDeviceController * deviceController;
-@property (nonatomic, readonly, copy) NSNumber * nodeID;
-// Queue used for various internal bookkeeping work.  In general endWork calls
-// on work items should happen on this queue, so we don't block progress of the
-// asyncCallbackWorkQueue on any client code.
+/**
+ * Like the public invokeCommandWithEndpointID but:
+ *
+ * 1) Allows passing through a serverSideProcessingTimeout.
+ * 2) Expects one of the command payload structs as commandPayload
+ * 3) On success, returns an instance of responseClass via the completion (or
+ *    nil if there is no responseClass, which indicates a status-only command).
+ */
+- (void)_invokeKnownCommandWithEndpointID:(NSNumber *)endpointID
+                                clusterID:(NSNumber *)clusterID
+                                commandID:(NSNumber *)commandID
+                           commandPayload:(id)commandPayload
+                           expectedValues:(NSArray<NSDictionary<NSString *, id> *> * _Nullable)expectedValues
+                    expectedValueInterval:(NSNumber * _Nullable)expectedValueInterval
+                       timedInvokeTimeout:(NSNumber * _Nullable)timeout
+              serverSideProcessingTimeout:(NSNumber * _Nullable)serverSideProcessingTimeout
+                            responseClass:(Class _Nullable)responseClass
+                                    queue:(dispatch_queue_t)queue
+                               completion:(void (^)(id _Nullable response, NSError * _Nullable error))completion;
+
+// Queue used for various internal bookkeeping work.
 @property (nonatomic) dispatch_queue_t queue;
-@property (nonatomic, readonly) MTRAsyncCallbackWorkQueue * asyncCallbackWorkQueue;
+@property (nonatomic, readonly) MTRAsyncWorkQueue<MTRDevice *> * asyncWorkQueue;
+
+// Method to insert persisted cluster data
+//   Contains data version information and attribute values.
+- (void)setPersistedClusterData:(NSDictionary<MTRClusterPath *, MTRDeviceClusterData *> *)clusterData;
+
+#ifdef DEBUG
+- (NSUInteger)unitTestAttributeCount;
+#endif
 
 @end
 

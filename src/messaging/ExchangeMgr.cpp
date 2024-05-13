@@ -21,14 +21,6 @@
  *
  */
 
-#ifndef __STDC_FORMAT_MACROS
-#define __STDC_FORMAT_MACROS
-#endif
-
-#ifndef __STDC_LIMIT_MACROS
-#define __STDC_LIMIT_MACROS
-#endif
-
 #include <cstring>
 #include <inttypes.h>
 #include <stddef.h>
@@ -85,6 +77,9 @@ CHIP_ERROR ExchangeManager::Init(SessionManager * sessionManager)
 
     sessionManager->SetMessageDelegate(this);
 
+#if INET_CONFIG_ENABLE_TCP_ENDPOINT
+    sessionManager->SetConnectionDelegate(this);
+#endif // INET_CONFIG_ENABLE_TCP_ENDPOINT
     mReliableMessageMgr.Init(sessionManager->SystemLayer());
 
     mState = State::kState_Initialized;
@@ -111,8 +106,13 @@ ExchangeContext * ExchangeManager::NewContext(const SessionHandle & session, Exc
 {
     if (!session->IsActiveSession())
     {
+#if CHIP_ERROR_LOGGING
+        const ScopedNodeId & peer = session->GetPeer();
+        ChipLogError(ExchangeManager, "NewContext failed: session %u to " ChipLogFormatScopedNodeId " is inactive",
+                     session->SessionIdForLogging(), ChipLogValueScopedNodeId(peer));
+#endif // CHIP_ERROR_LOGGING
+
         // Disallow creating exchange on an inactive session
-        ChipLogError(ExchangeManager, "NewContext failed: session inactive");
         return nullptr;
     }
     return mContextPool.CreateObject(this, mNextExchangeId++, session, isInitiator, delegate);
@@ -300,9 +300,17 @@ void ExchangeManager::OnMessageReceived(const PacketHeader & packetHeader, const
     // an ack to the peer.
     else if (!payloadHeader.NeedsAck())
     {
-        // Using same error message for all errors to reduce code size.
-        ChipLogError(ExchangeManager, "OnMessageReceived failed, err = %" CHIP_ERROR_FORMAT,
-                     CHIP_ERROR_UNSOLICITED_MSG_NO_ORIGINATOR.Format());
+        // We can easily get standalone acks here: any time we fail to get a
+        // timely ack for the last message in an exchange and retransmit it,
+        // then get acks for both the message and the retransmit, the second ack
+        // will end up in this block.  That's not really an error condition, so
+        // there is no need to log an error in that case.
+        if (!payloadHeader.HasMessageType(Protocols::SecureChannel::MsgType::StandaloneAck))
+        {
+            // Using same error message for all errors to reduce code size.
+            ChipLogError(ExchangeManager, "OnMessageReceived failed, err = %" CHIP_ERROR_FORMAT,
+                         CHIP_ERROR_UNSOLICITED_MSG_NO_ORIGINATOR.Format());
+        }
         return;
     }
 
@@ -364,8 +372,10 @@ void ExchangeManager::SendStandaloneAckIfNeeded(const PacketHeader & packetHeade
                                                 const SessionHandle & session, MessageFlags msgFlags,
                                                 System::PacketBufferHandle && msgBuf)
 {
-    // If we need to send a StandaloneAck, create a EphemeralExchange for the purpose to send the StandaloneAck
-    if (!payloadHeader.NeedsAck())
+
+    // If using the MRP protocol and we need to send a StandaloneAck, create an EphemeralExchange to send
+    // the StandaloneAck.
+    if (!session->AllowsMRP() || !payloadHeader.NeedsAck())
         return;
 
     // If rcvd msg is from initiator then this exchange is created as not Initiator.
@@ -410,6 +420,19 @@ void ExchangeManager::CloseAllContextsForDelegate(const ExchangeDelegate * deleg
         return Loop::Continue;
     });
 }
+
+#if INET_CONFIG_ENABLE_TCP_ENDPOINT
+void ExchangeManager::OnTCPConnectionClosed(const SessionHandle & session, CHIP_ERROR conErr)
+{
+    mContextPool.ForEachActiveObject([&](auto * ec) {
+        if (ec->HasSessionHandle() && ec->GetSessionHandle() == session)
+        {
+            ec->OnSessionConnectionClosed(conErr);
+        }
+        return Loop::Continue;
+    });
+}
+#endif // INET_CONFIG_ENABLE_TCP_ENDPOINT
 
 } // namespace Messaging
 } // namespace chip

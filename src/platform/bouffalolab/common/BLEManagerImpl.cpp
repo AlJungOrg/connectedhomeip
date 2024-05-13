@@ -16,12 +16,14 @@
  */
 
 #define __ZEPHYR__ 1
+#define CONFIG_EVENTFD 0
 #include <platform/internal/CHIPDeviceLayerInternal.h>
 
 #if CHIP_DEVICE_CONFIG_ENABLE_CHIPOBLE
 
-#include <ble/CHIPBleServiceData.h>
+#include <ble/Ble.h>
 #include <lib/support/CHIPMemString.h>
+#include <lib/support/SafeInt.h>
 #include <platform/DeviceInstanceInfoProvider.h>
 #include <platform/internal/BLEManager.h>
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
@@ -29,7 +31,7 @@
 #endif
 
 extern "C" {
-#ifdef BL702L
+#if CHIP_DEVICE_LAYER_TARGET_BL702L
 #include <btble_lib_api.h>
 #else
 #include <ble_lib_api.h>
@@ -124,7 +126,7 @@ CHIP_ERROR BLEManagerImpl::_Init()
     memset(mSubscribedConns, 0, sizeof(mSubscribedConns));
 
     ReturnErrorOnFailure(InitRandomStaticAddress());
-#ifdef BL702L
+#if CHIP_DEVICE_LAYER_TARGET_BL702L
     btble_controller_init(configMAX_PRIORITIES - 1);
 #else
     ble_controller_init(configMAX_PRIORITIES - 1);
@@ -275,7 +277,7 @@ CHIP_ERROR BLEManagerImpl::StartAdvertising(void)
 
     if (!isAdvertisingRerun)
     {
-#if CONFIG_BT_PRIVACY
+#ifdef CONFIG_BT_PRIVACY
         static_assert(CHIP_DEVICE_CONFIG_DISCOVERY_TIMEOUT_SECS <= CONFIG_BT_RPA_TIMEOUT,
                       "BLE advertising timeout is too long relative to RPA timeout");
         // Generate new private BLE address
@@ -668,7 +670,10 @@ bool BLEManagerImpl::SendIndication(BLE_CONNECTION_OBJECT conId, const ChipBleUU
     params->attr = &sChipoBleAttributes[kCHIPoBLE_CCC_AttributeIndex];
     params->func = HandleTXIndicated;
     params->data = pBuf->Start();
-    params->len  = pBuf->DataLength();
+    // For BLE, the buffer is capped at UINT16_MAX. Nevertheless, have a verify
+    // check before the cast to uint16_t.
+    VerifyOrExit(CanCastTo<uint16_t>(pBuf->DataLength()), err = CHIP_ERROR_MESSAGE_TOO_LONG);
+    params->len = static_cast<uint16_t>(pBuf->DataLength());
 
     status = bt_gatt_indicate(conId, params);
     VerifyOrExit(status == 0, err = MapErrorZephyr(status));
@@ -847,8 +852,10 @@ ssize_t BLEManagerImpl::HandleC3Read(struct bt_conn * conId, const struct bt_gat
         return 0;
     }
 
+    // For BLE, the max payload size is limited to UINT16_MAX since the length
+    // field is 2 bytes long. So, the cast to uint16_t should be fine.
     return bt_gatt_attr_read(conId, attr, buf, len, offset, sInstance.c3CharDataBufferHandle->Start(),
-                             sInstance.c3CharDataBufferHandle->DataLength());
+                             static_cast<uint16_t>(sInstance.c3CharDataBufferHandle->DataLength()));
 }
 #endif
 

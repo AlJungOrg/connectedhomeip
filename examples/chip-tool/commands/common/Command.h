@@ -30,6 +30,7 @@
 #include <condition_variable>
 #include <memory>
 #include <mutex>
+#include <string>
 #include <vector>
 
 class Command;
@@ -267,10 +268,11 @@ public:
 
     bool IsInteractive() { return mIsInteractive; }
 
-    CHIP_ERROR RunAsInteractive(const chip::Optional<char *> & interactiveStorageDirectory)
+    CHIP_ERROR RunAsInteractive(const chip::Optional<char *> & interactiveStorageDirectory, bool advertiseOperational)
     {
-        mStorageDirectory = interactiveStorageDirectory;
-        mIsInteractive    = true;
+        mStorageDirectory     = interactiveStorageDirectory;
+        mIsInteractive        = true;
+        mAdvertiseOperational = advertiseOperational;
         return Run();
     }
 
@@ -279,6 +281,10 @@ public:
 protected:
     // mStorageDirectory lives here so we can just set it in RunAsInteractive.
     chip::Optional<char *> mStorageDirectory;
+
+    // mAdvertiseOperational lives here so we can just set it in
+    // RunAsInteractive; it's only used by CHIPCommand.
+    bool mAdvertiseOperational = false;
 
 private:
     bool InitArgument(size_t argIndex, char * argValue);

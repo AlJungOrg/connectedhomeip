@@ -19,9 +19,9 @@
 
 #include <inet/tests/TestInetCommon.h>
 
+#include <lib/core/ErrorStr.h>
 #include <lib/support/CHIPMem.h>
 #include <lib/support/CodeUtils.h>
-#include <lib/support/ErrorStr.h>
 #include <platform/CHIPDeviceLayer.h>
 
 namespace chip {
@@ -35,10 +35,13 @@ CHIP_ERROR IOContext::Init()
     InitSystemLayer();
     InitNetwork();
 
-    mSystemLayer        = &gSystemLayer;
+    mSystemLayer = &gSystemLayer;
+#if INET_CONFIG_ENABLE_TCP_ENDPOINT
     mTCPEndPointManager = &gTCP;
+#endif
+#if INET_CONFIG_ENABLE_UDP_ENDPOINT
     mUDPEndPointManager = &gUDP;
-
+#endif
     return err;
 }
 

@@ -71,6 +71,7 @@ class AndroidApp(Enum):
     TV_SERVER = auto()
     TV_CASTING_APP = auto()
     JAVA_MATTER_CONTROLLER = auto()
+    KOTLIN_MATTER_CONTROLLER = auto()
     VIRTUAL_DEVICE_APP = auto()
 
     def AppName(self):
@@ -96,6 +97,8 @@ class AndroidApp(Enum):
             gn_args["chip_config_network_layer_ble"] = False
         elif self == AndroidApp.VIRTUAL_DEVICE_APP:
             gn_args["chip_config_network_layer_ble"] = True
+        elif self == AndroidApp.CHIP_TOOL:
+            gn_args["chip_build_controller_dynamic_server"] = True
         return gn_args
 
     def ExampleName(self):
@@ -105,12 +108,20 @@ class AndroidApp(Enum):
             return "tv-casting-app"
         elif self == AndroidApp.VIRTUAL_DEVICE_APP:
             return "virtual-device-app"
+        elif self == AndroidApp.CHIP_TEST:
+            return "chip-test"
         else:
             return None
 
     def Modules(self):
         if self == AndroidApp.TV_SERVER:
             return ["platform-app", "content-app"]
+        else:
+            return None
+
+    def BuildRoot(self, root):
+        if self == AndroidApp.CHIP_TEST:
+            return os.path.join(root, 'examples/android/CHIPTest')
         else:
             return None
 
@@ -232,9 +243,11 @@ class AndroidBuilder(Builder):
 
         jars = {
             "CHIPController.jar": "src/controller/java/CHIPController.jar",
+            "CHIPInteractionModel.jar": "src/controller/java/CHIPInteractionModel.jar",
             "OnboardingPayload.jar": "src/controller/java/OnboardingPayload.jar",
             "AndroidPlatform.jar": "src/platform/android/AndroidPlatform.jar",
-            "libCHIPTlv.jar": "src/controller/java/libCHIPTlv.jar",
+            "libMatterJson.jar": "src/controller/java/libMatterJson.jar",
+            "libMatterTlv.jar": "src/controller/java/libMatterTlv.jar",
             "CHIPClusters.jar": "src/controller/java/CHIPClusters.jar",
             "CHIPClusterID.jar": "src/controller/java/CHIPClusterID.jar",
         }
@@ -341,18 +354,27 @@ class AndroidBuilder(Builder):
             if not self._runner.dry_run:
                 self.validate_build_environment()
 
+            exampleName = self.app.ExampleName()
             gn_args = {}
             gn_args["target_os"] = "android"
             gn_args["target_cpu"] = self.board.TargetCpuName()
             gn_args["android_ndk_root"] = os.environ["ANDROID_NDK_HOME"]
             gn_args["android_sdk_root"] = os.environ["ANDROID_HOME"]
+            if exampleName == "chip-test":
+                gn_args["chip_build_test_static_libraries"] = False
+
+            if self.options.pw_command_launcher:
+                gn_args["pw_command_launcher"] = self.options.pw_command_launcher
+
+            if exampleName == "chip-test":
+                gn_args["chip_build_tests"] = True
             if self.profile != AndroidProfile.DEBUG:
                 gn_args["is_debug"] = False
             gn_args.update(self.app.AppGnArgs())
 
             args_str = ""
             for key, value in gn_args.items():
-                if type(value) == bool:
+                if type(value) is bool:
                     if value:
                         args_str += "%s=true " % (key)
                     else:
@@ -370,8 +392,10 @@ class AndroidBuilder(Builder):
                 args,
             ]
 
-            exampleName = self.app.ExampleName()
-            if exampleName is not None:
+            rootName = self.app.BuildRoot(self.root)
+            if rootName is not None:
+                gn_gen += ["--root=%s" % rootName]
+            elif exampleName is not None:
                 gn_gen += ["--root=%s/examples/%s/android/" %
                            (self.root, exampleName)]
 
@@ -466,6 +490,7 @@ class AndroidBuilder(Builder):
                 jars = {
                     "AndroidPlatform.jar": "third_party/connectedhomeip/src/platform/android/AndroidPlatform.jar",
                     "CHIPAppServer.jar": "third_party/connectedhomeip/src/app/server/java/CHIPAppServer.jar",
+                    "CHIPInteractionModel.jar": "third_party/connectedhomeip/src/controller/java/CHIPInteractionModel.jar",
                     "TvCastingApp.jar": "TvCastingApp.jar",
                 }
 
@@ -495,6 +520,25 @@ class AndroidBuilder(Builder):
 
                 self.copyToExampleApp(jnilibs_dir, libs_dir, libs, jars)
                 self.gradlewBuildExampleAndroid()
+            elif exampleName == "chip-test":
+                jnilibs_dir = os.path.join(
+                    self.root,
+                    "examples/android/CHIPTest/app/libs/jniLibs",
+                    self.board.AbiName(),
+                )
+
+                libs_dir = os.path.join(
+                    self.root, "examples/android/CHIPTest/app/libs"
+                )
+
+                libs = ["libc++_shared.so", "libCHIPTest.so"]
+
+                jars = {
+                    "AndroidPlatform.jar": "third_party/connectedhomeip/src/platform/android/AndroidPlatform.jar",
+                    "CHIPTest.jar": "CHIPTest.jar",
+                }
+                self.copyToExampleApp(jnilibs_dir, libs_dir, libs, jars)
+                self.gradlewBuildSrcAndroid()
             elif exampleName == "virtual-device-app":
                 jnilibs_dir = os.path.join(
                     self.root,
@@ -564,8 +608,11 @@ class AndroidBuilder(Builder):
                 "CHIPController.jar": os.path.join(
                     self.output_dir, "lib", "src/controller/java/CHIPController.jar"
                 ),
-                "libCHIPTlv.jar": os.path.join(
-                    self.output_dir, "lib", "src/controller/java/libCHIPTlv.jar"
+                "CHIPInteractionModel.jar": os.path.join(
+                    self.output_dir, "lib", "src/controller/java/CHIPInteractionModel.jar"
+                ),
+                "libMatterTlv.jar": os.path.join(
+                    self.output_dir, "lib", "src/controller/java/libMatterTlv.jar"
                 ),
                 "AndroidPlatform.jar": os.path.join(
                     self.output_dir, "lib", "src/platform/android/AndroidPlatform.jar"

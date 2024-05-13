@@ -1,6 +1,6 @@
 /*
  *
- *    Copyright (c) 2022-2023 Project CHIP Authors
+ *    Copyright (c) 2022-2024 Project CHIP Authors
  *    All rights reserved.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,14 +20,6 @@
 
 #include "AppConfig.h"
 #include "AppEventCommon.h"
-
-#if CONFIG_CHIP_ENABLE_APPLICATION_STATUS_LED
-#include "LEDWidget.h"
-#endif
-
-#if APP_USE_IDENTIFY_PWM
-#include "PWMDevice.h"
-#endif
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
@@ -53,12 +45,16 @@ using namespace ::chip::Credentials;
 using namespace ::chip::DeviceLayer;
 
 namespace {
-constexpr EndpointId kExampleEndpointId = 1;
-constexpr uint8_t kDefaultMinLevel      = 0;
-constexpr uint8_t kDefaultMaxLevel      = 254;
-constexpr uint8_t kButtonPushEvent      = 1;
-constexpr uint8_t kButtonReleaseEvent   = 0;
+inline constexpr EndpointId kExampleEndpointId = 1;
+inline constexpr uint8_t kDefaultMinLevel      = 0;
+inline constexpr uint8_t kDefaultMaxLevel      = 254;
+inline constexpr uint8_t kButtonPushEvent      = 1;
+inline constexpr uint8_t kButtonReleaseEvent   = 0;
 } // namespace
+
+class LedManager;
+class PwmManager;
+class ButtonManager;
 
 class AppTaskCommon
 {
@@ -87,7 +83,12 @@ protected:
     void DispatchEvent(AppEvent * event);
     void GetEvent(AppEvent * aEvent);
 
+    void InitLeds();
+    virtual void LinkLeds(LedManager & ledManager);
+    void InitPwms();
+    virtual void LinkPwms(PwmManager & pwmManager);
     void InitButtons(void);
+    virtual void LinkButtons(ButtonManager & buttonManager);
 
     static void FactoryResetTimerTimeoutCallback(k_timer * timer);
     static void FactoryResetTimerEventHandler(AppEvent * aEvent);
@@ -97,32 +98,19 @@ protected:
     static void StartBleAdvButtonEventHandler(void);
     static void StartBleAdvHandler(AppEvent * aEvent);
 
-#if APP_USE_THREAD_START_BUTTON
+#if !CHIP_DEVICE_CONFIG_ENABLE_CHIPOBLE && CHIP_DEVICE_CONFIG_ENABLE_THREAD
     static void StartThreadButtonEventHandler(void);
     static void StartThreadHandler(AppEvent * aEvent);
 #endif
 
-#if APP_USE_EXAMPLE_START_BUTTON
     static void ExampleActionButtonEventHandler(void);
 
     void SetExampleButtonCallbacks(EventHandler aAction_CB);
     EventHandler ExampleActionEventHandler;
-#endif
 
     static void ChipEventHandler(const chip::DeviceLayer::ChipDeviceEvent * event, intptr_t arg);
 
-#if APP_USE_IDENTIFY_PWM
-    PWMDevice mPwmIdentifyLed;
-
-    static void ActionIdentifyStateUpdateHandler(k_timer * timer);
-    static void UpdateIdentifyStateEventHandler(AppEvent * aEvent);
-#endif
-
-#if CONFIG_CHIP_ENABLE_APPLICATION_STATUS_LED
-    static void UpdateLedStateEventHandler(AppEvent * aEvent);
-    static void LEDStateUpdateHandler(LEDWidget * ledWidget);
     static void UpdateStatusLED(void);
-#endif
 
 #if CONFIG_CHIP_FACTORY_DATA
     chip::DeviceLayer::FactoryDataProvider<chip::DeviceLayer::ExternalFlashFactoryData> mFactoryDataProvider;

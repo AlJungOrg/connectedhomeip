@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# Auto-generated scripts for harness use only, please review before automation. The endpoints and cluster names are currently set to default
 
 name:
     178.2.4. [TC-TCTL-3.2] Optional temperature number functionality with DUT as
@@ -23,39 +22,151 @@ PICS:
 
 config:
     nodeId: 0x12344321
-    cluster: "Basic Information"
-    endpoint: 0
+    cluster: "Temperature Control"
+    endpoint: 1
+    Step_5_setTemp:
+        type: temperature
+        defaultValue: 5
+    InvalidTemp:
+        type: temperature
+        defaultValue: 100
+    Step_10_setTemp:
+        type: temperature
+        defaultValue: 50
 
 tests:
-    - label: "Step 1: Commission DUT to TH"
-      verification: |
-
-      disabled: true
-
-    - label: "Step 2: TH writes a valid value to DUT"
-      PICS: TCTL.S.C00.Rsp
-      verification: |
-          ./chip-tool temperaturecontrol set-temperature 1 1
-      disabled: true
+    - label:
+          "Step 1: Commission DUT to TH (can be skipped if done in a preceding
+          test)"
+      cluster: "DelayCommands"
+      command: "WaitForCommissionee"
+      arguments:
+          values:
+              - name: "nodeId"
+                value: nodeId
 
     - label:
-          "Step 3: after a few seconds, TH reads from the DUT the
-          TemperatureSetpoint attribute"
-      PICS: TCTL.S.A0000
+          "Step 2: Operate device such that a temperature number can be accepted"
       verification: |
+          Operate device such that a temperature number can be accepted
+      cluster: "LogCommands"
+      command: "UserPrompt"
+      PICS: PICS_USER_PROMPT
+      arguments:
+          values:
+              - name: "message"
+                value: "Please enter 'y' after success"
+              - name: "expectedValue"
+                value: "y"
 
-      disabled: true
+    - label: "Step 3: TH reads from the DUT the MinTemperature attribute"
+      PICS: TCTL.S.A0001
+      command: "readAttribute"
+      attribute: "MinTemperature"
+      response:
+          saveAs: minTemp
+          constraints:
+              type: temperature
 
-    - label: "Step 4: TH writes an invalid value to DUT"
-      PICS: TCTL.S.C00.Rsp
-      verification: |
-
-      disabled: true
+    - label: "Step 4: TH reads from the DUT the MaxTemperature attribute"
+      PICS: TCTL.S.A0002
+      command: "readAttribute"
+      attribute: "MaxTemperature"
+      response:
+          saveAs: maxTemp
+          constraints:
+              type: temperature
 
     - label:
-          "Step 5: after a few seconds, TH reads from the DUT the
-          TemperatureSetpoint attribute"
-      PICS: TCTL.S.A0000
-      verification: |
+          "Step 5: TH sends command SetTemperatureCommand with a temperature
+          number between minTemp and maxTemp inclusive, saved as setTemp"
+      command: "SetTemperature"
+      PICS: TCTL.S.C00.Rsp
+      arguments:
+          values:
+              - name: "TargetTemperature"
+                value: Step_5_setTemp
 
-      disabled: true
+    - label: "Wait for 5s"
+      cluster: "DelayCommands"
+      command: "WaitForMs"
+      arguments:
+          values:
+              - name: "ms"
+                value: 5000
+
+    - label: "Step 6: TH reads from the DUT the TemperatureSetpoint attribute"
+      PICS: TCTL.S.A0000
+      command: "readAttribute"
+      attribute: "TemperatureSetpoint"
+      response:
+          value: Step_5_setTemp
+
+    - label:
+          "Step 7: TH sends command SetTemperatureCommand with an invalid value"
+      PICS: TCTL.S.C00.Rsp
+      command: "SetTemperature"
+      arguments:
+          values:
+              - name: "TargetTemperature"
+                value: InvalidTemp
+      response:
+          error: CONSTRAINT_ERROR
+
+    - label: "Wait for 5s"
+      cluster: "DelayCommands"
+      command: "WaitForMs"
+      arguments:
+          values:
+              - name: "ms"
+                value: 5000
+
+    - label: "Step 8: TH reads from the DUT the TemperatureSetpoint attribute"
+      PICS: TCTL.S.A0000
+      command: "readAttribute"
+      attribute: "TemperatureSetpoint"
+      response:
+          value: Step_5_setTemp
+
+    - label:
+          "Step 9: Operate device such that a temperature number cannot be
+          accepted"
+      verification: |
+          Operate device such that a temperature number cannot be accepted
+      cluster: "LogCommands"
+      command: "UserPrompt"
+      PICS: PICS_USER_PROMPT && TCTL.S.M.SupportsInvalidInState
+      arguments:
+          values:
+              - name: "message"
+                value: "Please enter 'y' after success"
+              - name: "expectedValue"
+                value: "y"
+
+    - label:
+          "Step 10: TH sends command SetTemperatureCommand with a temperature
+          number between minTemp and maxTemp inclusive, saved as setTemp"
+      command: "SetTemperature"
+      PICS:
+          TCTL.S.C00.Rsp && PICS_USER_PROMPT && TCTL.S.M.SupportsInvalidInState
+      arguments:
+          values:
+              - name: "TargetTemperature"
+                value: Step_10_setTemp
+      response:
+          error: INVALID_IN_STATE
+
+    - label: "Wait for 5s"
+      cluster: "DelayCommands"
+      command: "WaitForMs"
+      arguments:
+          values:
+              - name: "ms"
+                value: 5000
+
+    - label: "Step 11: TH reads from the DUT the TemperatureSetpoint attribute"
+      PICS: TCTL.S.A0000 && TCTL.S.M.SupportsInvalidInState
+      command: "readAttribute"
+      attribute: "TemperatureSetpoint"
+      response:
+          value: Step_5_setTemp

@@ -19,20 +19,35 @@
 #include "lib/support/CHIPMem.h"
 #include <app-common/zap-generated/cluster-objects.h>
 #include <app/clusters/power-source-server/power-source-server.h>
+#include <app/util/attribute-storage.h>
+#include <lib/core/ErrorStr.h>
 #include <lib/core/TLV.h>
 #include <lib/core/TLVDebug.h>
 #include <lib/core/TLVUtilities.h>
 #include <lib/support/CHIPCounter.h>
-#include <lib/support/ErrorStr.h>
 #include <lib/support/UnitTestContext.h>
 #include <lib/support/UnitTestRegistration.h>
 #include <messaging/ExchangeContext.h>
 #include <messaging/Flags.h>
 #include <nlunit-test.h>
 #include <protocols/interaction_model/Constants.h>
-#include <type_traits>
 
 #include <vector>
+
+namespace {
+chip::EndpointId numEndpoints = 0;
+}
+extern uint16_t emberAfGetClusterServerEndpointIndex(chip::EndpointId endpoint, chip::ClusterId cluster,
+                                                     uint16_t fixedClusterServerEndpointCount)
+{
+    // Very simple mapping here, we're just going to return the endpoint that matches the given endpoint index because the test
+    // uses the endpoints in order.
+    if (endpoint >= numEndpoints)
+    {
+        return kEmberInvalidEndpointIndex;
+    }
+    return endpoint;
+}
 
 namespace chip {
 namespace app {
@@ -65,7 +80,8 @@ std::vector<EndpointId> ReadEndpointsThroughAttributeReader(nlTestSuite * apSuit
     ConcreteAttributePath path(endpoint, Clusters::PowerSource::Id, Clusters::PowerSource::Attributes::EndpointList::Id);
     ConcreteReadAttributePath readPath(path);
     chip::DataVersion dataVersion(0);
-    AttributeValueEncoder aEncoder(builder, 0, path, dataVersion);
+    Access::SubjectDescriptor subjectDescriptor;
+    AttributeValueEncoder aEncoder(builder, subjectDescriptor, path, dataVersion);
 
     err = attrAccess.Read(readPath, aEncoder);
 
@@ -144,7 +160,7 @@ void TestPowerSourceCluster::TestEndpointList(nlTestSuite * apSuite, void * apCo
     // we checked earlier that this fit
     // This test just uses endpoints in order, so we want to set endpoints from
     // 0 to numEndpoints - 1, and use this for overflow checking
-    EndpointId numEndpoints = static_cast<EndpointId>(powerSourceServer.GetNumSupportedEndpointLists());
+    numEndpoints = static_cast<EndpointId>(powerSourceServer.GetNumSupportedEndpointLists());
 
     // Endpoint 0 - list of 5
     err = powerSourceServer.SetEndpointList(0, Span<EndpointId>(list0));

@@ -10,6 +10,8 @@ and features.
 
 *
 esp32/README
+nxp/README
+ti/ti_platform_overview
 ```
 
 ## Build Guides
@@ -33,13 +35,12 @@ esp32/README
 -   [nRF Connect - Factory Data Configuration](./nrfconnect_factory_data_configuration.md)
 -   [nRF Connect - Platform Overview](./nrfconnect_platform_overview.md)
 -   [nRF Connect - Software Update](./nrfconnect_examples_software_update.md)
--   [NXP - Android Commissioning](./nxp_k32w_android_commissioning.md)
--   [NXP - Linux Examples](./nxp_imx8m_linux_examples.md)
--   [NXP - Manufacturing Data](./nxp_manufacturing_flow.md)
--   [Silicon Labs - Documentation](https://github.com/SiliconLabs/matter#readme)
--   [Silicon Labs - Building](./silabs_efr32_building.md)
+-   [NXP - Getting Started Guide](./nxp/README.md)
+-   [Silicon Labs - Documentation](https://siliconlabs.github.io/matter/latest/index.html)
+-   [Silicon Labs - Getting Started](./silabs_getting_started.md)
 -   [Silicon Labs - Software Update](./silabs_efr32_software_update.md)
--   [TI - Platform Overview](./ti_platform_overview.md)
+-   [Silicon Labs - CLI Guide](./silabs_cli_guide.md)
+-   [TI - Platform Overview](./ti/ti_platform_overview.md)
 
 ## Tool Guides
 
@@ -53,7 +54,7 @@ esp32/README
 ## Development Guides
 
 -   [Access Control](./access-control-guide.md)
--   [IP Commissioning](./ip_commissioning.md)
+-   [Matter IDL tooling and validation](./matter_idl_tooling.md)
 
 ## Setup Guides
 

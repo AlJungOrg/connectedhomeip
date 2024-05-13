@@ -17,8 +17,10 @@
  */
 
 #include "CastingServer.h"
+#include "ConversionUtils.h"
 
 #include "app/clusters/bindings/BindingManager.h"
+#include <app/server/Dnssd.h>
 
 using namespace chip;
 using namespace chip::Controller;
@@ -65,6 +67,10 @@ CHIP_ERROR CastingServer::Init(AppParams * AppParams)
 
     // Add callback to send Content casting commands after commissioning completes
     ReturnErrorOnFailure(DeviceLayer::PlatformMgrImpl().AddEventHandler(DeviceEventCallback, 0));
+
+#if CHIP_DEVICE_CONFIG_ENABLE_COMMISSIONER_DISCOVERY_CLIENT
+    Server::GetInstance().GetUserDirectedCommissioningClient()->SetCommissionerDeclarationHandler(this);
+#endif // CHIP_DEVICE_CONFIG_ENABLE_COMMISSIONER_DISCOVERY_CLIENT
 
     mInited = true;
     return CHIP_NO_ERROR;
@@ -188,9 +194,41 @@ void CastingServer::OnCommissioningSessionEstablishmentStarted()
 }
 
 #if CHIP_DEVICE_CONFIG_ENABLE_COMMISSIONER_DISCOVERY_CLIENT
+void CastingServer::OnCommissionerDeclarationMessage(const chip::Transport::PeerAddress & source,
+                                                     chip::Protocols::UserDirectedCommissioning::CommissionerDeclaration cd)
+{
+    ChipLogProgress(AppServer, "CastingServer::OnCommissionerDeclarationMessage");
+    // TODO: call a mCommissioningCallbacks
+}
+
 CHIP_ERROR CastingServer::SendUserDirectedCommissioningRequest(chip::Transport::PeerAddress commissioner)
 {
-    return Server::GetInstance().SendUserDirectedCommissioningRequest(commissioner);
+    // TODO: expose options to the higher layer
+    Protocols::UserDirectedCommissioning::IdentificationDeclaration id;
+    if (mUdcCommissionerPasscodeEnabled)
+    {
+        id.SetCommissionerPasscode(true);
+        if (mUdcCommissionerPasscodeReady)
+        {
+            id.SetCommissionerPasscodeReady(true);
+            id.SetInstanceName(mUdcCommissionerPasscodeInstanceName);
+            mUdcCommissionerPasscodeReady = false;
+        }
+        else
+        {
+            CHIP_ERROR err = app::DnssdServer::Instance().GetCommissionableInstanceName(
+                mUdcCommissionerPasscodeInstanceName, sizeof(mUdcCommissionerPasscodeInstanceName));
+            if (err != CHIP_NO_ERROR)
+            {
+                ChipLogError(AppServer, "Failed to get mdns instance name error: %" CHIP_ERROR_FORMAT, err.Format());
+            }
+            else
+            {
+                id.SetInstanceName(mUdcCommissionerPasscodeInstanceName);
+            }
+        }
+    }
+    return Server::GetInstance().SendUserDirectedCommissioningRequest(commissioner, id);
 }
 
 chip::Inet::IPAddress * CastingServer::getIpAddressForUDCRequest(chip::Inet::IPAddress ipAddresses[], const size_t numIPs)
@@ -215,34 +253,35 @@ chip::Inet::IPAddress * CastingServer::getIpAddressForUDCRequest(chip::Inet::IPA
     return &ipAddresses[ipIndexToUse];
 }
 
-CHIP_ERROR CastingServer::SendUserDirectedCommissioningRequest(Dnssd::DiscoveredNodeData * selectedCommissioner)
+CHIP_ERROR CastingServer::SendUserDirectedCommissioningRequest(Dnssd::CommissionNodeData * selectedCommissioner)
 {
     mUdcInProgress = true;
     // Send User Directed commissioning request
     chip::Inet::IPAddress * ipAddressToUse =
-        getIpAddressForUDCRequest(selectedCommissioner->resolutionData.ipAddress, selectedCommissioner->resolutionData.numIPs);
-    ReturnErrorOnFailure(SendUserDirectedCommissioningRequest(chip::Transport::PeerAddress::UDP(
-        *ipAddressToUse, selectedCommissioner->resolutionData.port, selectedCommissioner->resolutionData.interfaceId)));
-    mTargetVideoPlayerVendorId   = selectedCommissioner->commissionData.vendorId;
-    mTargetVideoPlayerProductId  = selectedCommissioner->commissionData.productId;
-    mTargetVideoPlayerDeviceType = selectedCommissioner->commissionData.deviceType;
-    mTargetVideoPlayerNumIPs     = selectedCommissioner->resolutionData.numIPs;
+        getIpAddressForUDCRequest(selectedCommissioner->ipAddress, selectedCommissioner->numIPs);
+    ReturnErrorOnFailure(SendUserDirectedCommissioningRequest(
+        chip::Transport::PeerAddress::UDP(*ipAddressToUse, selectedCommissioner->port, selectedCommissioner->interfaceId)));
+    mTargetVideoPlayerVendorId   = selectedCommissioner->vendorId;
+    mTargetVideoPlayerProductId  = selectedCommissioner->productId;
+    mTargetVideoPlayerDeviceType = selectedCommissioner->deviceType;
+    mTargetVideoPlayerNumIPs     = selectedCommissioner->numIPs;
     for (size_t i = 0; i < mTargetVideoPlayerNumIPs && i < chip::Dnssd::CommonResolutionData::kMaxIPAddresses; i++)
     {
-        mTargetVideoPlayerIpAddress[i] = selectedCommissioner->resolutionData.ipAddress[i];
+        mTargetVideoPlayerIpAddress[i] = selectedCommissioner->ipAddress[i];
     }
-    chip::Platform::CopyString(mTargetVideoPlayerDeviceName, chip::Dnssd::kMaxDeviceNameLen + 1,
-                               selectedCommissioner->commissionData.deviceName);
-    chip::Platform::CopyString(mTargetVideoPlayerHostName, chip::Dnssd::kHostNameMaxLength + 1,
-                               selectedCommissioner->resolutionData.hostName);
+    chip::Platform::CopyString(mTargetVideoPlayerDeviceName, chip::Dnssd::kMaxDeviceNameLen + 1, selectedCommissioner->deviceName);
+    chip::Platform::CopyString(mTargetVideoPlayerHostName, chip::Dnssd::kHostNameMaxLength + 1, selectedCommissioner->hostName);
+    chip::Platform::CopyString(mTargetVideoPlayerInstanceName, chip::Dnssd::Commission::kInstanceNameMaxLength + 1,
+                               selectedCommissioner->instanceName);
+    mTargetVideoPlayerPort = selectedCommissioner->port;
     return CHIP_NO_ERROR;
 }
 #endif // CHIP_DEVICE_CONFIG_ENABLE_COMMISSIONER_DISCOVERY_CLIENT
 
-const Dnssd::DiscoveredNodeData *
+const Dnssd::CommissionNodeData *
 CastingServer::GetDiscoveredCommissioner(int index, chip::Optional<TargetVideoPlayerInfo *> & outAssociatedConnectableVideoPlayer)
 {
-    const Dnssd::DiscoveredNodeData * discoveredNodeData = mCommissionableNodeController.GetDiscoveredCommissioner(index);
+    const Dnssd::CommissionNodeData * discoveredNodeData = mCommissionableNodeController.GetDiscoveredCommissioner(index);
     if (discoveredNodeData != nullptr)
     {
         for (size_t i = 0; i < kMaxCachedVideoPlayers && mCachedTargetVideoPlayerInfo[i].IsInitialized(); i++)
@@ -271,8 +310,8 @@ void CastingServer::ReadServerClustersForNode(NodeId nodeId)
                         "Binding type=%d fab=%d nodeId=0x" ChipLogFormatX64
                         " groupId=%d local endpoint=%d remote endpoint=%d cluster=" ChipLogFormatMEI,
                         binding.type, binding.fabricIndex, ChipLogValueX64(binding.nodeId), binding.groupId, binding.local,
-                        binding.remote, ChipLogValueMEI(binding.clusterId.ValueOr(0)));
-        if (binding.type == EMBER_UNICAST_BINDING && nodeId == binding.nodeId)
+                        binding.remote, ChipLogValueMEI(binding.clusterId.value_or(0)));
+        if (binding.type == MATTER_UNICAST_BINDING && nodeId == binding.nodeId)
         {
             if (!mActiveTargetVideoPlayerInfo.HasEndpoint(binding.remote))
             {
@@ -314,6 +353,45 @@ void CastingServer::ReadServerClusters(EndpointId endpointId)
     ChipLogProgress(Controller, "Sent descriptor read for remote endpoint=%d", endpointId);
 }
 
+CHIP_ERROR CastingServer::SendWakeOnLan(TargetVideoPlayerInfo & targetVideoPlayerInfo)
+{
+    return SendWakeOnLanPacket(targetVideoPlayerInfo.GetMACAddress());
+}
+
+CHIP_ERROR CastingServer::ReadMACAddress(TargetEndpointInfo * endpoint)
+{
+    CHIP_ERROR err = CHIP_NO_ERROR;
+    if (endpoint != nullptr && endpoint->HasCluster(chip::app::Clusters::WakeOnLan::Id))
+    {
+        // Read MAC address
+        ChipLogProgress(AppServer, "Endpoint supports WoL. Reading Active VideoPlayer's MACAddress");
+        mMACAddressReader.SetTarget(mActiveTargetVideoPlayerInfo, endpoint->GetEndpointId());
+        err = mMACAddressReader.ReadAttribute(
+            &mActiveTargetVideoPlayerInfo,
+            [](void * context, const chip::app::Clusters::WakeOnLan::Attributes::MACAddress::TypeInfo::DecodableArgType response) {
+                ChipLogProgress(AppServer, "Read MACAddress successfully");
+                TargetVideoPlayerInfo * videoPlayerInfo = static_cast<TargetVideoPlayerInfo *>(context);
+                if (response.data() != nullptr && response.size() > 0)
+                {
+                    videoPlayerInfo->SetMACAddress(response);
+                    ChipLogProgress(AppServer, "Updating cache of VideoPlayers with MACAddress: %.*s",
+                                    static_cast<int>(response.size()), response.data());
+                    CHIP_ERROR error = CastingServer::GetInstance()->mPersistenceManager.AddVideoPlayer(videoPlayerInfo);
+                    if (error != CHIP_NO_ERROR)
+                    {
+                        ChipLogError(AppServer, "AddVideoPlayer(ToCache) error: %" CHIP_ERROR_FORMAT, error.Format());
+                    }
+                }
+            },
+            [](void * context, CHIP_ERROR error) { ChipLogError(AppServer, "Failed to read MACAddress"); });
+    }
+    else
+    {
+        err = CHIP_ERROR_INVALID_ARGUMENT;
+    }
+    return err;
+}
+
 void CastingServer::OnDescriptorReadSuccessResponse(void * context, const app::DataModel::DecodableList<ClusterId> & responseList)
 {
     TargetEndpointInfo * endpointInfo = static_cast<TargetEndpointInfo *>(context);
@@ -335,6 +413,9 @@ void CastingServer::OnDescriptorReadSuccessResponse(void * context, const app::D
     {
         ChipLogError(AppServer, "AddVideoPlayer(ToCache) error: %" CHIP_ERROR_FORMAT, err.Format());
     }
+
+    // Read WoL:MACAddress (if available from this endpoint)
+    CastingServer::GetInstance()->ReadMACAddress(endpointInfo);
 
     if (CastingServer::GetInstance()->mOnNewOrUpdatedEndpoint)
     {
@@ -365,7 +446,7 @@ TargetVideoPlayerInfo * CastingServer::ReadCachedTargetVideoPlayerInfos()
     CHIP_ERROR err = mPersistenceManager.ReadAllVideoPlayers(mCachedTargetVideoPlayerInfo);
     if (err != CHIP_NO_ERROR)
     {
-        ChipLogError(AppServer, "ReadAllVideoPlayers error: %" CHIP_ERROR_FORMAT, err.Format());
+        ChipLogProgress(AppServer, "ReadAllVideoPlayers error: %" CHIP_ERROR_FORMAT, err.Format());
         return nullptr;
     }
     return mCachedTargetVideoPlayerInfo;
@@ -404,18 +485,59 @@ CHIP_ERROR CastingServer::VerifyOrEstablishConnection(TargetVideoPlayerInfo & ta
     }
 
     CastingServer::GetInstance()->mActiveTargetVideoPlayerInfo = targetVideoPlayerInfo;
-    return CastingServer::GetInstance()->mActiveTargetVideoPlayerInfo.FindOrEstablishCASESession(
+    uint32_t delay                                             = 0;
+    if (targetVideoPlayerInfo.IsAsleep())
+    {
+        ChipLogProgress(AppServer, "CastingServer::VerifyOrEstablishConnection(): Sending WoL to sleeping VideoPlayer and waiting");
+        ReturnErrorOnFailure(CastingServer::GetInstance()->SendWakeOnLan(targetVideoPlayerInfo));
+
+#ifdef CHIP_DEVICE_CONFIG_STR_WAKE_UP_DELAY_SEC
+        delay = CHIP_DEVICE_CONFIG_STR_WAKE_UP_DELAY_SEC * 1000;
+#endif
+    }
+
+    // cancel preexisting timer for VerifyOrEstablishConnectionTask, if any, and schedule the task
+    chip::DeviceLayer::SystemLayer().CancelTimer(VerifyOrEstablishConnectionTask, nullptr);
+    return chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(delay), VerifyOrEstablishConnectionTask,
+                                                       nullptr);
+}
+
+void CastingServer::VerifyOrEstablishConnectionTask(chip::System::Layer * aSystemLayer, void * context)
+{
+    ChipLogProgress(AppServer, "CastingServer::VerifyOrEstablishConnectionTask called");
+    CastingServer::GetInstance()->mActiveTargetVideoPlayerInfo.PrintInfo();
+    CHIP_ERROR err = CastingServer::GetInstance()->mActiveTargetVideoPlayerInfo.FindOrEstablishCASESession(
         [](TargetVideoPlayerInfo * videoPlayer) {
             ChipLogProgress(AppServer, "CastingServer::OnConnectionSuccess lambda called");
             CastingServer::GetInstance()->mActiveTargetVideoPlayerInfo = *videoPlayer;
+            CastingServer::GetInstance()->ReadMACAddress(
+                videoPlayer->GetEndpoint(1)); // Read MACAddress from cached VideoPlayer endpoint (1) which supports WoL
             CastingServer::GetInstance()->mOnConnectionSuccessClientCallback(videoPlayer);
         },
-        onConnectionFailure);
+        [](CHIP_ERROR error) {
+            ChipLogProgress(AppServer, "Deleting VideoPlayer from cache after connection failure: %" CHIP_ERROR_FORMAT,
+                            error.Format());
+            CastingServer::GetInstance()->mPersistenceManager.DeleteVideoPlayer(
+                &CastingServer::GetInstance()->mActiveTargetVideoPlayerInfo);
+            CastingServer::GetInstance()->mOnConnectionFailureClientCallback(error);
+        });
+    if (err != CHIP_NO_ERROR)
+    {
+        ChipLogError(AppServer,
+                     "CastingServer::VerifyOrEstablishConnectionTask FindOrEstablishCASESession failed with %" CHIP_ERROR_FORMAT,
+                     err.Format());
+        CastingServer::GetInstance()->mOnConnectionFailureClientCallback(err);
+    }
 }
 
 CHIP_ERROR CastingServer::PurgeCache()
 {
     return mPersistenceManager.PurgeVideoPlayerCache();
+}
+
+CHIP_ERROR CastingServer::AddVideoPlayer(TargetVideoPlayerInfo * targetVideoPlayerInfo)
+{
+    return CastingServer::GetInstance()->mPersistenceManager.AddVideoPlayer(targetVideoPlayerInfo);
 }
 
 [[deprecated("Use ContentLauncher_LaunchURL(..) instead")]] CHIP_ERROR
@@ -460,8 +582,8 @@ void CastingServer::DeviceEventCallback(const DeviceLayer::ChipDeviceEvent * eve
                     "CastingServer::DeviceEventCallback Read cached binding type=%d fabrixIndex=%d nodeId=0x" ChipLogFormatX64
                     " groupId=%d local endpoint=%d remote endpoint=%d cluster=" ChipLogFormatMEI,
                     binding.type, binding.fabricIndex, ChipLogValueX64(binding.nodeId), binding.groupId, binding.local,
-                    binding.remote, ChipLogValueMEI(binding.clusterId.ValueOr(0)));
-                if (binding.type == EMBER_UNICAST_BINDING && event->BindingsChanged.fabricIndex == binding.fabricIndex)
+                    binding.remote, ChipLogValueMEI(binding.clusterId.value_or(0)));
+                if (binding.type == MATTER_UNICAST_BINDING && event->BindingsChanged.fabricIndex == binding.fabricIndex)
                 {
                     ChipLogProgress(
                         NotSpecified,
@@ -506,11 +628,21 @@ void CastingServer::DeviceEventCallback(const DeviceLayer::ChipDeviceEvent * eve
             CastingServer::GetInstance()->mTargetVideoPlayerVendorId, CastingServer::GetInstance()->mTargetVideoPlayerProductId,
             CastingServer::GetInstance()->mTargetVideoPlayerDeviceType, CastingServer::GetInstance()->mTargetVideoPlayerDeviceName,
             CastingServer::GetInstance()->mTargetVideoPlayerHostName, CastingServer::GetInstance()->mTargetVideoPlayerNumIPs,
-            CastingServer::GetInstance()->mTargetVideoPlayerIpAddress);
+            CastingServer::GetInstance()->mTargetVideoPlayerIpAddress, CastingServer::GetInstance()->mTargetVideoPlayerPort,
+            CastingServer::GetInstance()->mTargetVideoPlayerInstanceName, System::SystemClock().GetMonotonicMilliseconds64());
 
         if (err != CHIP_NO_ERROR)
         {
             ChipLogError(AppServer, "Failed to initialize target video player");
+        }
+        else
+        {
+            // add discovery timestamp
+            chip::System::Clock::Timestamp currentUnixTimeMS = chip::System::Clock::kZero;
+            chip::System::SystemClock().GetClock_RealTimeMS(currentUnixTimeMS);
+            ChipLogProgress(AppServer, "Updating discovery timestamp for VideoPlayer to %lu",
+                            static_cast<unsigned long>(currentUnixTimeMS.count()));
+            CastingServer::GetInstance()->mActiveTargetVideoPlayerInfo.SetLastDiscovered(currentUnixTimeMS);
         }
 
         err = CastingServer::GetInstance()->mPersistenceManager.AddVideoPlayer(
@@ -541,8 +673,8 @@ NodeId CastingServer::GetVideoPlayerNodeForFabricIndex(FabricIndex fabricIndex)
                         "Binding type=%d fab=%d nodeId=0x" ChipLogFormatX64
                         " groupId=%d local endpoint=%d remote endpoint=%d cluster=" ChipLogFormatMEI,
                         binding.type, binding.fabricIndex, ChipLogValueX64(binding.nodeId), binding.groupId, binding.local,
-                        binding.remote, ChipLogValueMEI(binding.clusterId.ValueOr(0)));
-        if (binding.type == EMBER_UNICAST_BINDING && fabricIndex == binding.fabricIndex)
+                        binding.remote, ChipLogValueMEI(binding.clusterId.value_or(0)));
+        if (binding.type == MATTER_UNICAST_BINDING && fabricIndex == binding.fabricIndex)
         {
             ChipLogProgress(NotSpecified, "GetVideoPlayerNodeForFabricIndex nodeId=0x" ChipLogFormatX64,
                             ChipLogValueX64(binding.nodeId));
@@ -567,8 +699,8 @@ FabricIndex CastingServer::GetVideoPlayerFabricIndexForNode(NodeId nodeId)
                         "Binding type=%d fab=%d nodeId=0x" ChipLogFormatX64
                         " groupId=%d local endpoint=%d remote endpoint=%d cluster=" ChipLogFormatMEI,
                         binding.type, binding.fabricIndex, ChipLogValueX64(binding.nodeId), binding.groupId, binding.local,
-                        binding.remote, ChipLogValueMEI(binding.clusterId.ValueOr(0)));
-        if (binding.type == EMBER_UNICAST_BINDING && nodeId == binding.nodeId)
+                        binding.remote, ChipLogValueMEI(binding.clusterId.value_or(0)));
+        if (binding.type == MATTER_UNICAST_BINDING && nodeId == binding.nodeId)
         {
             ChipLogProgress(NotSpecified, "GetVideoPlayerFabricIndexForNode fabricIndex=%d nodeId=0x" ChipLogFormatX64,
                             binding.fabricIndex, ChipLogValueX64(binding.nodeId));
@@ -596,7 +728,7 @@ void CastingServer::SetDefaultFabricIndex(std::function<void(TargetVideoPlayerIn
             ChipLogError(AppServer, " -- Not initialized");
             continue;
         }
-        NodeId myNodeId = fb.GetNodeId();
+        [[maybe_unused]] NodeId myNodeId = fb.GetNodeId();
         ChipLogProgress(NotSpecified,
                         "---- Current Fabric nodeId=0x" ChipLogFormatX64 " fabricId=0x" ChipLogFormatX64 " fabricIndex=%d",
                         ChipLogValueX64(myNodeId), ChipLogValueX64(fb.GetFabricId()), fabricIndex);
@@ -692,7 +824,7 @@ CastingServer::ContentLauncher_SubscribeToSupportedStreamingProtocols(
 /**
  * @brief Level Control cluster
  */
-CHIP_ERROR CastingServer::LevelControl_Step(TargetEndpointInfo * endpoint, chip::app::Clusters::LevelControl::StepMode stepMode,
+CHIP_ERROR CastingServer::LevelControl_Step(TargetEndpointInfo * endpoint, chip::app::Clusters::LevelControl::StepModeEnum stepMode,
                                             uint8_t stepSize, uint16_t transitionTime, uint8_t optionMask, uint8_t optionOverride,
                                             std::function<void(CHIP_ERROR)> responseCallback)
 {
@@ -768,6 +900,16 @@ CHIP_ERROR CastingServer::OnOff_Toggle(TargetEndpointInfo * endpoint, std::funct
 {
     ReturnErrorOnFailure(mToggleCommand.SetTarget(mActiveTargetVideoPlayerInfo, endpoint->GetEndpointId()));
     return mToggleCommand.Invoke(responseCallback);
+}
+
+/**
+ * @brief Messages cluster
+ */
+CHIP_ERROR CastingServer::Messages_PresentMessagesRequest(TargetEndpointInfo * endpoint, const char * messageText,
+                                                          std::function<void(CHIP_ERROR)> responseCallback)
+{
+    ReturnErrorOnFailure(mPresentMessagesRequestCommand.SetTarget(mActiveTargetVideoPlayerInfo, endpoint->GetEndpointId()));
+    return mPresentMessagesRequestCommand.Invoke(messageText, responseCallback);
 }
 
 /**
@@ -1003,7 +1145,7 @@ CHIP_ERROR CastingServer::TargetNavigator_SubscribeToCurrentTarget(
  * @brief Keypad Input cluster
  */
 CHIP_ERROR CastingServer::KeypadInput_SendKey(TargetEndpointInfo * endpoint,
-                                              const chip::app::Clusters::KeypadInput::CecKeyCode keyCode,
+                                              const chip::app::Clusters::KeypadInput::CECKeyCodeEnum keyCode,
                                               std::function<void(CHIP_ERROR)> responseCallback)
 {
     ReturnErrorOnFailure(mSendKeyCommand.SetTarget(mActiveTargetVideoPlayerInfo, endpoint->GetEndpointId()));

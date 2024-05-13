@@ -31,6 +31,7 @@
 #include <lib/core/CHIPError.h>
 #include <lib/core/CHIPVendorIdentifiers.hpp>
 #include <lib/core/Optional.h>
+#include <lib/support/BufferReader.h>
 #include <lib/support/CodeUtils.h>
 #include <lib/support/SafePointerCast.h>
 #include <lib/support/Span.h>
@@ -41,72 +42,79 @@
 namespace chip {
 namespace Crypto {
 
-constexpr size_t kMax_x509_Certificate_Length = 600;
+inline constexpr size_t kMax_x509_Certificate_Length = 600;
 
-constexpr size_t kP256_FE_Length                        = 32;
-constexpr size_t kP256_ECDSA_Signature_Length_Raw       = (2 * kP256_FE_Length);
-constexpr size_t kP256_Point_Length                     = (2 * kP256_FE_Length + 1);
-constexpr size_t kSHA256_Hash_Length                    = 32;
-constexpr size_t kSHA1_Hash_Length                      = 20;
-constexpr size_t kSubjectKeyIdentifierLength            = kSHA1_Hash_Length;
-constexpr size_t kAuthorityKeyIdentifierLength          = kSHA1_Hash_Length;
-constexpr size_t kMaxCertificateSerialNumberLength      = 20;
-constexpr size_t kMaxCertificateDistinguishedNameLength = 200;
-constexpr size_t kMaxCRLDistributionPointURLLength      = 100;
+inline constexpr size_t kP256_FE_Length                        = 32;
+inline constexpr size_t kP256_ECDSA_Signature_Length_Raw       = (2 * kP256_FE_Length);
+inline constexpr size_t kP256_Point_Length                     = (2 * kP256_FE_Length + 1);
+inline constexpr size_t kSHA256_Hash_Length                    = 32;
+inline constexpr size_t kSHA1_Hash_Length                      = 20;
+inline constexpr size_t kSubjectKeyIdentifierLength            = kSHA1_Hash_Length;
+inline constexpr size_t kAuthorityKeyIdentifierLength          = kSHA1_Hash_Length;
+inline constexpr size_t kMaxCertificateSerialNumberLength      = 20;
+inline constexpr size_t kMaxCertificateDistinguishedNameLength = 200;
+inline constexpr size_t kMaxCRLDistributionPointURLLength      = 100;
 
-constexpr const char * kValidCDPURIHttpPrefix  = "http://";
-constexpr const char * kValidCDPURIHttpsPrefix = "https://";
+inline constexpr char kValidCDPURIHttpPrefix[]  = "http://";
+inline constexpr char kValidCDPURIHttpsPrefix[] = "https://";
 
-constexpr size_t CHIP_CRYPTO_GROUP_SIZE_BYTES      = kP256_FE_Length;
-constexpr size_t CHIP_CRYPTO_PUBLIC_KEY_SIZE_BYTES = kP256_Point_Length;
+inline constexpr size_t CHIP_CRYPTO_GROUP_SIZE_BYTES      = kP256_FE_Length;
+inline constexpr size_t CHIP_CRYPTO_PUBLIC_KEY_SIZE_BYTES = kP256_Point_Length;
 
-constexpr size_t CHIP_CRYPTO_AEAD_MIC_LENGTH_BYTES      = 16;
-constexpr size_t CHIP_CRYPTO_SYMMETRIC_KEY_LENGTH_BYTES = 16;
+inline constexpr size_t CHIP_CRYPTO_AEAD_MIC_LENGTH_BYTES      = 16;
+inline constexpr size_t CHIP_CRYPTO_SYMMETRIC_KEY_LENGTH_BYTES = 16;
 
-constexpr size_t kMax_ECDH_Secret_Length     = kP256_FE_Length;
-constexpr size_t kMax_ECDSA_Signature_Length = kP256_ECDSA_Signature_Length_Raw;
-constexpr size_t kMAX_FE_Length              = kP256_FE_Length;
-constexpr size_t kMAX_Point_Length           = kP256_Point_Length;
-constexpr size_t kMAX_Hash_Length            = kSHA256_Hash_Length;
+inline constexpr size_t kMax_ECDH_Secret_Length     = kP256_FE_Length;
+inline constexpr size_t kMax_ECDSA_Signature_Length = kP256_ECDSA_Signature_Length_Raw;
+inline constexpr size_t kMAX_FE_Length              = kP256_FE_Length;
+inline constexpr size_t kMAX_Point_Length           = kP256_Point_Length;
+inline constexpr size_t kMAX_Hash_Length            = kSHA256_Hash_Length;
 
-// Max CSR length should be relatively small since it's a single P256 key and
-// no metadata is expected to be honored by the CA.
-constexpr size_t kMAX_CSR_Length = 255;
+// Minimum required CSR length buffer length is relatively small since it's a single
+// P256 key and no metadata/extensions are expected to be honored by the CA.
+inline constexpr size_t kMIN_CSR_Buffer_Size = 255;
 
-constexpr size_t CHIP_CRYPTO_HASH_LEN_BYTES = kSHA256_Hash_Length;
+[[deprecated("This constant is no longer used by common code and should be replaced by kMIN_CSR_Buffer_Size. Checks that a CSR is "
+             "<= kMAX_CSR_Buffer_size must be updated. This remains to keep valid buffers working from previous public API "
+             "usage.")]] constexpr size_t kMAX_CSR_Buffer_Size = 255;
 
-constexpr size_t kSpake2p_Min_PBKDF_Salt_Length  = 16;
-constexpr size_t kSpake2p_Max_PBKDF_Salt_Length  = 32;
-constexpr uint32_t kSpake2p_Min_PBKDF_Iterations = 1000;
-constexpr uint32_t kSpake2p_Max_PBKDF_Iterations = 100000;
+inline constexpr size_t CHIP_CRYPTO_HASH_LEN_BYTES = kSHA256_Hash_Length;
 
-constexpr size_t kP256_PrivateKey_Length = CHIP_CRYPTO_GROUP_SIZE_BYTES;
-constexpr size_t kP256_PublicKey_Length  = CHIP_CRYPTO_PUBLIC_KEY_SIZE_BYTES;
+inline constexpr size_t kSpake2p_Min_PBKDF_Salt_Length  = 16;
+inline constexpr size_t kSpake2p_Max_PBKDF_Salt_Length  = 32;
+inline constexpr uint32_t kSpake2p_Min_PBKDF_Iterations = 1000;
+inline constexpr uint32_t kSpake2p_Max_PBKDF_Iterations = 100000;
 
-constexpr size_t kAES_CCM128_Key_Length   = 128u / 8u;
-constexpr size_t kAES_CCM128_Block_Length = kAES_CCM128_Key_Length;
-constexpr size_t kAES_CCM128_Nonce_Length = 13;
-constexpr size_t kAES_CCM128_Tag_Length   = 16;
+inline constexpr size_t kP256_PrivateKey_Length = CHIP_CRYPTO_GROUP_SIZE_BYTES;
+inline constexpr size_t kP256_PublicKey_Length  = CHIP_CRYPTO_PUBLIC_KEY_SIZE_BYTES;
+
+inline constexpr size_t kAES_CCM128_Key_Length   = 128u / 8u;
+inline constexpr size_t kAES_CCM128_Block_Length = kAES_CCM128_Key_Length;
+inline constexpr size_t kAES_CCM128_Nonce_Length = 13;
+inline constexpr size_t kAES_CCM128_Tag_Length   = 16;
+inline constexpr size_t kHMAC_CCM128_Key_Length  = 128u / 8u;
+
+inline constexpr size_t CHIP_CRYPTO_AEAD_NONCE_LENGTH_BYTES = kAES_CCM128_Nonce_Length;
 
 /* These sizes are hardcoded here to remove header dependency on underlying crypto library
  * in a public interface file. The validity of these sizes is verified by static_assert in
  * the implementation files.
  */
-constexpr size_t kMAX_Spake2p_Context_Size     = 1024;
-constexpr size_t kMAX_P256Keypair_Context_Size = 512;
+inline constexpr size_t kMAX_Spake2p_Context_Size     = 1024;
+inline constexpr size_t kMAX_P256Keypair_Context_Size = 512;
 
-constexpr size_t kEmitDerIntegerWithoutTagOverhead = 1; // 1 sign stuffer
-constexpr size_t kEmitDerIntegerOverhead           = 3; // Tag + Length byte + 1 sign stuffer
+inline constexpr size_t kEmitDerIntegerWithoutTagOverhead = 1; // 1 sign stuffer
+inline constexpr size_t kEmitDerIntegerOverhead           = 3; // Tag + Length byte + 1 sign stuffer
 
-constexpr size_t kMAX_Hash_SHA256_Context_Size = CHIP_CONFIG_SHA256_CONTEXT_SIZE;
+inline constexpr size_t kMAX_Hash_SHA256_Context_Size = CHIP_CONFIG_SHA256_CONTEXT_SIZE;
 
-constexpr size_t kSpake2p_WS_Length                 = kP256_FE_Length + 8;
-constexpr size_t kSpake2p_VerifierSerialized_Length = kP256_FE_Length + kP256_Point_Length;
+inline constexpr size_t kSpake2p_WS_Length                 = kP256_FE_Length + 8;
+inline constexpr size_t kSpake2p_VerifierSerialized_Length = kP256_FE_Length + kP256_Point_Length;
 
-constexpr char kVIDPrefixForCNEncoding[]    = "Mvid:";
-constexpr char kPIDPrefixForCNEncoding[]    = "Mpid:";
-constexpr size_t kVIDandPIDHexLength        = sizeof(uint16_t) * 2;
-constexpr size_t kMax_CommonNameAttr_Length = 64;
+inline constexpr char kVIDPrefixForCNEncoding[]    = "Mvid:";
+inline constexpr char kPIDPrefixForCNEncoding[]    = "Mpid:";
+inline constexpr size_t kVIDandPIDHexLength        = sizeof(uint16_t) * 2;
+inline constexpr size_t kMax_CommonNameAttr_Length = 64;
 
 /*
  * Overhead to encode a raw ECDSA signature in X9.62 format in ASN.1 DER
@@ -124,14 +132,14 @@ constexpr size_t kMax_CommonNameAttr_Length = 64;
  *
  * There is 1 sequence of 2 integers. Overhead is SEQ_OVERHEAD + (2 * INT_OVERHEAD) = 3 + (2 * 3) = 9.
  */
-constexpr size_t kMax_ECDSA_X9Dot62_Asn1_Overhead = 9;
-constexpr size_t kMax_ECDSA_Signature_Length_Der  = kMax_ECDSA_Signature_Length + kMax_ECDSA_X9Dot62_Asn1_Overhead;
+inline constexpr size_t kMax_ECDSA_X9Dot62_Asn1_Overhead = 9;
+inline constexpr size_t kMax_ECDSA_Signature_Length_Der  = kMax_ECDSA_Signature_Length + kMax_ECDSA_X9Dot62_Asn1_Overhead;
 
 static_assert(kMax_ECDH_Secret_Length >= kP256_FE_Length, "ECDH shared secret is too short for crypto suite");
 static_assert(kMax_ECDSA_Signature_Length >= kP256_ECDSA_Signature_Length_Raw,
               "ECDSA signature buffer length is too short for crypto suite");
 
-constexpr size_t kCompressedFabricIdentifierSize = 8;
+inline constexpr size_t kCompressedFabricIdentifierSize = 8;
 
 /**
  * Spake2+ parameters for P256
@@ -214,8 +222,16 @@ bool IsBufferContentEqualConstantTime(const void * a, const void * b, size_t n);
 template <typename Sig>
 class ECPKey
 {
+protected:
+    // This base type can't be copied / assigned directly.
+    // Sub-types should be either uncopyable or final.
+    ECPKey()                           = default;
+    ECPKey(const ECPKey &)             = default;
+    ECPKey & operator=(const ECPKey &) = default;
+
 public:
-    virtual ~ECPKey() {}
+    virtual ~ECPKey() = default;
+
     virtual SupportedECPKeyTypes Type() const  = 0;
     virtual size_t Length() const              = 0;
     virtual bool IsUncompressed() const        = 0;
@@ -250,7 +266,8 @@ public:
         // Sanitize after use
         ClearSecretData(mBytes);
     }
-
+    SensitiveDataBuffer() {}
+    SensitiveDataBuffer(const SensitiveDataBuffer & other) { *this = other; }
     SensitiveDataBuffer & operator=(const SensitiveDataBuffer & other)
     {
         // Guard self assignment
@@ -369,10 +386,11 @@ using IdentityProtectionKeySpan = FixedByteSpan<Crypto::CHIP_CRYPTO_SYMMETRIC_KE
 
 using AttestationChallenge = SensitiveDataFixedBuffer<CHIP_CRYPTO_SYMMETRIC_KEY_LENGTH_BYTES>;
 
-class P256PublicKey : public ECPKey<P256ECDSASignature>
+class P256PublicKey final // final due to being copyable
+    : public ECPKey<P256ECDSASignature>
 {
 public:
-    P256PublicKey() {}
+    P256PublicKey() = default;
 
     template <size_t N>
     constexpr P256PublicKey(const uint8_t (&raw_value)[N])
@@ -422,8 +440,15 @@ private:
 template <typename PK, typename Secret, typename Sig>
 class ECPKeypair
 {
+protected:
+    // This base type can't be copied / assigned directly.
+    // Sub-types should be either uncopyable or final.
+    ECPKeypair()                               = default;
+    ECPKeypair(const ECPKeypair &)             = default;
+    ECPKeypair & operator=(const ECPKeypair &) = default;
+
 public:
-    virtual ~ECPKeypair() {}
+    virtual ~ECPKeypair() = default;
 
     /** @brief Generate a new Certificate Signing Request (CSR).
      * @param csr Newly generated CSR in DER format
@@ -460,10 +485,20 @@ struct alignas(size_t) P256KeypairContext
     uint8_t mBytes[kMAX_P256Keypair_Context_Size];
 };
 
+/**
+ * A serialized P256 key pair is the concatenation of the public and private keys, in that order.
+ */
 using P256SerializedKeypair = SensitiveDataBuffer<kP256_PublicKey_Length + kP256_PrivateKey_Length>;
 
 class P256KeypairBase : public ECPKeypair<P256PublicKey, P256ECDHDerivedSecret, P256ECDSASignature>
 {
+protected:
+    // This base type can't be copied / assigned directly.
+    // Sub-types should be either uncopyable or final.
+    P256KeypairBase()                                    = default;
+    P256KeypairBase(const P256KeypairBase &)             = default;
+    P256KeypairBase & operator=(const P256KeypairBase &) = default;
+
 public:
     /**
      * @brief Initialize the keypair.
@@ -487,8 +522,12 @@ public:
 class P256Keypair : public P256KeypairBase
 {
 public:
-    P256Keypair() {}
+    P256Keypair() = default;
     ~P256Keypair() override;
+
+    // P256Keypair can't be copied / assigned.
+    P256Keypair(const P256Keypair &)             = delete;
+    P256Keypair & operator=(const P256Keypair &) = delete;
 
     /**
      * @brief Initialize the keypair.
@@ -555,26 +594,24 @@ protected:
     bool mInitialized = false;
 };
 
-using Aes128KeyByteArray = uint8_t[CHIP_CRYPTO_SYMMETRIC_KEY_LENGTH_BYTES];
-
 /**
- * @brief Platform-specific AES key
+ * @brief Platform-specific symmetric key handle
  *
- * The class represents AES key used by Matter stack either in the form of raw key material or key
+ * The class represents a key used by the Matter stack either in the form of raw key material or key
  * reference, depending on the platform. To achieve that, it contains an opaque context that can be
- * cast to a concrete representation used by the given platform. Note that currently Matter uses
- * 128-bit symmetric keys only.
+ * cast to a concrete representation used by the given platform.
+ *
+ * @note SymmetricKeyHandle is an abstract class to force child classes for each key handle type.
+ *       SymmetricKeyHandle class implements all the necessary components for handles.
  */
-class Aes128KeyHandle
+template <size_t ContextSize>
+class SymmetricKeyHandle
 {
 public:
-    Aes128KeyHandle() = default;
-    ~Aes128KeyHandle() { ClearSecretData(mContext.mOpaque); }
-
-    Aes128KeyHandle(const Aes128KeyHandle &) = delete;
-    Aes128KeyHandle(Aes128KeyHandle &&)      = delete;
-    void operator=(const Aes128KeyHandle &) = delete;
-    void operator=(Aes128KeyHandle &&) = delete;
+    SymmetricKeyHandle(const SymmetricKeyHandle &) = delete;
+    SymmetricKeyHandle(SymmetricKeyHandle &&)      = delete;
+    void operator=(const SymmetricKeyHandle &)     = delete;
+    void operator=(SymmetricKeyHandle &&)          = delete;
 
     /**
      * @brief Get internal context cast to the desired key representation
@@ -594,13 +631,45 @@ public:
         return *SafePointerCast<T *>(&mContext);
     }
 
-private:
-    static constexpr size_t kContextSize = CHIP_CRYPTO_SYMMETRIC_KEY_LENGTH_BYTES;
+protected:
+    SymmetricKeyHandle() = default;
+    ~SymmetricKeyHandle() { ClearSecretData(mContext.mOpaque); }
 
+private:
     struct alignas(uintptr_t) OpaqueContext
     {
-        uint8_t mOpaque[kContextSize] = {};
+        uint8_t mOpaque[ContextSize] = {};
     } mContext;
+};
+
+using Symmetric128BitsKeyByteArray = uint8_t[CHIP_CRYPTO_SYMMETRIC_KEY_LENGTH_BYTES];
+
+/**
+ * @brief Platform-specific 128-bit symmetric key handle
+ */
+class Symmetric128BitsKeyHandle : public SymmetricKeyHandle<CHIP_CRYPTO_SYMMETRIC_KEY_LENGTH_BYTES>
+{
+};
+
+/**
+ * @brief Platform-specific 128-bit AES key handle
+ */
+class Aes128KeyHandle final : public Symmetric128BitsKeyHandle
+{
+};
+
+/**
+ * @brief Platform-specific 128-bit HMAC key handle
+ */
+class Hmac128KeyHandle final : public Symmetric128BitsKeyHandle
+{
+};
+
+/**
+ * @brief Platform-specific HKDF key handle
+ */
+class HkdfKeyHandle final : public SymmetricKeyHandle<CHIP_CONFIG_HKDF_KEY_HANDLE_CONTEXT_SIZE>
+{
 };
 
 /**
@@ -638,6 +707,14 @@ CHIP_ERROR EcdsaRawSignatureToAsn1(size_t fe_length_bytes, const ByteSpan & raw_
  * @return Returns a CHIP_ERROR on error, CHIP_NO_ERROR otherwise
  */
 CHIP_ERROR EcdsaAsn1SignatureToRaw(size_t fe_length_bytes, const ByteSpan & asn1_sig, MutableByteSpan & out_raw_sig);
+
+/**
+ * @brief Utility to read a length field after a tag in a DER-encoded stream.
+ * @param[in] reader Reader instance from which the input will be read
+ * @param[out] length Length of the following element read from the stream
+ * @return CHIP_ERROR_INVALID_ARGUMENT or CHIP_ERROR_BUFFER_TOO_SMALL on error, CHIP_NO_ERROR otherwise
+ */
+CHIP_ERROR ReadDerLength(chip::Encoding::LittleEndian::Reader & reader, size_t & length);
 
 /**
  * @brief Utility to emit a DER-encoded INTEGER given a raw unsigned large integer
@@ -742,8 +819,9 @@ CHIP_ERROR AES_CTR_crypt(const uint8_t * input, size_t input_length, const Aes12
  * be configured to ignore CSR requested subject.
  *
  * @param keypair The key pair for which a CSR should be generated. Must not be null.
- * @param csr_span Span to hold the resulting CSR. Must be at least kMAX_CSR_Length.  Otherwise returns CHIP_ERROR_BUFFER_TOO_SMALL.
- *                 It will get resized to actual size needed on success.
+ * @param csr_span Span to hold the resulting CSR. Must have size at least kMIN_CSR_Buffer_Size.
+ *                 Otherwise returns CHIP_ERROR_BUFFER_TOO_SMALL. It will get resized to
+ *                 actual size needed on success.
 
  * @return Returns a CHIP_ERROR from P256Keypair or ASN.1 backend on error, CHIP_NO_ERROR otherwise
  **/
@@ -869,8 +947,8 @@ private:
 class HKDF_sha
 {
 public:
-    HKDF_sha() {}
-    virtual ~HKDF_sha() {}
+    HKDF_sha()          = default;
+    virtual ~HKDF_sha() = default;
 
     /**
      * @brief A function that implements SHA-256 based HKDF
@@ -902,8 +980,8 @@ public:
 class HMAC_sha
 {
 public:
-    HMAC_sha() {}
-    virtual ~HMAC_sha() {}
+    HMAC_sha()          = default;
+    virtual ~HMAC_sha() = default;
 
     /**
      * @brief A function that implements SHA-256 based HMAC per FIPS1981.
@@ -931,6 +1009,31 @@ public:
 
     virtual CHIP_ERROR HMAC_SHA256(const uint8_t * key, size_t key_length, const uint8_t * message, size_t message_length,
                                    uint8_t * out_buffer, size_t out_length);
+
+    /**
+     * @brief A function that implements SHA-256 based HMAC per FIPS1981.
+     *
+     * This implements the CHIP_Crypto_HMAC() cryptographic primitive
+     * in the the specification.
+     *
+     * The `out_length` must be at least kSHA256_Hash_Length, and only
+     * kSHA256_Hash_Length bytes are written to out_buffer.
+     *
+     * Error values are:
+     *   - CHIP_ERROR_INVALID_ARGUMENT: for any bad arguments or nullptr input on
+     *     any pointer.
+     *   - CHIP_ERROR_INTERNAL: for any unexpected error arising in the underlying
+     *     cryptographic layers.
+     *
+     * @param key The HMAC Key handle to use for the HMAC operation
+     * @param message Message over which to compute the HMAC
+     * @param message_length Length of the message over which to compute the HMAC
+     * @param out_buffer Pointer to buffer into which to write the output.
+     * @param out_length Underlying size of the `out_buffer`.
+     * @return Returns a CHIP_ERROR on error, CHIP_NO_ERROR otherwise
+     **/
+    virtual CHIP_ERROR HMAC_SHA256(const Hmac128KeyHandle & key, const uint8_t * message, size_t message_length,
+                                   uint8_t * out_buffer, size_t out_length);
 };
 
 /**
@@ -951,6 +1054,13 @@ CHIP_ERROR DRBG_get_bytes(uint8_t * out_buffer, size_t out_length);
 typedef int (*entropy_source)(void * data, uint8_t * output, size_t len, size_t * olen);
 
 /** @brief A function to add entropy sources to crypto library
+ *
+ * This function can be called multiple times to add multiple entropy sources. However,
+ * once the entropy source is added, it cannot be removed. Please make sure that the
+ * entropy source is valid for the lifetime of the application. Also, make sure that the
+ * same entropy source is not added multiple times, e.g.: by calling this function
+ * in class constructor or initialization function.
+ *
  * @param fn_source Function pointer to the entropy source
  * @param p_source  Data that should be provided when fn_source is called
  * @param threshold Minimum required from source before entropy is released
@@ -961,8 +1071,8 @@ CHIP_ERROR add_entropy_source(entropy_source fn_source, void * p_source, size_t 
 class PBKDF2_sha256
 {
 public:
-    PBKDF2_sha256() {}
-    virtual ~PBKDF2_sha256() {}
+    PBKDF2_sha256()          = default;
+    virtual ~PBKDF2_sha256() = default;
 
     /** @brief Function to derive key using password. SHA256 hashing algorithm is used for calculating hmac.
      * @param password password used for key derivation
@@ -977,6 +1087,9 @@ public:
     virtual CHIP_ERROR pbkdf2_sha256(const uint8_t * password, size_t plen, const uint8_t * salt, size_t slen,
                                      unsigned int iteration_count, uint32_t key_length, uint8_t * output);
 };
+
+// TODO: Extract Spake2p to a separate header and replace the forward declaration with #include SessionKeystore.h
+class SessionKeystore;
 
 /**
  * The below class implements the draft 01 version of the Spake2+ protocol as
@@ -1003,7 +1116,7 @@ class Spake2p
 {
 public:
     Spake2p(size_t fe_size, size_t point_size, size_t hash_size);
-    virtual ~Spake2p() {}
+    virtual ~Spake2p() = default;
 
     /**
      * @brief Initialize Spake2+ with some context specific information.
@@ -1093,14 +1206,17 @@ public:
     virtual CHIP_ERROR KeyConfirm(const uint8_t * in, size_t in_len);
 
     /**
-     * @brief Return the shared secret.
+     * @brief Return the shared HKDF key.
      *
-     * @param out     The output secret.
-     * @param out_len The output secret length.
+     * Returns the shared key established during the Spake2+ process, which can be used
+     * to derive application-specific keys using HKDF.
+     *
+     * @param keystore The session keystore for managing the HKDF key lifetime.
+     * @param key The output HKDF key.
      *
      * @return Returns a CHIP_ERROR on error, CHIP_NO_ERROR otherwise
      **/
-    CHIP_ERROR GetKeys(uint8_t * out, size_t * out_len);
+    CHIP_ERROR GetKeys(SessionKeystore & keystore, HkdfKeyHandle & key);
 
     CHIP_ERROR InternalHash(const uint8_t * in, size_t in_len);
     CHIP_ERROR WriteMN();

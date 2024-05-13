@@ -126,7 +126,7 @@ public:
     virtual ~AttestationTrustStore() = default;
 
     // Not copyable
-    AttestationTrustStore(const AttestationTrustStore &) = delete;
+    AttestationTrustStore(const AttestationTrustStore &)             = delete;
     AttestationTrustStore & operator=(const AttestationTrustStore &) = delete;
 
     /**
@@ -164,7 +164,7 @@ public:
     virtual ~WellKnownKeysTrustStore() = default;
 
     // Not copyable
-    WellKnownKeysTrustStore(const WellKnownKeysTrustStore &) = delete;
+    WellKnownKeysTrustStore(const WellKnownKeysTrustStore &)             = delete;
     WellKnownKeysTrustStore & operator=(const WellKnownKeysTrustStore &) = delete;
 
     /**
@@ -266,7 +266,7 @@ public:
     virtual ~DeviceAttestationVerifier() = default;
 
     // Not copyable
-    DeviceAttestationVerifier(const DeviceAttestationVerifier &) = delete;
+    DeviceAttestationVerifier(const DeviceAttestationVerifier &)             = delete;
     DeviceAttestationVerifier & operator=(const DeviceAttestationVerifier &) = delete;
 
     struct AttestationInfo
@@ -385,6 +385,16 @@ public:
                                                            const ByteSpan & attestationSignatureBuffer,
                                                            const Crypto::P256PublicKey & dacPublicKey,
                                                            const ByteSpan & csrNonce) = 0;
+
+    /**
+     * @brief Verify whether or not the given DAC chain is revoked.
+     *
+     * @param[in] info All of the information required to check for revoked DAC chain.
+     * @param[in] onCompletion Callback handler to provide Attestation Information Verification result to the caller of
+     *                         CheckForRevokedDACChain()
+     */
+    virtual void CheckForRevokedDACChain(const AttestationInfo & info,
+                                         Callback::Callback<OnAttestationInformationVerification> * onCompletion) = 0;
 
     /**
      * @brief Get the trust store used for the attestation verifier.

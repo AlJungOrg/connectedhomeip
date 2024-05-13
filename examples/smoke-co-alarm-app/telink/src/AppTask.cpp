@@ -26,22 +26,13 @@ AppTask AppTask::sAppTask;
 
 CHIP_ERROR AppTask::Init(void)
 {
-#if APP_USE_EXAMPLE_START_BUTTON
     SetExampleButtonCallbacks(SelfTestEventHandler);
-#endif
     InitCommonParts();
 
     CHIP_ERROR err = AlarmMgr().Init();
     if (err != CHIP_NO_ERROR)
     {
         LOG_ERR("AlarmMgr::Init() failed");
-        return err;
-    }
-
-    err = ConnectivityMgr().SetBLEDeviceName("TelinkCOSensor");
-    if (err != CHIP_NO_ERROR)
-    {
-        LOG_ERR("SetBLEDeviceName fail");
         return err;
     }
 

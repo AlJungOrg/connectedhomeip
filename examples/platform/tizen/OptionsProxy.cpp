@@ -22,7 +22,10 @@
 
 #include <app_control.h>
 
-#include <platform/CHIPDeviceBuildConfig.h>
+#include <lib/core/CHIPConfig.h>
+#include <platform/CHIPDeviceConfig.h>
+
+#include <string>
 
 namespace {
 

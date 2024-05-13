@@ -51,6 +51,7 @@ buildconfig_header("crypto_buildconfig") {
   defines = [
     "CHIP_CRYPTO_MBEDTLS=${chip_crypto_mbedtls}",
     "CHIP_CRYPTO_PSA=${chip_crypto_psa}",
+    "CHIP_CRYPTO_PSA_SPAKE2P=${chip_crypto_psa_spake2p}",
     "CHIP_CRYPTO_OPENSSL=${chip_crypto_openssl}",
     "CHIP_CRYPTO_BORINGSSL=${chip_crypto_boringssl}",
     "CHIP_CRYPTO_PLATFORM=${chip_crypto_platform}",
@@ -68,6 +69,7 @@ source_set("public_headers") {
     ":crypto_buildconfig",
     "${chip_root}/src/lib/asn1",
     "${chip_root}/src/lib/core",
+    "${chip_root}/src/lib/core:types",
     "${chip_root}/src/lib/support",
     "${nlassert_root}:nlassert",
   ]
@@ -100,7 +102,11 @@ if (chip_crypto == "openssl") {
   import("//build_overrides/mbedtls.gni")
 
   source_set("cryptopal_mbedtls") {
-    sources = [ "CHIPCryptoPALmbedTLS.cpp" ]
+    sources = [
+      "CHIPCryptoPALmbedTLS.cpp",
+      "CHIPCryptoPALmbedTLS.h",
+      "CHIPCryptoPALmbedTLSCert.cpp",
+    ]
     public_deps = [ ":public_headers" ]
 
     if (!chip_external_mbedtls) {
@@ -114,8 +120,8 @@ if (chip_crypto == "openssl") {
     sources = [
       "CHIPCryptoPALPSA.cpp",
       "CHIPCryptoPALPSA.h",
-      "PSAOperationalKeystore.cpp",
-      "PSAOperationalKeystore.h",
+      "CHIPCryptoPALmbedTLS.h",
+      "CHIPCryptoPALmbedTLSCert.cpp",
     ]
     public_deps = [ ":public_headers" ]
 
@@ -139,6 +145,8 @@ static_library("crypto") {
 
   if (chip_crypto == "psa") {
     sources += [
+      "PSAOperationalKeystore.cpp",
+      "PSAOperationalKeystore.h",
       "PSASessionKeystore.cpp",
       "PSASessionKeystore.h",
     ]
@@ -146,6 +154,13 @@ static_library("crypto") {
     sources += [
       "RawKeySessionKeystore.cpp",
       "RawKeySessionKeystore.h",
+    ]
+  }
+
+  if (chip_crypto_psa_spake2p) {
+    sources += [
+      "PSASpake2p.cpp",
+      "PSASpake2p.h",
     ]
   }
 

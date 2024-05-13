@@ -28,8 +28,9 @@ test runner.
     (For Mac OS X, `commander` is located inside
     `Commander.app/Contents/MacOS/`.)
 
--   Download and install a suitable ARM gcc tool chain:
-    [GNU Arm Embedded Toolchain 9-2019-q4-major](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads)
+-   Download and install a suitable ARM gcc tool chain (For most Host, the
+    bootstrap already installs the toolchain):
+    [GNU Arm Embedded Toolchain 12.2 Rel1](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads)
 
 -   Install some additional tools(likely already present for CHIP developers):
 
@@ -70,7 +71,7 @@ OR use GN/Ninja directly
           cd ~/connectedhomeip/src/test_driver/efr32/
           git submodule update --init
           source third_party/connectedhomeip/scripts/activate.sh
-          export EFR32_BOARD=BRD4161A
+          export SILABS_BOARD=BRD4161A
           gn gen out/debug
           ninja -C out/debug
           ```
@@ -103,6 +104,18 @@ Or build using build script from the root
 
 The runner will be installed into the venv and python wheels will be packaged in
 the output folder for deploying.
+
+Then the python wheels need to installed using pip3.
+
+    ```
+    pip3 install out/debug/chip_nl_test_runner_wheels/*.whl
+    ```
+
+Other python libraries may need to be installed such as
+
+    ```
+    pip3 install pyserial
+    ```
 
 -   To run the tests:
 

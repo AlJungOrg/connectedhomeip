@@ -21,21 +21,21 @@
  *          Utilities for accessing persisted device configuration on
  *          platforms based on the Silicon Labs SDK.
  */
-/* this file behaves like a config.h, comes first */
-#include <platform/internal/CHIPDeviceLayerInternal.h>
-
 #include <platform/silabs/SilabsConfig.h>
 
 #include <lib/core/CHIPEncoding.h>
+#include <lib/support/CodeUtils.h>
 #include <platform/internal/testing/ConfigUnitTest.h>
+#include <platform/silabs/CHIPDevicePlatformConfig.h>
 
-#include "FreeRTOS.h"
-#include "nvm3.h"
-#include "nvm3_default.h"
-#include "nvm3_hal_flash.h"
+#include <nvm3.h>
+#include <nvm3_default.h>
+#include <nvm3_hal_flash.h>
 #include <nvm3_lock.h>
 
-#ifndef BRD4325A // TODO: fix semaphore usage in nvm3_lock for siwx917. use weak implementation for that board instead
+#ifndef SLI_SI91X_MCU_INTERFACE // 917soc/wifi-sdk implements the same nvm3 lock/unlock mechanism and it currently can't be overide.
+#include <FreeRTOS.h>
+#include <semphr.h>
 // Substitute the GSDK weak nvm3_lockBegin and nvm3_lockEnd
 // for an application controlled re-entrance protection
 static SemaphoreHandle_t nvm3_Sem;
@@ -58,7 +58,7 @@ void nvm3_lockEnd(void)
     VerifyOrDie(nvm3_Sem != NULL);
     xSemaphoreGive(nvm3_Sem);
 }
-#endif // not BRD4325A
+#endif // !SLI_SI91X_MCU_INTERFACE
 
 namespace chip {
 namespace DeviceLayer {
@@ -78,9 +78,9 @@ CHIP_ERROR SilabsConfig::Init()
 
 void SilabsConfig::DeInit()
 {
-#ifndef BRD4325A // TODO: fix semaphore usage in nvm3_lock for siwx917. use weak implementation for that board instead
+#ifndef SLI_SI91X_MCU_INTERFACE
     vSemaphoreDelete(nvm3_Sem);
-#endif // not BRD4325A
+#endif // !SLI_SI91X_MCU_INTERFACE
     nvm3_close(nvm3_defaultHandle);
 }
 
@@ -90,6 +90,28 @@ CHIP_ERROR SilabsConfig::ReadConfigValue(Key key, bool & val)
     uint32_t objectType;
     size_t dataLen;
     bool tmpVal = 0;
+
+    VerifyOrExit(ValidConfigKey(key), err = CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND); // Verify key id.
+
+    // Get nvm3 object info.
+    err = MapNvm3Error(nvm3_getObjectInfo(nvm3_defaultHandle, key, &objectType, &dataLen));
+    SuccessOrExit(err);
+
+    // Read nvm3 bytes into tmp.
+    err = MapNvm3Error(nvm3_readData(nvm3_defaultHandle, key, &tmpVal, dataLen));
+    SuccessOrExit(err);
+    val = tmpVal;
+
+exit:
+    return err;
+}
+
+CHIP_ERROR SilabsConfig::ReadConfigValue(Key key, uint16_t & val)
+{
+    CHIP_ERROR err;
+    uint32_t objectType;
+    size_t dataLen;
+    uint16_t tmpVal = 0;
 
     VerifyOrExit(ValidConfigKey(key), err = CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND); // Verify key id.
 
@@ -288,6 +310,19 @@ CHIP_ERROR SilabsConfig::WriteConfigValue(Key key, bool val)
     CHIP_ERROR err;
 
     VerifyOrExit(ValidConfigKey(key), err = CHIP_ERROR_INVALID_ARGUMENT); // Verify key id.
+
+    err = MapNvm3Error(nvm3_writeData(nvm3_defaultHandle, key, &val, sizeof(val)));
+    SuccessOrExit(err);
+
+exit:
+    return err;
+}
+
+CHIP_ERROR SilabsConfig::WriteConfigValue(Key key, uint16_t val)
+{
+    CHIP_ERROR err;
+
+    VerifyOrExit(ValidConfigKey(key), err = CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND); // Verify key id.
 
     err = MapNvm3Error(nvm3_writeData(nvm3_defaultHandle, key, &val, sizeof(val)));
     SuccessOrExit(err);
@@ -517,11 +552,13 @@ bool SilabsConfig::ValidConfigKey(Key key)
     return false;
 }
 
+#if CONFIG_BUILD_FOR_HOST_UNIT_TEST
 void SilabsConfig::RunConfigUnitTest()
 {
     // Run common unit test.
     ::chip::DeviceLayer::Internal::RunConfigUnitTest<SilabsConfig>();
 }
+#endif // CONFIG_BUILD_FOR_HOST_UNIT_TEST
 
 void SilabsConfig::RepackNvm3Flash(void)
 {

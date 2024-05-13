@@ -26,12 +26,12 @@
 
 #include "CHIPDeviceManager.h"
 #include <app/util/basic-types.h>
+#include <core/ErrorStr.h>
 #include <credentials/DeviceAttestationCredsProvider.h>
 #include <credentials/examples/DeviceAttestationCredsExample.h>
 #include <platform/Ameba/FactoryDataProvider.h>
 #include <support/CHIPMem.h>
 #include <support/CodeUtils.h>
-#include <support/ErrorStr.h>
 
 #include "Globals.h"
 #include "LEDWidget.h"
@@ -84,10 +84,9 @@ CHIP_ERROR CHIPDeviceManager::Init(CHIPDeviceManagerCallbacks * cb)
     SetDeviceAttestationCredentialsProvider(&mFactoryDataProvider);
     SetDeviceInstanceInfoProvider(&mFactoryDataProvider);
 
-    if (CONFIG_NETWORK_LAYER_BLE)
-    {
-        ConnectivityMgr().SetBLEAdvertisingEnabled(true);
-    }
+#if CONFIG_NETWORK_LAYER_BLE
+    ConnectivityMgr().SetBLEAdvertisingEnabled(true);
+#endif
 
     PlatformMgr().AddEventHandler(CHIPDeviceManager::CommonDeviceEventHandler, reinterpret_cast<intptr_t>(cb));
 

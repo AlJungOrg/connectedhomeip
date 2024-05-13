@@ -26,7 +26,7 @@
 #include "StructBuilder.h"
 #include "StructParser.h"
 
-#include <app/AppBuildConfig.h>
+#include <app/AppConfig.h>
 #include <app/util/basic-types.h>
 #include <lib/core/CHIPCore.h>
 #include <lib/core/Optional.h>
@@ -116,6 +116,16 @@ struct StatusIB
     Optional<ClusterStatus> mClusterStatus      = Optional<ClusterStatus>::Missing();
 
 }; // struct StatusIB
+
+constexpr bool operator==(const StatusIB & one, const StatusIB & two)
+{
+    return one.mStatus == two.mStatus && one.mClusterStatus == two.mClusterStatus;
+}
+
+constexpr bool operator!=(const StatusIB & one, const StatusIB & two)
+{
+    return !(one == two);
+}
 
 }; // namespace app
 }; // namespace chip

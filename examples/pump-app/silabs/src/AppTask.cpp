@@ -26,7 +26,6 @@
 #include "LEDWidget.h"
 
 #include <app/clusters/on-off-server/on-off-server.h>
-#include <app/clusters/scenes-server/scenes-server.h>
 #include <app/server/OnboardingCodesUtil.h>
 #include <app/server/Server.h>
 #include <app/util/attribute-storage.h>
@@ -110,7 +109,7 @@ CHIP_ERROR AppTask::Init()
     if (!ConnectivityMgr().IsThreadProvisioned())
 #endif /* !SL_WIFI */
     {
-        GetLCD().ShowQRCode(true, true);
+        GetLCD().ShowQRCode(true);
     }
 #endif // QR_CODE_ENABLED
 #endif
@@ -126,7 +125,7 @@ CHIP_ERROR AppTask::StartAppTask()
 void AppTask::AppTaskMain(void * pvParameter)
 {
     AppEvent event;
-    QueueHandle_t sAppEventQueue = *(static_cast<QueueHandle_t *>(pvParameter));
+    osMessageQueueId_t sAppEventQueue = *(static_cast<osMessageQueueId_t *>(pvParameter));
 
     CHIP_ERROR err = sAppTask.Init();
     if (err != CHIP_NO_ERROR)
@@ -135,7 +134,7 @@ void AppTask::AppTaskMain(void * pvParameter)
         appError(err);
     }
 
-#if !(defined(CHIP_DEVICE_CONFIG_ENABLE_SED) && CHIP_DEVICE_CONFIG_ENABLE_SED)
+#if !(defined(CHIP_CONFIG_ENABLE_ICD_SERVER) && CHIP_CONFIG_ENABLE_ICD_SERVER)
     sAppTask.StartStatusLEDTimer();
 #endif
 
@@ -143,11 +142,11 @@ void AppTask::AppTaskMain(void * pvParameter)
 
     while (true)
     {
-        BaseType_t eventReceived = xQueueReceive(sAppEventQueue, &event, portMAX_DELAY);
-        while (eventReceived == pdTRUE)
+        osStatus_t eventReceived = osMessageQueueGet(sAppEventQueue, &event, NULL, osWaitForever);
+        while (eventReceived == osOK)
         {
             sAppTask.DispatchEvent(&event);
-            eventReceived = xQueueReceive(sAppEventQueue, &event, 0);
+            eventReceived = osMessageQueueGet(sAppEventQueue, &event, NULL, 0);
         }
     }
 }
@@ -243,11 +242,11 @@ void AppTask::ActionCompleted(PumpManager::Action_t aAction, int32_t aActor)
 void AppTask::UpdateClusterState(intptr_t context)
 {
     // Set On/Off state
-    EmberStatus status;
+    Protocols::InteractionModel::Status status;
     bool onOffState = !PumpMgr().IsStopped();
     status          = chip::app::Clusters::OnOff::Attributes::OnOff::Set(PCC_CLUSTER_ENDPOINT, onOffState);
-    if (status != EMBER_ZCL_STATUS_SUCCESS)
+    if (status != Protocols::InteractionModel::Status::Success)
     {
-        ChipLogError(NotSpecified, "ERR: Updating On/Off state  %x", status);
+        ChipLogError(NotSpecified, "ERR: Updating On/Off state  %x", to_underlying(status));
     }
 }

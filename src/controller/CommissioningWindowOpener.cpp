@@ -25,6 +25,7 @@
 
 using namespace chip::app::Clusters;
 using namespace chip::System::Clock;
+using namespace chip::Crypto;
 
 namespace {
 // TODO: What should the timed invoke timeout here be?
@@ -126,7 +127,7 @@ CHIP_ERROR CommissioningWindowOpener::OpenCommissioningWindow(NodeId deviceId, S
 CHIP_ERROR CommissioningWindowOpener::OpenCommissioningWindowInternal(Messaging::ExchangeManager & exchangeMgr,
                                                                       const SessionHandle & sessionHandle)
 {
-    ChipLogProgress(Controller, "OpenCommissioningWindow for device ID %" PRIu64, mNodeId);
+    ChipLogProgress(Controller, "OpenCommissioningWindow for device ID 0x" ChipLogFormatX64, ChipLogValueX64(mNodeId));
 
     constexpr EndpointId kAdministratorCommissioningClusterEndpoint = 0;
 
@@ -134,7 +135,7 @@ CHIP_ERROR CommissioningWindowOpener::OpenCommissioningWindowInternal(Messaging:
 
     if (mCommissioningWindowOption != CommissioningWindowOption::kOriginalSetupCode)
     {
-        chip::Spake2pVerifierSerialized serializedVerifier;
+        Spake2pVerifierSerialized serializedVerifier;
         MutableByteSpan serializedVerifierSpan(serializedVerifier);
         ReturnErrorOnFailure(mVerifier.Serialize(serializedVerifierSpan));
 

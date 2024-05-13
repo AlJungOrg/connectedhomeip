@@ -27,10 +27,6 @@
  *
  */
 
-#ifndef __STDC_LIMIT_MACROS
-#define __STDC_LIMIT_MACROS
-#endif
-
 #include <inet/IPAddress.h>
 
 #include <inet/InetError.h>
@@ -108,7 +104,7 @@ ip4_addr_t IPAddress::ToIPv4() const
 
 #endif // INET_CONFIG_ENABLE_IPV4
 
-ip_addr_t IPAddress::ToLwIPAddr(void) const
+ip_addr_t IPAddress::ToLwIPAddr() const
 {
     ip_addr_t ret;
 
@@ -194,7 +190,7 @@ lwip_ip_addr_type IPAddress::ToLwIPAddrType(IPAddressType typ)
 
 ip6_addr_t IPAddress::ToIPv6() const
 {
-    ip6_addr_t ipAddr = { 0 };
+    ip6_addr_t ipAddr = {};
     static_assert(sizeof(ipAddr.addr) == sizeof(Addr), "ip6_addr_t size mismatch");
     memcpy(&ipAddr.addr, Addr, sizeof(ipAddr.addr));
     return ipAddr;
@@ -323,7 +319,7 @@ bool IPAddress::IsIPv6GlobalUnicast() const
 // Is address an IPv6 Unique Local Address?
 bool IPAddress::IsIPv6ULA() const
 {
-    return (ntohl(Addr[0]) & 0xFF000000U) == 0xFD000000U;
+    return (ntohl(Addr[0]) & 0xFE000000U) == 0xFC000000U;
 }
 
 // Is address an IPv6 Link-local Address?

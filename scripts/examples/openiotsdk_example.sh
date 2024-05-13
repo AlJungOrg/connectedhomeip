@@ -53,6 +53,8 @@ readarray -t SUPPORTED_APP_NAMES <"$CHIP_ROOT"/examples/platform/openiotsdk/supp
 SUPPORTED_APP_NAMES+=("unit-tests")
 
 readarray -t TEST_NAMES <"$CHIP_ROOT"/src/test_driver/openiotsdk/unit-tests/test_components.txt
+readarray -t TEST_NAMES_NL <"$CHIP_ROOT"/src/test_driver/openiotsdk/unit-tests/test_components_nl.txt
+TEST_NAMES+=("${TEST_NAMES_NL[@]}")
 
 function show_usage() {
     cat <<EOF
@@ -268,7 +270,7 @@ function run_test() {
     fi
 
     set +e
-    pytest --json-report --json-report-summary --json-report-file="$EXAMPLE_TEST_PATH"/test_report_"$EXAMPLE".json --binaryPath="$EXAMPLE_EXE_PATH" --fvp="$FVP_BIN" --fvpConfig="$FVP_CONFIG_FILE" "${TEST_OPTIONS[@]}" "$EXAMPLE_TEST_PATH"/test_app.py
+    pytest --log-level=INFO --json-report --json-report-summary --json-report-file="$EXAMPLE_TEST_PATH"/test_report_"$EXAMPLE".json --binaryPath="$EXAMPLE_EXE_PATH" --fvp="$FVP_BIN" --fvpConfig="$FVP_CONFIG_FILE" "${TEST_OPTIONS[@]}" "$EXAMPLE_TEST_PATH"/test_app.py
     set -e
 
     if [[ ! -f $EXAMPLE_TEST_PATH/test_report_$EXAMPLE.json ]]; then

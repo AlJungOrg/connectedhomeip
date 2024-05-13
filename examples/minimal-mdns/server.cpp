@@ -126,10 +126,10 @@ public:
 
     void OnQuery(const mdns::Minimal::BytesRange & data, const Inet::IPPacketInfo * info) override
     {
-        char addr[INET6_ADDRSTRLEN];
+        char addr[Inet::IPAddress::kMaxStringLength];
         info->SrcAddress.ToString(addr, sizeof(addr));
 
-        char ifName[64];
+        char ifName[Inet::InterfaceId::kMaxIfNameLength];
         VerifyOrDie(info->Interface.GetInterfaceName(ifName, sizeof(ifName)) == CHIP_NO_ERROR);
 
         printf("QUERY from: %-15s on port %d, via interface %s\n", addr, info->SrcPort, ifName);
@@ -145,10 +145,10 @@ public:
 
     void OnResponse(const mdns::Minimal::BytesRange & data, const Inet::IPPacketInfo * info) override
     {
-        char addr[INET6_ADDRSTRLEN];
+        char addr[Inet::IPAddress::kMaxStringLength];
         info->SrcAddress.ToString(addr, sizeof(addr));
 
-        char ifName[64];
+        char ifName[Inet::InterfaceId::kMaxIfNameLength];
         VerifyOrDie(info->Interface.GetInterfaceName(ifName, sizeof(ifName)) == CHIP_NO_ERROR);
 
         printf("RESPONSE from: %-15s on port %d, via interface %s\n", addr, info->SrcPort, ifName);
@@ -224,11 +224,11 @@ int main(int argc, char ** args)
     mdns::Minimal::QueryResponder<16 /* maxRecords */> queryResponder;
 
     mdns::Minimal::QNamePart tcpServiceName[]       = { Dnssd::kOperationalServiceName, Dnssd::kOperationalProtocol,
-                                                  Dnssd::kLocalDomain };
+                                                        Dnssd::kLocalDomain };
     mdns::Minimal::QNamePart tcpServerServiceName[] = { gOptions.instanceName, Dnssd::kOperationalServiceName,
                                                         Dnssd::kOperationalProtocol, Dnssd::kLocalDomain };
     mdns::Minimal::QNamePart udpServiceName[]       = { Dnssd::kCommissionableServiceName, Dnssd::kCommissionProtocol,
-                                                  Dnssd::kLocalDomain };
+                                                        Dnssd::kLocalDomain };
     mdns::Minimal::QNamePart udpServerServiceName[] = { gOptions.instanceName, Dnssd::kCommissionableServiceName,
                                                         Dnssd::kCommissionProtocol, Dnssd::kLocalDomain };
 

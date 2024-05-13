@@ -23,7 +23,6 @@
 
 #include <platform/internal/CHIPDeviceLayerInternal.h>
 
-#include <app-common/zap-generated/enums.h>
 #include <app/data-model/List.h>
 #include <lib/support/CHIPMem.h>
 #include <lib/support/CHIPMemString.h>
@@ -75,6 +74,9 @@ enum class WiFiStatsCountType
     kWiFiOverrunCount
 };
 
+// Static variable to store the maximum heap size
+static size_t maxHeapHighWatermark = 0;
+
 CHIP_ERROR GetEthernetStatsCount(EthernetStatsCountType type, uint64_t & count)
 {
     CHIP_ERROR err          = CHIP_ERROR_READ_FAILED;
@@ -91,8 +93,7 @@ CHIP_ERROR GetEthernetStatsCount(EthernetStatsCountType type, uint64_t & count)
         // Walk through linked list, maintaining head pointer so we can free list later.
         for (ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next)
         {
-            if (ConnectivityUtils::GetInterfaceConnectionType(ifa->ifa_name) ==
-                InterfaceTypeEnum::EMBER_ZCL_INTERFACE_TYPE_ENUM_ETHERNET)
+            if (ConnectivityUtils::GetInterfaceConnectionType(ifa->ifa_name) == InterfaceTypeEnum::kEthernet)
             {
                 ChipLogProgress(DeviceLayer, "Found the primary Ethernet interface:%s", StringOrNullMarker(ifa->ifa_name));
                 break;
@@ -156,8 +157,7 @@ CHIP_ERROR GetWiFiStatsCount(WiFiStatsCountType type, uint64_t & count)
         // Walk through linked list, maintaining head pointer so we can free list later.
         for (ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next)
         {
-            if (ConnectivityUtils::GetInterfaceConnectionType(ifa->ifa_name) ==
-                InterfaceTypeEnum::EMBER_ZCL_INTERFACE_TYPE_ENUM_WI_FI)
+            if (ConnectivityUtils::GetInterfaceConnectionType(ifa->ifa_name) == InterfaceTypeEnum::kWiFi)
             {
                 ChipLogProgress(DeviceLayer, "Found the primary WiFi interface:%s", StringOrNullMarker(ifa->ifa_name));
                 break;
@@ -247,6 +247,11 @@ CHIP_ERROR DiagnosticDataProviderImpl::GetCurrentHeapUsed(uint64_t & currentHeap
     // the current running program.
     currentHeapUsed = mallocInfo.uordblks;
 
+    // Update the maximum heap high watermark if the current heap usage exceeds it.
+    if (currentHeapUsed > maxHeapHighWatermark)
+    {
+        maxHeapHighWatermark = currentHeapUsed;
+    }
     return CHIP_NO_ERROR;
 #endif
 }
@@ -263,9 +268,15 @@ CHIP_ERROR DiagnosticDataProviderImpl::GetCurrentHeapHighWatermark(uint64_t & cu
     // has been used by the Node.
     // On Linux, since it uses virtual memory, whereby a page of memory could be copied to
     // the hard disk, called swap space, and free up that page of memory. So it is impossible
-    // to know accurately peak physical memory it use. We just return the current heap memory
-    // being used by the current running program.
-    currentHeapHighWatermark = mallocInfo.uordblks;
+    // to know accurately peak physical memory it use.
+    // Update the maximum heap high watermark if the current heap usage exceeds it.
+    if (mallocInfo.uordblks > static_cast<int>(maxHeapHighWatermark))
+    {
+        maxHeapHighWatermark = mallocInfo.uordblks;
+    }
+
+    // Set the current heap high watermark.
+    currentHeapHighWatermark = maxHeapHighWatermark;
 
     return CHIP_NO_ERROR;
 #endif
@@ -276,8 +287,10 @@ CHIP_ERROR DiagnosticDataProviderImpl::ResetWatermarks()
     // If implemented, the server SHALL set the value of the CurrentHeapHighWatermark attribute to the
     // value of the CurrentHeapUsed.
 
-    // On Linux, the write operation is non-op since we always rely on the mallinfo system
-    // function to get the current heap memory.
+    // Get the current amount of heap memory, in bytes, that are being used by
+    // the current running program and reset the max heap high watermark to current heap amount.
+    struct mallinfo mallocInfo = mallinfo();
+    maxHeapHighWatermark       = mallocInfo.uordblks;
 
     return CHIP_NO_ERROR;
 }
@@ -413,10 +426,10 @@ CHIP_ERROR DiagnosticDataProviderImpl::GetActiveRadioFaults(GeneralFaults<kMaxRa
 {
 #if CHIP_CONFIG_TEST
     // On Linux Simulation, set following radio faults statically.
-    ReturnErrorOnFailure(radioFaults.add(EMBER_ZCL_RADIO_FAULT_ENUM_WI_FI_FAULT));
-    ReturnErrorOnFailure(radioFaults.add(EMBER_ZCL_RADIO_FAULT_ENUM_CELLULAR_FAULT));
-    ReturnErrorOnFailure(radioFaults.add(EMBER_ZCL_RADIO_FAULT_ENUM_THREAD_FAULT));
-    ReturnErrorOnFailure(radioFaults.add(EMBER_ZCL_RADIO_FAULT_ENUM_NFC_FAULT));
+    ReturnErrorOnFailure(radioFaults.add(to_underlying(RadioFaultEnum::kWiFiFault)));
+    ReturnErrorOnFailure(radioFaults.add(to_underlying(RadioFaultEnum::kCellularFault)));
+    ReturnErrorOnFailure(radioFaults.add(to_underlying(RadioFaultEnum::kThreadFault)));
+    ReturnErrorOnFailure(radioFaults.add(to_underlying(RadioFaultEnum::kNFCFault)));
 #endif
 
     return CHIP_NO_ERROR;
@@ -615,8 +628,7 @@ CHIP_ERROR DiagnosticDataProviderImpl::ResetEthNetworkDiagnosticsCounts()
         // Walk through linked list, maintaining head pointer so we can free list later.
         for (ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next)
         {
-            if (ConnectivityUtils::GetInterfaceConnectionType(ifa->ifa_name) ==
-                InterfaceTypeEnum::EMBER_ZCL_INTERFACE_TYPE_ENUM_ETHERNET)
+            if (ConnectivityUtils::GetInterfaceConnectionType(ifa->ifa_name) == InterfaceTypeEnum::kEthernet)
             {
                 ChipLogProgress(DeviceLayer, "Found the primary Ethernet interface:%s", StringOrNullMarker(ifa->ifa_name));
                 break;
@@ -763,6 +775,16 @@ CHIP_ERROR DiagnosticDataProviderImpl::GetWiFiOverrunCount(uint64_t & overrunCou
     return CHIP_NO_ERROR;
 }
 
+CHIP_ERROR DiagnosticDataProviderImpl::GetWiFiBeaconRxCount(uint32_t & beaconRxCount)
+{
+    if (DeviceLayer::ConnectivityMgrImpl().IsWiFiManagementStarted())
+    {
+        beaconRxCount = mBeaconRxCount;
+        return CHIP_NO_ERROR;
+    }
+    return CHIP_ERROR_NOT_IMPLEMENTED;
+}
+
 CHIP_ERROR DiagnosticDataProviderImpl::ResetWiFiNetworkDiagnosticsCounts()
 {
     CHIP_ERROR err          = CHIP_ERROR_READ_FAILED;
@@ -781,8 +803,7 @@ CHIP_ERROR DiagnosticDataProviderImpl::ResetWiFiNetworkDiagnosticsCounts()
         // Walk through linked list, maintaining head pointer so we can free list later.
         for (ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next)
         {
-            if (ConnectivityUtils::GetInterfaceConnectionType(ifa->ifa_name) ==
-                InterfaceTypeEnum::EMBER_ZCL_INTERFACE_TYPE_ENUM_WI_FI)
+            if (ConnectivityUtils::GetInterfaceConnectionType(ifa->ifa_name) == InterfaceTypeEnum::kWiFi)
             {
                 ChipLogProgress(DeviceLayer, "Found the primary WiFi interface:%s", StringOrNullMarker(ifa->ifa_name));
                 break;

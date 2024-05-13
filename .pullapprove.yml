@@ -15,9 +15,6 @@ overrides:
     ############################################################
     #  Draft PRs
     ############################################################
-    - if: "draft or 'WIP' in title"
-      status: pending
-      explanation: "PR is draft, pending review"
     - if: "draft"
       status: pending
       explanation: "PR is draft, pending review"
@@ -174,6 +171,14 @@ groups:
             - files.include('*')
         reviewers:
             teams: [reviewers-samsung]
+        reviews:
+            request: 10
+    shared-reviewers-eve:
+        type: optional
+        conditions:
+            - files.include('*')
+        reviewers:
+            teams: [reviewers-eve]
         reviews:
             request: 10
     # shared-reviewers-signify disabled for now, because the reviewers-signify

@@ -20,7 +20,7 @@
 #include <memory>
 #include <vector>
 
-#include <app/AttributeAccessInterface.h>
+#include <app/icd/server/ICDServerConfig.h>
 #include <lib/support/ThreadOperationalDataset.h>
 #include <platform/GLibTypeDeleter.h>
 #include <platform/Linux/dbus/openthread/introspect.h>
@@ -56,6 +56,11 @@ public:
     void _LockThreadStack() {}                              // Intentionally left blank
     bool _TryLockThreadStack() { return false; }            // Intentionally left blank
     void _UnlockThreadStack() {}                            // Intentionally left blank
+
+#if CHIP_DEVICE_CONFIG_ENABLE_THREAD_SRP_CLIENT
+    void _WaitOnSrpClearAllComplete() {}
+    void _NotifySrpClearAllComplete() {}
+#endif // CHIP_DEVICE_CONFIG_ENABLE_THREAD_SRP_CLIENT
 
     bool _HaveRouteToAddress(const Inet::IPAddress & destAddr);
 
@@ -93,11 +98,6 @@ public:
 
     CHIP_ERROR _SetThreadDeviceType(ConnectivityManager::ThreadDeviceType deviceType);
 
-#if CHIP_DEVICE_CONFIG_ENABLE_SED
-    CHIP_ERROR _GetSEDIntervalsConfig(ConnectivityManager::SEDIntervalsConfig & intervalsConfig);
-    CHIP_ERROR _SetSEDIntervalsConfig(const ConnectivityManager::SEDIntervalsConfig & intervalsConfig);
-    CHIP_ERROR _RequestSEDActiveMode(bool onOff, bool delayIdle = false);
-#endif
 #if CHIP_CONFIG_ENABLE_ICD_SERVER
     CHIP_ERROR _SetPollingInterval(System::Clock::Milliseconds32 pollingInterval);
 #endif /* CHIP_CONFIG_ENABLE_ICD_SERVER */
@@ -116,13 +116,7 @@ public:
 
     CHIP_ERROR _GetPollPeriod(uint32_t & buf);
 
-    CHIP_ERROR _JoinerStart();
-
-    void _SetRouterPromotion(bool val);
-
     void _ResetThreadNetworkDiagnosticsCounts();
-
-    CHIP_ERROR _WriteThreadNetworkDiagnosticAttributeToTlv(AttributeId attributeId, app::AttributeValueEncoder & encoder);
 
     CHIP_ERROR _StartThreadScan(NetworkCommissioning::ThreadDriver::ScanCallback * callback);
 

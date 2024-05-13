@@ -18,13 +18,15 @@
 #include "AppTask.h"
 #include "AppConfig.h"
 #include "AppEvent.h"
+#include "FabricTableDelegate.h"
 #include "LEDUtil.h"
 #include "WindowCovering.h"
 
 #include <DeviceInfoProviderImpl.h>
 
+#include <app/TestEventTriggerDelegate.h>
 #include <app/clusters/identify-server/identify-server.h>
-#include <app/clusters/ota-requestor/OTATestEventTriggerDelegate.h>
+#include <app/clusters/ota-requestor/OTATestEventTriggerHandler.h>
 #include <app/server/OnboardingCodesUtil.h>
 #include <app/server/Server.h>
 #include <app/util/attribute-storage.h>
@@ -35,8 +37,11 @@
 #include "OTAUtil.h"
 #endif
 
-#ifdef CONFIG_CHIP_ICD_SUBSCRIPTION_HANDLING
-#include <app/InteractionModelEngine.h>
+#ifdef CONFIG_CHIP_CRYPTO_PSA
+#include <crypto/PSAOperationalKeystore.h>
+#ifdef CONFIG_CHIP_MIGRATE_OPERATIONAL_KEYS_TO_ITS
+#include "MigrationManager.h"
+#endif
 #endif
 
 #include <dk_buttons_and_leds.h>
@@ -74,6 +79,10 @@ chip::DeviceLayer::DeviceInfoProviderImpl gExampleDeviceInfoProvider;
 bool sIsNetworkProvisioned = false;
 bool sIsNetworkEnabled     = false;
 bool sHaveBLEConnections   = false;
+
+#ifdef CONFIG_CHIP_CRYPTO_PSA
+chip::Crypto::PSAOperationalKeystore sPSAOperationalKeystore{};
+#endif
 } // namespace
 
 namespace LedConsts {
@@ -165,6 +174,11 @@ CHIP_ERROR AppTask::Init()
     GetDFUOverSMP().ConfirmNewImage();
 #endif
 
+#ifdef CONFIG_CHIP_OTA_REQUESTOR
+    /* OTA image confirmation must be done before the factory data init. */
+    OtaConfirmNewImage();
+#endif
+
     // Initialize CHIP server
 #if CONFIG_CHIP_FACTORY_DATA
     ReturnErrorOnFailure(mFactoryDataProvider.Init());
@@ -186,20 +200,33 @@ CHIP_ERROR AppTask::Init()
 #endif
 
     static CommonCaseDeviceServerInitParams initParams;
-    static OTATestEventTriggerDelegate testEventTriggerDelegate{ ByteSpan(sTestEventTriggerEnableKey) };
+    static SimpleTestEventTriggerDelegate sTestEventTriggerDelegate{};
+    static OTATestEventTriggerHandler sOtaTestEventTriggerHandler{};
+    VerifyOrDie(sTestEventTriggerDelegate.Init(ByteSpan(sTestEventTriggerEnableKey)) == CHIP_NO_ERROR);
+    VerifyOrDie(sTestEventTriggerDelegate.AddHandler(&sOtaTestEventTriggerHandler) == CHIP_NO_ERROR);
+#ifdef CONFIG_CHIP_CRYPTO_PSA
+    initParams.operationalKeystore = &sPSAOperationalKeystore;
+#endif
     (void) initParams.InitializeStaticResourcesBeforeServerInit();
-    initParams.testEventTriggerDelegate = &testEventTriggerDelegate;
+    initParams.testEventTriggerDelegate = &sTestEventTriggerDelegate;
     ReturnErrorOnFailure(chip::Server::GetInstance().Init(initParams));
+    AppFabricTableDelegate::Init();
+
+#ifdef CONFIG_CHIP_MIGRATE_OPERATIONAL_KEYS_TO_ITS
+    err = MoveOperationalKeysFromKvsToIts(sLocalInitData.mServerInitParams->persistentStorageDelegate,
+                                          sLocalInitData.mServerInitParams->operationalKeystore);
+    if (err != CHIP_NO_ERROR)
+    {
+        LOG_ERR("MoveOperationalKeysFromKvsToIts() failed");
+        return err;
+    }
+#endif
 
     gExampleDeviceInfoProvider.SetStorageDelegate(&Server::GetInstance().GetPersistentStorage());
     chip::DeviceLayer::SetDeviceInfoProvider(&gExampleDeviceInfoProvider);
 
     ConfigurationMgr().LogDeviceConfig();
     PrintOnboardingCodes(chip::RendezvousInformationFlag(chip::RendezvousInformationFlag::kBLE));
-
-#ifdef CONFIG_CHIP_ICD_SUBSCRIPTION_HANDLING
-    chip::app::InteractionModelEngine::GetInstance()->RegisterReadHandlerAppCallback(&GetICDUtil());
-#endif
 
     // Add CHIP event handler and start CHIP thread.
     // Note that all the initialization code should happen prior to this point to avoid data races

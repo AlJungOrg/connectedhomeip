@@ -55,7 +55,7 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
     }
     else if (clusterId == ColorControl::Id)
     {
-        EmberAfStatus status;
+        Protocols::InteractionModel::Status status;
         /* ignore several attributes that are currently not processed */
         if ((attributeId == ColorControl::Attributes::RemainingTime::Id) ||
             (attributeId == ColorControl::Attributes::EnhancedColorMode::Id) ||
@@ -99,8 +99,8 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
             */
             if (attributeId == ColorControl::Attributes::EnhancedCurrentHue::Id)
             {
-                hsv.h = (uint8_t)(((*reinterpret_cast<uint16_t *>(value)) & 0xFF00) >> 8);
-                hsv.s = (uint8_t)((*reinterpret_cast<uint16_t *>(value)) & 0xFF);
+                hsv.h = (uint8_t) (((*reinterpret_cast<uint16_t *>(value)) & 0xFF00) >> 8);
+                hsv.s = (uint8_t) ((*reinterpret_cast<uint16_t *>(value)) & 0xFF);
             }
             else if (attributeId == ColorControl::Attributes::CurrentHue::Id)
             {

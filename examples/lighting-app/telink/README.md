@@ -9,34 +9,39 @@ a reference for creating your own application.
 
 ## Build and flash
 
-1. Pull docker image from repository:
+1. Run the Docker container:
 
     ```bash
-    $ docker pull ghcr.io/project-chip/chip-build-telink:1
+    $ docker run -it --rm -v $PWD:/host -w /host ghcr.io/project-chip/chip-build-telink:$(wget -q -O - https://raw.githubusercontent.com/project-chip/connectedhomeip/master/.github/workflows/examples-telink.yaml 2> /dev/null | grep chip-build-telink | awk -F: '{print $NF}')
     ```
 
-1. Run docker container:
+    Compatible docker image version can be found in next file:
 
     ```bash
-    $ docker run -it --rm -v ${CHIP_BASE}:/root/chip -v /dev/bus/usb:/dev/bus/usb --device-cgroup-rule "c 189:* rmw" ghcr.io/project-chip/chip-build-telink:1
+    $ .github/workflows/examples-telink.yaml
     ```
 
-    here `${CHIP_BASE}` is directory which contains CHIP repo files **!!!Pay
-    attention that OUTPUT_DIR should contains ABSOLUTE path to output dir**
-
-1. Activate the build environment:
+2. Activate the build environment:
 
     ```bash
-    $ source ./scripts/activate.sh
+    $ source ./scripts/activate.sh -p all,telink
     ```
 
-1. In the example dir run:
+3. In the example dir run (replace _<build_target>_ with your board name, for
+   example, `tlsr9518adk80d`, `tlsr9528a` or `tlsr9258a`):
 
     ```bash
-    $ west build
+    $ west build -b <build_target>
     ```
 
-1. Flash binary:
+    Also use key `-DFLASH_SIZE`, if your board has memory size different from 2
+    MB, for example, `-DFLASH_SIZE=1m` or `-DFLASH_SIZE=4m`:
+
+    ```bash
+    $ west build -b tlsr9518adk80d -- -DFLASH_SIZE=4m
+    ```
+
+4. Flash binary:
 
     ```
     $ west flash --erase
@@ -92,30 +97,6 @@ be used to specify the the effect. It is able to be in following effects:
 | Blinks (1000 ms on/1000 ms off) | Channel Change ( `Clusters::Identify::EffectIdentifierEnum::kChannelChange`) |
 | Blinks (950 ms on/50 ms off)    | Finish ( `Clusters::Identify::EffectIdentifierEnum::kFinishEffect`)          |
 | LED off                         | Stop (`Clusters::Identify::EffectIdentifierEnum::kStopEffect`)               |
-
-#### Indicate current state of lightbulb
-
-By default, only **Blue** LED is used to show current state of lightbulb (only
-for lightning-app).
-
-To enable RGB functionality in Your application set this config:
-
-In Matter examples/lighting-app/telink/include/**AppConfig.h**, set the define
-`USE_RGB_PWM`:
-
-```bash
-    define USE_RGB_PWM 1
-```
-
-To get current state of lightbulb in RGB mode, connect 3-color LED module to
-following pins:
-
-| Name  |         Pin         |
-| :---: | :-----------------: |
-|  Red  | PE2 (pin 8 of J34)  |
-| Green | PE0 (pin 5 of J34)  |
-| Blue  | PB4 (pin 20 of J34) |
-|  GND  | GND (pin 24 of J50) |
 
 ### CHIP tool commands
 
@@ -207,7 +188,7 @@ feature for another Telink example:
 
 After build application with enabled OTA feature, use next binary files:
 
--   zephyr.bin - main binary to flash PCB (Use 2MB PCB).
+-   zephyr.bin - main binary to flash PCB (Use at least 2MB PCB).
 -   zephyr-ota.bin - binary for OTA Provider
 
 All binaries has the same SW version. To test OTA “zephyr-ota.bin” should have

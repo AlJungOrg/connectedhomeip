@@ -19,7 +19,6 @@
 #pragma once
 
 #include <app/clusters/mode-base-server/mode-base-server.h>
-#include <app/util/af.h>
 #include <app/util/config.h>
 #include <cstring>
 #include <utility>
@@ -41,10 +40,10 @@ private:
     using ModeTagStructType             = detail::Structs::ModeTagStruct::Type;
     ModeTagStructType modeTagsNormal[1] = { { .value = to_underlying(ModeTag::kNormal) } };
     ModeTagStructType modeTagsHeavy[2]  = { { .value = to_underlying(ModeBase::ModeTag::kMax) },
-                                           { .value = to_underlying(ModeTag::kHeavy) } };
+                                            { .value = to_underlying(ModeTag::kHeavy) } };
     ModeTagStructType modeTagsLight[3]  = { { .value = to_underlying(ModeTag::kLight) },
-                                           { .value = to_underlying(ModeBase::ModeTag::kNight) },
-                                           { .value = to_underlying(ModeBase::ModeTag::kQuiet) } };
+                                            { .value = to_underlying(ModeBase::ModeTag::kNight) },
+                                            { .value = to_underlying(ModeBase::ModeTag::kQuiet) } };
 
     const detail::Structs::ModeOptionStruct::Type kModeOptions[3] = {
         detail::Structs::ModeOptionStruct::Type{ .label    = CharSpan::fromCharString("Normal"),
@@ -68,6 +67,8 @@ private:
 public:
     ~DishwasherModeDelegate() override = default;
 };
+
+ModeBase::Instance * Instance();
 
 void Shutdown();
 

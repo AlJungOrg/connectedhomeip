@@ -34,7 +34,7 @@
 #include "FreeRTOS.h"
 #include "event_groups.h"
 #include "timers.h"
-#include <ble/CHIPBleServiceData.h>
+#include <ble/Ble.h>
 #include <lib/support/CodeUtils.h>
 #include <lib/support/logging/CHIPLogging.h>
 
@@ -123,7 +123,7 @@ CHIP_ERROR BLEManagerImpl::_Init()
     bt_create_task();
 
     bt_callback_manager_register_callback(bt_callback_type_app_event,
-                                          (uint32_t)(MODULE_MASK_GAP | MODULE_MASK_GATT | MODULE_MASK_SYSTEM),
+                                          (uint32_t) (MODULE_MASK_GAP | MODULE_MASK_GATT | MODULE_MASK_SYSTEM),
                                           (void *) BleMatterAppEventCallback);
 #ifdef BT_ENABLE_HCI_SNOOP_LOG
     bt_driver_btsnoop_ctrl(1);
@@ -656,7 +656,7 @@ void BLEManagerImpl::BleAdvTimeoutHandler(TimerHandle_t xTimer)
     else if (BLEMgrImpl().mFlags.Has(Flags::kAdvertising))
     {
         // Advertisement time expired. Stop advertising
-        ChipLogDetail(DeviceLayer, "bleAdv Timeout : Stop advertissement");
+        ChipLogDetail(DeviceLayer, "bleAdv Timeout : Stop advertisement");
         BLEMgr().SetAdvertisingEnabled(false);
     }
 }

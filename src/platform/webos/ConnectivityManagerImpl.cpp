@@ -65,7 +65,6 @@
 #endif
 
 using namespace ::chip;
-using namespace ::chip::TLV;
 using namespace ::chip::DeviceLayer;
 using namespace ::chip::DeviceLayer::Internal;
 using namespace ::chip::app::Clusters::GeneralDiagnostics;
@@ -1133,8 +1132,7 @@ CHIP_ERROR ConnectivityManagerImpl::GetWiFiBssId(MutableByteSpan & value)
         // Walk through linked list, maintaining head pointer so we can free list later.
         for (struct ifaddrs * ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next)
         {
-            if (ConnectivityUtils::GetInterfaceConnectionType(ifa->ifa_name) ==
-                InterfaceTypeEnum::EMBER_ZCL_INTERFACE_TYPE_ENUM_WI_FI)
+            if (ConnectivityUtils::GetInterfaceConnectionType(ifa->ifa_name) == InterfaceTypeEnum::kWiFi)
             {
                 if (ConnectivityUtils::GetInterfaceHardwareAddrs(ifa->ifa_name, value.data(), kMaxHardwareAddrSize) !=
                     CHIP_NO_ERROR)

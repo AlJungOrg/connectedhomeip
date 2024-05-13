@@ -50,10 +50,13 @@ static_library("Ameba") {
     "SoftwareUpdateManagerImpl.h",
     "SystemTimeSupport.cpp",
     "SystemTimeSupport.h",
+    "crypto/AmebaPersistentStorageOperationalKeystore.cpp",
+    "crypto/AmebaPersistentStorageOperationalKeystore.h",
   ]
 
   deps = [
     "${chip_root}/src/lib/dnssd:platform_header",
+    "${chip_root}/src/platform/logging:headers",
     "${chip_root}/src/setup_payload",
   ]
 

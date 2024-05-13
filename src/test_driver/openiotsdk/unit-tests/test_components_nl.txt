@@ -1,0 +1,4 @@
+AppTests
+DataModelTests
+MessagingLayerTests
+SecureChannelTestsNL
